@@ -1,0 +1,684 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 50;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		18A692DE21B90B7600E4B3DC /* MeshFramework.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 18A692DD21B90B7600E4B3DC /* MeshFramework.framework */; };
+		18A692DF21B90B7600E4B3DC /* MeshFramework.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 18A692DD21B90B7600E4B3DC /* MeshFramework.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		18A692E321B90B8100E4B3DC /* MeshFramework.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 18A692E221B90B8100E4B3DC /* MeshFramework.framework */; };
+		18A692E421B90B8100E4B3DC /* MeshFramework.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 18A692E221B90B8100E4B3DC /* MeshFramework.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		18C0843521B7DB7600A166F8 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18C0843421B7DB7600A166F8 /* AppDelegate.swift */; };
+		18C0843721B7DB7600A166F8 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18C0843621B7DB7600A166F8 /* ViewController.swift */; };
+		18C0843A21B7DB7600A166F8 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 18C0843821B7DB7600A166F8 /* Main.storyboard */; };
+		18C0843C21B7DB7700A166F8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 18C0843B21B7DB7700A166F8 /* Assets.xcassets */; };
+		18C0843F21B7DB7700A166F8 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 18C0843D21B7DB7700A166F8 /* LaunchScreen.storyboard */; };
+		18C0844421B7DB7700A166F8 /* MeshAppWatchKitApp.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 18C0844321B7DB7700A166F8 /* MeshAppWatchKitApp.app */; };
+		18C0844A21B7DB7700A166F8 /* Interface.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 18C0844821B7DB7700A166F8 /* Interface.storyboard */; };
+		18C0844C21B7DB7700A166F8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 18C0844B21B7DB7700A166F8 /* Assets.xcassets */; };
+		18C0845321B7DB7700A166F8 /* MeshAppWatchKitExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 18C0845221B7DB7700A166F8 /* MeshAppWatchKitExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		18C0845821B7DB7700A166F8 /* InterfaceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18C0845721B7DB7700A166F8 /* InterfaceController.swift */; };
+		18C0845A21B7DB7700A166F8 /* ExtensionDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18C0845921B7DB7700A166F8 /* ExtensionDelegate.swift */; };
+		18C0845C21B7DB7700A166F8 /* NotificationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18C0845B21B7DB7700A166F8 /* NotificationController.swift */; };
+		18C0845E21B7DB7800A166F8 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 18C0845D21B7DB7800A166F8 /* Assets.xcassets */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		18C0844521B7DB7700A166F8 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 18C0842921B7DB7600A166F8 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 18C0844221B7DB7700A166F8;
+			remoteInfo = MeshAppWatchKitApp;
+		};
+		18C0845421B7DB7700A166F8 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 18C0842921B7DB7600A166F8 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 18C0845121B7DB7700A166F8;
+			remoteInfo = MeshAppWatchKitExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		18A692E121B90B7700E4B3DC /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				18A692DF21B90B7600E4B3DC /* MeshFramework.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		18A692E521B90B8100E4B3DC /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				18A692E421B90B8100E4B3DC /* MeshFramework.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		18C0846621B7DB7800A166F8 /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				18C0845321B7DB7700A166F8 /* MeshAppWatchKitExtension.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		18C0846A21B7DB7800A166F8 /* Embed Watch Content */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(CONTENTS_FOLDER_PATH)/Watch";
+			dstSubfolderSpec = 16;
+			files = (
+				18C0844421B7DB7700A166F8 /* MeshAppWatchKitApp.app in Embed Watch Content */,
+			);
+			name = "Embed Watch Content";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		18A692D921B909D800E4B3DC /* MeshFramework.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = MeshFramework.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		18A692DD21B90B7600E4B3DC /* MeshFramework.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = MeshFramework.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		18A692E221B90B8100E4B3DC /* MeshFramework.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = MeshFramework.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		18C0843121B7DB7600A166F8 /* MeshApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MeshApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		18C0843421B7DB7600A166F8 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		18C0843621B7DB7600A166F8 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
+		18C0843921B7DB7600A166F8 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		18C0843B21B7DB7700A166F8 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		18C0843E21B7DB7700A166F8 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		18C0844021B7DB7700A166F8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		18C0844321B7DB7700A166F8 /* MeshAppWatchKitApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MeshAppWatchKitApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		18C0844921B7DB7700A166F8 /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Interface.storyboard; sourceTree = "<group>"; };
+		18C0844B21B7DB7700A166F8 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		18C0844D21B7DB7700A166F8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		18C0845221B7DB7700A166F8 /* MeshAppWatchKitExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = MeshAppWatchKitExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		18C0845721B7DB7700A166F8 /* InterfaceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InterfaceController.swift; sourceTree = "<group>"; };
+		18C0845921B7DB7700A166F8 /* ExtensionDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExtensionDelegate.swift; sourceTree = "<group>"; };
+		18C0845B21B7DB7700A166F8 /* NotificationController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationController.swift; sourceTree = "<group>"; };
+		18C0845D21B7DB7800A166F8 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		18C0845F21B7DB7800A166F8 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		18C0846021B7DB7800A166F8 /* PushNotificationPayload.apns */ = {isa = PBXFileReference; lastKnownFileType = text; path = PushNotificationPayload.apns; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		18A692E021B90B7700E4B3DC /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				18A692DE21B90B7600E4B3DC /* MeshFramework.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		18C0842E21B7DB7600A166F8 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		18C0844F21B7DB7700A166F8 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				18A692E321B90B8100E4B3DC /* MeshFramework.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		18C0842821B7DB7600A166F8 = {
+			isa = PBXGroup;
+			children = (
+				18A692E221B90B8100E4B3DC /* MeshFramework.framework */,
+				18A692DD21B90B7600E4B3DC /* MeshFramework.framework */,
+				18A692D921B909D800E4B3DC /* MeshFramework.framework */,
+				18C0843321B7DB7600A166F8 /* MeshApp */,
+				18C0844721B7DB7700A166F8 /* MeshAppWatchKitApp */,
+				18C0845621B7DB7700A166F8 /* MeshAppWatchKitExtension */,
+				18C0843221B7DB7600A166F8 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		18C0843221B7DB7600A166F8 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				18C0843121B7DB7600A166F8 /* MeshApp.app */,
+				18C0844321B7DB7700A166F8 /* MeshAppWatchKitApp.app */,
+				18C0845221B7DB7700A166F8 /* MeshAppWatchKitExtension.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		18C0843321B7DB7600A166F8 /* MeshApp */ = {
+			isa = PBXGroup;
+			children = (
+				18C0843421B7DB7600A166F8 /* AppDelegate.swift */,
+				18C0843621B7DB7600A166F8 /* ViewController.swift */,
+				18C0843821B7DB7600A166F8 /* Main.storyboard */,
+				18C0843B21B7DB7700A166F8 /* Assets.xcassets */,
+				18C0843D21B7DB7700A166F8 /* LaunchScreen.storyboard */,
+				18C0844021B7DB7700A166F8 /* Info.plist */,
+			);
+			path = MeshApp;
+			sourceTree = "<group>";
+		};
+		18C0844721B7DB7700A166F8 /* MeshAppWatchKitApp */ = {
+			isa = PBXGroup;
+			children = (
+				18C0844821B7DB7700A166F8 /* Interface.storyboard */,
+				18C0844B21B7DB7700A166F8 /* Assets.xcassets */,
+				18C0844D21B7DB7700A166F8 /* Info.plist */,
+			);
+			path = MeshAppWatchKitApp;
+			sourceTree = "<group>";
+		};
+		18C0845621B7DB7700A166F8 /* MeshAppWatchKitExtension */ = {
+			isa = PBXGroup;
+			children = (
+				18C0845721B7DB7700A166F8 /* InterfaceController.swift */,
+				18C0845921B7DB7700A166F8 /* ExtensionDelegate.swift */,
+				18C0845B21B7DB7700A166F8 /* NotificationController.swift */,
+				18C0845D21B7DB7800A166F8 /* Assets.xcassets */,
+				18C0845F21B7DB7800A166F8 /* Info.plist */,
+				18C0846021B7DB7800A166F8 /* PushNotificationPayload.apns */,
+			);
+			path = MeshAppWatchKitExtension;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		18C0843021B7DB7600A166F8 /* MeshApp */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 18C0846B21B7DB7800A166F8 /* Build configuration list for PBXNativeTarget "MeshApp" */;
+			buildPhases = (
+				18C0842D21B7DB7600A166F8 /* Sources */,
+				18C0842E21B7DB7600A166F8 /* Frameworks */,
+				18C0842F21B7DB7600A166F8 /* Resources */,
+				18C0846A21B7DB7800A166F8 /* Embed Watch Content */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				18C0844621B7DB7700A166F8 /* PBXTargetDependency */,
+			);
+			name = MeshApp;
+			productName = MeshApp;
+			productReference = 18C0843121B7DB7600A166F8 /* MeshApp.app */;
+			productType = "com.apple.product-type.application";
+		};
+		18C0844221B7DB7700A166F8 /* MeshAppWatchKitApp */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 18C0846721B7DB7800A166F8 /* Build configuration list for PBXNativeTarget "MeshAppWatchKitApp" */;
+			buildPhases = (
+				18C0844121B7DB7700A166F8 /* Resources */,
+				18C0846621B7DB7800A166F8 /* Embed App Extensions */,
+				18A692E021B90B7700E4B3DC /* Frameworks */,
+				18A692E121B90B7700E4B3DC /* Embed Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				18C0845521B7DB7700A166F8 /* PBXTargetDependency */,
+			);
+			name = MeshAppWatchKitApp;
+			productName = MeshAppWatchKitApp;
+			productReference = 18C0844321B7DB7700A166F8 /* MeshAppWatchKitApp.app */;
+			productType = "com.apple.product-type.application.watchapp2";
+		};
+		18C0845121B7DB7700A166F8 /* MeshAppWatchKitExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 18C0846321B7DB7800A166F8 /* Build configuration list for PBXNativeTarget "MeshAppWatchKitExtension" */;
+			buildPhases = (
+				18C0844E21B7DB7700A166F8 /* Sources */,
+				18C0844F21B7DB7700A166F8 /* Frameworks */,
+				18C0845021B7DB7700A166F8 /* Resources */,
+				18A692E521B90B8100E4B3DC /* Embed Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MeshAppWatchKitExtension;
+			productName = MeshAppWatchKitExtension;
+			productReference = 18C0845221B7DB7700A166F8 /* MeshAppWatchKitExtension.appex */;
+			productType = "com.apple.product-type.watchkit2-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		18C0842921B7DB7600A166F8 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastSwiftUpdateCheck = 1010;
+				LastUpgradeCheck = 1010;
+				ORGANIZATIONNAME = "Cypress Semiconductor";
+				TargetAttributes = {
+					18C0843021B7DB7600A166F8 = {
+						CreatedOnToolsVersion = 10.1;
+					};
+					18C0844221B7DB7700A166F8 = {
+						CreatedOnToolsVersion = 10.1;
+					};
+					18C0845121B7DB7700A166F8 = {
+						CreatedOnToolsVersion = 10.1;
+					};
+				};
+			};
+			buildConfigurationList = 18C0842C21B7DB7600A166F8 /* Build configuration list for PBXProject "MeshApp" */;
+			compatibilityVersion = "Xcode 9.3";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 18C0842821B7DB7600A166F8;
+			productRefGroup = 18C0843221B7DB7600A166F8 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				18C0843021B7DB7600A166F8 /* MeshApp */,
+				18C0844221B7DB7700A166F8 /* MeshAppWatchKitApp */,
+				18C0845121B7DB7700A166F8 /* MeshAppWatchKitExtension */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		18C0842F21B7DB7600A166F8 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				18C0843F21B7DB7700A166F8 /* LaunchScreen.storyboard in Resources */,
+				18C0843C21B7DB7700A166F8 /* Assets.xcassets in Resources */,
+				18C0843A21B7DB7600A166F8 /* Main.storyboard in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		18C0844121B7DB7700A166F8 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				18C0844C21B7DB7700A166F8 /* Assets.xcassets in Resources */,
+				18C0844A21B7DB7700A166F8 /* Interface.storyboard in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		18C0845021B7DB7700A166F8 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				18C0845E21B7DB7800A166F8 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		18C0842D21B7DB7600A166F8 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				18C0843721B7DB7600A166F8 /* ViewController.swift in Sources */,
+				18C0843521B7DB7600A166F8 /* AppDelegate.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		18C0844E21B7DB7700A166F8 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				18C0845C21B7DB7700A166F8 /* NotificationController.swift in Sources */,
+				18C0845A21B7DB7700A166F8 /* ExtensionDelegate.swift in Sources */,
+				18C0845821B7DB7700A166F8 /* InterfaceController.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		18C0844621B7DB7700A166F8 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 18C0844221B7DB7700A166F8 /* MeshAppWatchKitApp */;
+			targetProxy = 18C0844521B7DB7700A166F8 /* PBXContainerItemProxy */;
+		};
+		18C0845521B7DB7700A166F8 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 18C0845121B7DB7700A166F8 /* MeshAppWatchKitExtension */;
+			targetProxy = 18C0845421B7DB7700A166F8 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		18C0843821B7DB7600A166F8 /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				18C0843921B7DB7600A166F8 /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+		18C0843D21B7DB7700A166F8 /* LaunchScreen.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				18C0843E21B7DB7700A166F8 /* Base */,
+			);
+			name = LaunchScreen.storyboard;
+			sourceTree = "<group>";
+		};
+		18C0844821B7DB7700A166F8 /* Interface.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				18C0844921B7DB7700A166F8 /* Base */,
+			);
+			name = Interface.storyboard;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		18C0846121B7DB7800A166F8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		18C0846221B7DB7800A166F8 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		18C0846421B7DB7800A166F8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_COMPLICATION_NAME = Complication;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = XZQX3CQUF5;
+				INFOPLIST_FILE = MeshAppWatchKitExtension/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.cypress.le.mesh.watchos.MeshApp.watchkitapp.watchkitextension;
+				PRODUCT_NAME = "${TARGET_NAME}";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 4.2;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 5.1;
+			};
+			name = Debug;
+		};
+		18C0846521B7DB7800A166F8 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_COMPLICATION_NAME = Complication;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = XZQX3CQUF5;
+				INFOPLIST_FILE = MeshAppWatchKitExtension/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.cypress.le.mesh.watchos.MeshApp.watchkitapp.watchkitextension;
+				PRODUCT_NAME = "${TARGET_NAME}";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 4.2;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 5.1;
+			};
+			name = Release;
+		};
+		18C0846821B7DB7800A166F8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = XZQX3CQUF5;
+				IBSC_MODULE = MeshAppWatchKitExtension;
+				INFOPLIST_FILE = MeshAppWatchKitApp/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.cypress.le.mesh.watchos.MeshApp.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 4.2;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 5.1;
+			};
+			name = Debug;
+		};
+		18C0846921B7DB7800A166F8 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES = YES;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = XZQX3CQUF5;
+				IBSC_MODULE = MeshAppWatchKitExtension;
+				INFOPLIST_FILE = MeshAppWatchKitApp/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.cypress.le.mesh.watchos.MeshApp.watchkitapp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = watchos;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 4.2;
+				TARGETED_DEVICE_FAMILY = 4;
+				WATCHOS_DEPLOYMENT_TARGET = 5.1;
+			};
+			name = Release;
+		};
+		18C0846C21B7DB7800A166F8 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = LCV43QB9EG;
+				INFOPLIST_FILE = MeshApp/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.cypress.le.mesh.watchos.MeshApp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_VERSION = 4.2;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		18C0846D21B7DB7800A166F8 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = LCV43QB9EG;
+				INFOPLIST_FILE = MeshApp/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.cypress.le.mesh.watchos.MeshApp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_VERSION = 4.2;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		18C0842C21B7DB7600A166F8 /* Build configuration list for PBXProject "MeshApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				18C0846121B7DB7800A166F8 /* Debug */,
+				18C0846221B7DB7800A166F8 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		18C0846321B7DB7800A166F8 /* Build configuration list for PBXNativeTarget "MeshAppWatchKitExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				18C0846421B7DB7800A166F8 /* Debug */,
+				18C0846521B7DB7800A166F8 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		18C0846721B7DB7800A166F8 /* Build configuration list for PBXNativeTarget "MeshAppWatchKitApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				18C0846821B7DB7800A166F8 /* Debug */,
+				18C0846921B7DB7800A166F8 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		18C0846B21B7DB7800A166F8 /* Build configuration list for PBXNativeTarget "MeshApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				18C0846C21B7DB7800A166F8 /* Debug */,
+				18C0846D21B7DB7800A166F8 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 18C0842921B7DB7600A166F8 /* Project object */;
+}

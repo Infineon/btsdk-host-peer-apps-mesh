@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="wrap_content"
+    android:layout_margin="@dimen/activity_horizontal_margin"
+    android:layout_height="wrap_content"
+    android:padding="@dimen/activity_horizontal_margin"
+    android:id="@+id/addDevicePop">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="Add BT Internet Gateway"
+        android:gravity="center"
+        android:id="@+id/textView5"
+        android:textColor="@color/primary"
+        android:layout_alignParentTop="true"
+        android:layout_marginBottom="@dimen/activity_horizontal_margin"
+        android:layout_marginTop="@dimen/activity_horizontal_margin"
+        android:layout_alignParentStart="true" />
+
+    <View
+        android:layout_width="fill_parent"
+        android:background="@android:color/darker_gray"
+        android:layout_below="@+id/textView5"
+        android:id="@+id/line"
+        android:layout_height="2dp"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Select BT Internet Gateway BD Address"
+        android:id="@+id/textView7"
+        android:layout_marginRight="@dimen/activity_horizontal_margin"
+        android:layout_below="@+id/myRadioGroup"
+        android:layout_alignParentStart="true" />
+    <ListView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/listView6"
+
+        android:drawSelectorOnTop="false"
+        android:listSelector="@color/light_primary"
+        android:entries="@array/device_array"
+        android:layout_alignParentStart="true"
+        android:layout_below="@+id/textView7"/>
+
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Select Iot Cloud"
+        android:layout_marginTop="@dimen/activity_horizontal_margin"
+        android:layout_below="@+id/line"
+        android:id="@+id/text1"/>
+    <RadioGroup
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/text1"
+        android:id="@+id/myRadioGroup"
+        android:layout_marginTop="10dp"
+        android:theme="@style/CustomSwitch"
+        android:checkedButton="@+id/aws" >
+
+        <RadioButton
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:id="@+id/aws"
+            android:text="AWS Iot" />
+
+
+        <RadioButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/bluemix"
+            android:visibility="gone"
+            android:text="Bluemix" />
+        <View
+            android:layout_width="fill_parent"
+            android:background="@android:color/darker_gray"
+            android:layout_marginTop="@dimen/activity_vertical_margin"
+
+            android:layout_below="@+id/bluemix"
+            android:id="@+id/line1"
+            android:layout_height="2dp"/>
+        <RadioButton
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/line1"
+            android:layout_marginTop="@dimen/activity_vertical_margin"
+            android:id="@+id/rest"
+            android:text="Use REST (Home AP)" />
+        <RelativeLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/ip"
+            android:visibility="gone"
+            android:layout_below="@+id/bluemix"
+            >
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Enter BIG IP address"
+                android:id="@+id/textView39"
+                android:layout_marginTop="@dimen/activity_vertical_margin"
+                android:layout_marginRight="@dimen/activity_horizontal_margin"
+                android:layout_alignParentStart="true"
+                android:layout_alignEnd="@+id/editText4" />
+
+            <EditText
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:id="@+id/editText4"
+                android:layout_below="@+id/textView39"
+                android:layout_marginBottom="@dimen/activity_horizontal_margin"
+                android:layout_alignParentStart="true"
+                android:layout_alignParentEnd="true" />
+        </RelativeLayout>
+    </RadioGroup>
+
+
+</RelativeLayout>

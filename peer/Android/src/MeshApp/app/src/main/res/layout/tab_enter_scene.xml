@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:orientation="vertical"
+    android:weightSum="1">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="Enter Scene at"
+        android:id="@+id/textView2"
+        android:gravity="center"
+        android:layout_marginLeft="@dimen/activity_vertical_margin"
+        android:layout_marginRight="@dimen/activity_vertical_margin"
+        android:layout_alignParentStart="true"
+        android:layout_marginTop="@dimen/activity_vertical_margin" />
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="7:17 AM"
+        android:textColor="@color/primary"
+        android:textSize="50dp"
+        android:layout_marginTop="@dimen/activity_vertical_margin"
+        android:id="@+id/textView1"
+        android:layout_below="@+id/textView2"
+        android:layout_alignStart="@+id/textView2" />
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="Fade in"
+        android:id="@+id/textView"
+        android:gravity="center"
+        android:layout_marginLeft="@dimen/activity_vertical_margin"
+        android:layout_marginRight="@dimen/activity_vertical_margin"
+        android:layout_below="@+id/textView1"
+        android:layout_marginTop="30dp" />
+
+    <!--<org.adw.library.widgets.discreteseekbar.DiscreteSeekBar-->
+        <!--android:layout_width="match_parent"-->
+        <!--android:layout_height="50dp"-->
+        <!--app:dsb_min="0"-->
+        <!--app:dsb_max="60"-->
+        <!--app:dsb_progressColor="@color/primary"-->
+        <!--app:dsb_trackColor="@color/primary"-->
+        <!--app:dsb_indicatorColor="@color/primary"-->
+        <!--android:id="@+id/view"-->
+        <!--android:layout_below="@+id/textView"-->
+        <!--android:layout_alignParentStart="true"-->
+        <!--android:layout_marginTop="17dp" />-->
+
+
+
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="00"
+        android:id="@+id/textView4"
+        android:layout_above="@+id/view"
+        android:layout_toEndOf="@+id/textView" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="@style/Base.TextAppearance.AppCompat.Medium"
+        android:text="min"
+        android:id="@+id/textView5"
+        android:layout_above="@+id/view"
+        android:layout_toEndOf="@+id/textView4" />
+
+</RelativeLayout>

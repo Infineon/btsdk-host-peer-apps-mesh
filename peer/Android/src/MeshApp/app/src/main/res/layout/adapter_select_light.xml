@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:layout_margin="@dimen/activity_horizontal_margin"
+
+    android:id="@+id/deviceList">
+    <TextView
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:id="@+id/DevGrpName"
+        android:layout_margin="@dimen/activity_horizontal_margin"
+        android:gravity="left|center"
+        android:text="@string/gp_dev_name"
+        android:ellipsize="end"
+        android:singleLine="true"
+        android:layout_toRightOf="@+id/imageButton"
+        android:layout_toLeftOf="@+id/checkBox2"
+        android:layout_alignBottom="@+id/imageButton"
+        android:layout_alignParentTop="true"
+        android:layout_toEndOf="@+id/imageButton" />
+
+    <ImageButton
+        android:layout_width="50dp"
+        android:layout_height="50dp"
+        android:id="@+id/imageButton"
+        android:layout_gravity="right|top"
+        android:src="@mipmap/bulb_red"
+        android:layout_marginRight="@dimen/activity_vertical_margin"
+        android:background="@android:color/transparent"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentStart="true" />
+
+    <CheckBox
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/checkBox2"
+        android:buttonTint="@color/primary"
+        android:checked="false"
+        android:layout_margin="@dimen/activity_horizontal_margin"
+
+        android:layout_alignParentEnd="true" />
+
+
+</RelativeLayout>

@@ -1,0 +1,15 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:background="@color/primary"
+    tools:context=".MainActivity">
+
+    <item android:id="@+id/edit"
+        android:title="Edit Name"
+        android:icon="@drawable/edit"
+        android:orderInCategory="100"
+        app:showAsAction="always"/>
+
+
+
+</menu>

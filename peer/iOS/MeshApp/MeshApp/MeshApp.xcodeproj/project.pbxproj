@@ -1,0 +1,804 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 50;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		180DA06D21AFE22300BA6926 /* SelectNetworkPopoverViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 180DA06C21AFE22300BA6926 /* SelectNetworkPopoverViewController.swift */; };
+		180DA06F21AFE25E00BA6926 /* SelectNetworkPopoverTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 180DA06E21AFE25E00BA6926 /* SelectNetworkPopoverTableViewCell.swift */; };
+		180E2ABA21A698720066F66E /* UserSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 180E2AB921A698720066F66E /* UserSettings.swift */; };
+		180E2ABE21A8286B0066F66E /* NetworkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 180E2ABD21A8286B0066F66E /* NetworkManager.swift */; };
+		180E2ACD21AB8AD20066F66E /* LoginViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 180E2ACB21AB8AD20066F66E /* LoginViewController.swift */; };
+		180E2AD421ABDCC10066F66E /* MeshAppConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 180E2AD321ABDCC10066F66E /* MeshAppConstants.swift */; };
+		180E2AD821ABDED40066F66E /* StartViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 180E2AD721ABDED40066F66E /* StartViewController.swift */; };
+		180E2ADA21ABFE0C0066F66E /* SignUpViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 180E2AD921ABFE0C0066F66E /* SignUpViewController.swift */; };
+		180E2ADC21ACDC760066F66E /* UtilityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 180E2ADB21ACDC760066F66E /* UtilityManager.swift */; };
+		180E2ADF21ACECAB0066F66E /* CustomIndicatorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 180E2ADE21ACECAB0066F66E /* CustomIndicatorView.swift */; };
+		180E2AE321AE2EEC0066F66E /* NetworkListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 180E2AE221AE2EEC0066F66E /* NetworkListViewController.swift */; };
+		180E2AE721AE3E030066F66E /* CustomCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 180E2AE621AE3E030066F66E /* CustomCardView.swift */; };
+		180E2AE921AE40C10066F66E /* CustomRoundedRectButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 180E2AE821AE40C10066F66E /* CustomRoundedRectButton.swift */; };
+		180E2AEB21AE62F20066F66E /* NetworkListTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 180E2AEA21AE62F20066F66E /* NetworkListTableViewCell.swift */; };
+		180E2AF221AEA50C0066F66E /* MenuViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 180E2AF121AEA50C0066F66E /* MenuViewController.swift */; };
+		180E2AFE21AEBA6C0066F66E /* AlwaysPopoverPresentationController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 180E2AFD21AEBA6C0066F66E /* AlwaysPopoverPresentationController.swift */; };
+		180E2B0021AEBBD00066F66E /* PopoverChoiceTableViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 180E2AFF21AEBBD00066F66E /* PopoverChoiceTableViewController.swift */; };
+		180E2B0221AF8AD90066F66E /* NetworkListEmptyTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 180E2B0121AF8AD90066F66E /* NetworkListEmptyTableViewCell.swift */; };
+		180E2B0621AFC5EB0066F66E /* CustomRadioButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 180E2B0521AFC5EB0066F66E /* CustomRadioButton.swift */; };
+		181044F821B50B30002ECCBC /* TransitionViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 181044F721B50B30002ECCBC /* TransitionViewController.swift */; };
+		181044FC21B6549F002ECCBC /* GroupListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 181044FB21B6549F002ECCBC /* GroupListViewController.swift */; };
+		1810450021B65607002ECCBC /* GroupListTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 181044FF21B65607002ECCBC /* GroupListTableViewCell.swift */; };
+		1810450221B65618002ECCBC /* GroupListEmptyTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1810450121B65618002ECCBC /* GroupListEmptyTableViewCell.swift */; };
+		1814B4EC21E77FD100A6FD77 /* PopoverTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1814B4EB21E77FD100A6FD77 /* PopoverTableViewCell.swift */; };
+		1814B4EE21E77FE700A6FD77 /* PopoverViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1814B4ED21E77FE700A6FD77 /* PopoverViewController.swift */; };
+		18310CAF222FB0B200D54229 /* CustomDropDownButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18310CAE222FB0B200D54229 /* CustomDropDownButton.swift */; };
+		183179832372B4BD008D84A3 /* ScanProvisionTestViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 183179822372B4BD008D84A3 /* ScanProvisionTestViewController.swift */; };
+		184A9BAE21BA57FB005A1CF7 /* DeviceListEmptyTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 184A9BAD21BA57FB005A1CF7 /* DeviceListEmptyTableViewCell.swift */; };
+		184A9BB021BA580B005A1CF7 /* DeviceListTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 184A9BAF21BA580B005A1CF7 /* DeviceListTableViewCell.swift */; };
+		184F8CC222B23D13006CDB19 /* PublicationConfigureViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 184F8CC122B23D13006CDB19 /* PublicationConfigureViewController.swift */; };
+		1866DF6C21FAD6A000A29331 /* MenuDeletingDevicesTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1866DF6B21FAD6A000A29331 /* MenuDeletingDevicesTableViewCell.swift */; };
+		1866DF6F21FAF1E700A29331 /* DeletingDevicesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1866DF6E21FAF1E700A29331 /* DeletingDevicesViewController.swift */; };
+		1866DF7521FB157800A29331 /* DeletingDevicesEmptyTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1866DF7421FB157800A29331 /* DeletingDevicesEmptyTableViewCell.swift */; };
+		1866DF7721FB158A00A29331 /* DeletingDevicesTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1866DF7621FB158A00A29331 /* DeletingDevicesTableViewCell.swift */; };
+		1868D5862190382A00CC27FB /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1868D5852190382A00CC27FB /* AppDelegate.swift */; };
+		1868D58B2190382A00CC27FB /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 1868D5892190382A00CC27FB /* Main.storyboard */; };
+		1868D58D2190382B00CC27FB /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 1868D58C2190382B00CC27FB /* Assets.xcassets */; };
+		1868D5902190382B00CC27FB /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 1868D58E2190382B00CC27FB /* LaunchScreen.storyboard */; };
+		1868DBBB219457B500CC27FB /* MeshFramework.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1868DBB92194530200CC27FB /* MeshFramework.framework */; };
+		1868DBBC219457B500CC27FB /* MeshFramework.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = 1868DBB92194530200CC27FB /* MeshFramework.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		188A102E240E22DE00A93534 /* Settings.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 188A102D240E22DE00A93534 /* Settings.bundle */; };
+		1891A5A221CA2AC4000EEFCB /* UnprovisionedDeviceListEmptyTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1891A5A121CA2AC4000EEFCB /* UnprovisionedDeviceListEmptyTableViewCell.swift */; };
+		1891A5A421CA2AD5000EEFCB /* UnprovisionedDeviceListTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1891A5A321CA2AD5000EEFCB /* UnprovisionedDeviceListTableViewCell.swift */; };
+		1891AA3521CB7709000EEFCB /* ProvisioningStatusPopoverViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1891AA3421CB7709000EEFCB /* ProvisioningStatusPopoverViewController.swift */; };
+		1891AA3721CCBCC7000EEFCB /* ProfileSettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1891AA3621CCBCC7000EEFCB /* ProfileSettingsViewController.swift */; };
+		1891AA3C21CD0502000EEFCB /* MenuTitleTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1891AA3B21CD0502000EEFCB /* MenuTitleTableViewCell.swift */; };
+		1891AA3E21CD0537000EEFCB /* MenuNetworkStatusTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1891AA3D21CD0537000EEFCB /* MenuNetworkStatusTableViewCell.swift */; };
+		1891AA4021CD055C000EEFCB /* MenuMyNetworkTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1891AA3F21CD055C000EEFCB /* MenuMyNetworkTableViewCell.swift */; };
+		1891AA4221CD056B000EEFCB /* MenuMyGroupsTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1891AA4121CD056B000EEFCB /* MenuMyGroupsTableViewCell.swift */; };
+		1891AA4421CD057E000EEFCB /* MenuFirmwareUpgradeTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1891AA4321CD057E000EEFCB /* MenuFirmwareUpgradeTableViewCell.swift */; };
+		1892374E222D293C00A1DEC8 /* SensorViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1892374D222D293C00A1DEC8 /* SensorViewController.swift */; };
+		18923750222D295A00A1DEC8 /* SensorSettingViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1892374F222D295A00A1DEC8 /* SensorSettingViewController.swift */; };
+		1896378622530AEF00DD8E22 /* MeshOtaDfuViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1896378522530AEF00DD8E22 /* MeshOtaDfuViewController.swift */; };
+		18A3A28A22AFCCCA007D4B6F /* LightLCSettingsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18A3A28922AFCCCA007D4B6F /* LightLCSettingsViewController.swift */; };
+		18B17CCA22A7E35E00AF9D06 /* VendorSpecificDataViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18B17CC922A7E35E00AF9D06 /* VendorSpecificDataViewController.swift */; };
+		18B41EA9224A339E0002BDAB /* CustomLayoutButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18B41EA8224A339E0002BDAB /* CustomLayoutButton.swift */; };
+		18B6A98721D07DA700B10AB1 /* FirmwareUpgradeTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18B6A98621D07DA700B10AB1 /* FirmwareUpgradeTableViewCell.swift */; };
+		18B6A98921D07E3600B10AB1 /* FirmwareUpgradeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18B6A98821D07E3600B10AB1 /* FirmwareUpgradeViewController.swift */; };
+		18B6A98B21D081BA00B10AB1 /* FirmwareUpgradeEmptyTableViewCell.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18B6A98A21D081BA00B10AB1 /* FirmwareUpgradeEmptyTableViewCell.swift */; };
+		18B6A98F21D0A9FE00B10AB1 /* DeviceOtaUpgradeViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18B6A98E21D0A9FE00B10AB1 /* DeviceOtaUpgradeViewController.swift */; };
+		18B6A99121D0CD6700B10AB1 /* CustomDropDownView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18B6A99021D0CD6700B10AB1 /* CustomDropDownView.swift */; };
+		18C081D621B79E8300A166F8 /* GroupDetailsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18C081D521B79E8300A166F8 /* GroupDetailsViewController.swift */; };
+		18C081D821B7A8A000A166F8 /* GroupDetailsControlsViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18C081D721B7A8A000A166F8 /* GroupDetailsControlsViewController.swift */; };
+		18C081DA21B7A8BD00A166F8 /* GroupDetailsDeviceListViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18C081D921B7A8BD00A166F8 /* GroupDetailsDeviceListViewController.swift */; };
+		18FA6CD221C0EF24005C9148 /* ComponentViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18FA6CD121C0EF24005C9148 /* ComponentViewController.swift */; };
+		18FA6CD721C35CB8005C9148 /* UnprovisionedDevicesViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18FA6CD621C35CB8005C9148 /* UnprovisionedDevicesViewController.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		1868DBB72194523D00CC27FB /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				1868DBBC219457B500CC27FB /* MeshFramework.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		180DA06C21AFE22300BA6926 /* SelectNetworkPopoverViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectNetworkPopoverViewController.swift; sourceTree = "<group>"; };
+		180DA06E21AFE25E00BA6926 /* SelectNetworkPopoverTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectNetworkPopoverTableViewCell.swift; sourceTree = "<group>"; };
+		180E2AB921A698720066F66E /* UserSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserSettings.swift; sourceTree = "<group>"; };
+		180E2ABD21A8286B0066F66E /* NetworkManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkManager.swift; sourceTree = "<group>"; };
+		180E2ACB21AB8AD20066F66E /* LoginViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoginViewController.swift; sourceTree = "<group>"; };
+		180E2AD321ABDCC10066F66E /* MeshAppConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshAppConstants.swift; sourceTree = "<group>"; };
+		180E2AD721ABDED40066F66E /* StartViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StartViewController.swift; sourceTree = "<group>"; };
+		180E2AD921ABFE0C0066F66E /* SignUpViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignUpViewController.swift; sourceTree = "<group>"; };
+		180E2ADB21ACDC760066F66E /* UtilityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UtilityManager.swift; sourceTree = "<group>"; };
+		180E2ADE21ACECAB0066F66E /* CustomIndicatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomIndicatorView.swift; sourceTree = "<group>"; };
+		180E2AE221AE2EEC0066F66E /* NetworkListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkListViewController.swift; sourceTree = "<group>"; };
+		180E2AE621AE3E030066F66E /* CustomCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomCardView.swift; sourceTree = "<group>"; };
+		180E2AE821AE40C10066F66E /* CustomRoundedRectButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomRoundedRectButton.swift; sourceTree = "<group>"; };
+		180E2AEA21AE62F20066F66E /* NetworkListTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkListTableViewCell.swift; sourceTree = "<group>"; };
+		180E2AF121AEA50C0066F66E /* MenuViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuViewController.swift; sourceTree = "<group>"; };
+		180E2AFD21AEBA6C0066F66E /* AlwaysPopoverPresentationController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlwaysPopoverPresentationController.swift; sourceTree = "<group>"; };
+		180E2AFF21AEBBD00066F66E /* PopoverChoiceTableViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopoverChoiceTableViewController.swift; sourceTree = "<group>"; };
+		180E2B0121AF8AD90066F66E /* NetworkListEmptyTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NetworkListEmptyTableViewCell.swift; sourceTree = "<group>"; };
+		180E2B0521AFC5EB0066F66E /* CustomRadioButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomRadioButton.swift; sourceTree = "<group>"; };
+		181044F721B50B30002ECCBC /* TransitionViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransitionViewController.swift; sourceTree = "<group>"; };
+		181044FB21B6549F002ECCBC /* GroupListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupListViewController.swift; sourceTree = "<group>"; };
+		181044FF21B65607002ECCBC /* GroupListTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupListTableViewCell.swift; sourceTree = "<group>"; };
+		1810450121B65618002ECCBC /* GroupListEmptyTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupListEmptyTableViewCell.swift; sourceTree = "<group>"; };
+		1814B4EB21E77FD100A6FD77 /* PopoverTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopoverTableViewCell.swift; sourceTree = "<group>"; };
+		1814B4ED21E77FE700A6FD77 /* PopoverViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PopoverViewController.swift; sourceTree = "<group>"; };
+		18310CAE222FB0B200D54229 /* CustomDropDownButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomDropDownButton.swift; sourceTree = "<group>"; };
+		183179822372B4BD008D84A3 /* ScanProvisionTestViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScanProvisionTestViewController.swift; sourceTree = "<group>"; };
+		184A9BAD21BA57FB005A1CF7 /* DeviceListEmptyTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceListEmptyTableViewCell.swift; sourceTree = "<group>"; };
+		184A9BAF21BA580B005A1CF7 /* DeviceListTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceListTableViewCell.swift; sourceTree = "<group>"; };
+		184F8CC122B23D13006CDB19 /* PublicationConfigureViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PublicationConfigureViewController.swift; sourceTree = "<group>"; };
+		1866DF6B21FAD6A000A29331 /* MenuDeletingDevicesTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuDeletingDevicesTableViewCell.swift; sourceTree = "<group>"; };
+		1866DF6E21FAF1E700A29331 /* DeletingDevicesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeletingDevicesViewController.swift; sourceTree = "<group>"; };
+		1866DF7421FB157800A29331 /* DeletingDevicesEmptyTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeletingDevicesEmptyTableViewCell.swift; sourceTree = "<group>"; };
+		1866DF7621FB158A00A29331 /* DeletingDevicesTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeletingDevicesTableViewCell.swift; sourceTree = "<group>"; };
+		1868D5822190382A00CC27FB /* MeshApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MeshApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		1868D5852190382A00CC27FB /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
+		1868D58A2190382A00CC27FB /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
+		1868D58C2190382B00CC27FB /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		1868D58F2190382B00CC27FB /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		1868D5912190382B00CC27FB /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		1868D5A321903C4500CC27FB /* MeshApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = MeshApp.entitlements; sourceTree = "<group>"; };
+		1868DBB92194530200CC27FB /* MeshFramework.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; path = MeshFramework.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		188A102D240E22DE00A93534 /* Settings.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = Settings.bundle; sourceTree = "<group>"; };
+		1891A5A121CA2AC4000EEFCB /* UnprovisionedDeviceListEmptyTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnprovisionedDeviceListEmptyTableViewCell.swift; sourceTree = "<group>"; };
+		1891A5A321CA2AD5000EEFCB /* UnprovisionedDeviceListTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnprovisionedDeviceListTableViewCell.swift; sourceTree = "<group>"; };
+		1891AA3421CB7709000EEFCB /* ProvisioningStatusPopoverViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProvisioningStatusPopoverViewController.swift; sourceTree = "<group>"; };
+		1891AA3621CCBCC7000EEFCB /* ProfileSettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileSettingsViewController.swift; sourceTree = "<group>"; };
+		1891AA3B21CD0502000EEFCB /* MenuTitleTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuTitleTableViewCell.swift; sourceTree = "<group>"; };
+		1891AA3D21CD0537000EEFCB /* MenuNetworkStatusTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuNetworkStatusTableViewCell.swift; sourceTree = "<group>"; };
+		1891AA3F21CD055C000EEFCB /* MenuMyNetworkTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuMyNetworkTableViewCell.swift; sourceTree = "<group>"; };
+		1891AA4121CD056B000EEFCB /* MenuMyGroupsTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuMyGroupsTableViewCell.swift; sourceTree = "<group>"; };
+		1891AA4321CD057E000EEFCB /* MenuFirmwareUpgradeTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuFirmwareUpgradeTableViewCell.swift; sourceTree = "<group>"; };
+		1892374D222D293C00A1DEC8 /* SensorViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SensorViewController.swift; sourceTree = "<group>"; };
+		1892374F222D295A00A1DEC8 /* SensorSettingViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SensorSettingViewController.swift; sourceTree = "<group>"; };
+		1896378522530AEF00DD8E22 /* MeshOtaDfuViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshOtaDfuViewController.swift; sourceTree = "<group>"; };
+		18A3A28922AFCCCA007D4B6F /* LightLCSettingsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LightLCSettingsViewController.swift; sourceTree = "<group>"; };
+		18B17CC922A7E35E00AF9D06 /* VendorSpecificDataViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VendorSpecificDataViewController.swift; sourceTree = "<group>"; };
+		18B41EA8224A339E0002BDAB /* CustomLayoutButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomLayoutButton.swift; sourceTree = "<group>"; };
+		18B6A98621D07DA700B10AB1 /* FirmwareUpgradeTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirmwareUpgradeTableViewCell.swift; sourceTree = "<group>"; };
+		18B6A98821D07E3600B10AB1 /* FirmwareUpgradeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirmwareUpgradeViewController.swift; sourceTree = "<group>"; };
+		18B6A98A21D081BA00B10AB1 /* FirmwareUpgradeEmptyTableViewCell.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirmwareUpgradeEmptyTableViewCell.swift; sourceTree = "<group>"; };
+		18B6A98E21D0A9FE00B10AB1 /* DeviceOtaUpgradeViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeviceOtaUpgradeViewController.swift; sourceTree = "<group>"; };
+		18B6A99021D0CD6700B10AB1 /* CustomDropDownView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomDropDownView.swift; sourceTree = "<group>"; };
+		18C081D521B79E8300A166F8 /* GroupDetailsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupDetailsViewController.swift; sourceTree = "<group>"; };
+		18C081D721B7A8A000A166F8 /* GroupDetailsControlsViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupDetailsControlsViewController.swift; sourceTree = "<group>"; };
+		18C081D921B7A8BD00A166F8 /* GroupDetailsDeviceListViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroupDetailsDeviceListViewController.swift; sourceTree = "<group>"; };
+		18FA6CD121C0EF24005C9148 /* ComponentViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComponentViewController.swift; sourceTree = "<group>"; };
+		18FA6CD621C35CB8005C9148 /* UnprovisionedDevicesViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UnprovisionedDevicesViewController.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		1868D57F2190382A00CC27FB /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1868DBBB219457B500CC27FB /* MeshFramework.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		180DA06B21AFE1AF00BA6926 /* SelectPopover */ = {
+			isa = PBXGroup;
+			children = (
+				180DA06C21AFE22300BA6926 /* SelectNetworkPopoverViewController.swift */,
+				180DA06E21AFE25E00BA6926 /* SelectNetworkPopoverTableViewCell.swift */,
+			);
+			path = SelectPopover;
+			sourceTree = "<group>";
+		};
+		180E2AB821A6982B0066F66E /* Model */ = {
+			isa = PBXGroup;
+			children = (
+				180E2AB921A698720066F66E /* UserSettings.swift */,
+				180E2ABD21A8286B0066F66E /* NetworkManager.swift */,
+			);
+			path = Model;
+			sourceTree = "<group>";
+		};
+		180E2AC221AB86010066F66E /* Scene */ = {
+			isa = PBXGroup;
+			children = (
+				18B6A98521D07D9300B10AB1 /* FirmwareUpgrade */,
+				18FA6CD521C35B35005C9148 /* AddDevice */,
+				18FA6CD021C0EF07005C9148 /* Component */,
+				18C081D421B79E5700A166F8 /* GroupDetails */,
+				181044FA21B65485002ECCBC /* GroupList */,
+				180E2AF821AEB8D50066F66E /* PopOverView */,
+				180E2AF021AEA4EC0066F66E /* Menu */,
+				180E2AE121AE2DC80066F66E /* NetworkList */,
+				180E2AD621ABDEBF0066F66E /* Start */,
+				180E2ACA21AB8AB40066F66E /* Login */,
+			);
+			path = Scene;
+			sourceTree = "<group>";
+		};
+		180E2ACA21AB8AB40066F66E /* Login */ = {
+			isa = PBXGroup;
+			children = (
+				180E2ACB21AB8AD20066F66E /* LoginViewController.swift */,
+				180E2AD921ABFE0C0066F66E /* SignUpViewController.swift */,
+				1891AA3621CCBCC7000EEFCB /* ProfileSettingsViewController.swift */,
+			);
+			path = Login;
+			sourceTree = "<group>";
+		};
+		180E2AD221ABDC780066F66E /* Helper */ = {
+			isa = PBXGroup;
+			children = (
+				180E2AD321ABDCC10066F66E /* MeshAppConstants.swift */,
+				180E2ADB21ACDC760066F66E /* UtilityManager.swift */,
+				180E2ADE21ACECAB0066F66E /* CustomIndicatorView.swift */,
+				180E2AE621AE3E030066F66E /* CustomCardView.swift */,
+				180E2AE821AE40C10066F66E /* CustomRoundedRectButton.swift */,
+				180E2B0521AFC5EB0066F66E /* CustomRadioButton.swift */,
+				18B6A99021D0CD6700B10AB1 /* CustomDropDownView.swift */,
+				18310CAE222FB0B200D54229 /* CustomDropDownButton.swift */,
+				18B41EA8224A339E0002BDAB /* CustomLayoutButton.swift */,
+			);
+			path = Helper;
+			sourceTree = "<group>";
+		};
+		180E2AD621ABDEBF0066F66E /* Start */ = {
+			isa = PBXGroup;
+			children = (
+				180E2AD721ABDED40066F66E /* StartViewController.swift */,
+				181044F721B50B30002ECCBC /* TransitionViewController.swift */,
+			);
+			path = Start;
+			sourceTree = "<group>";
+		};
+		180E2AE121AE2DC80066F66E /* NetworkList */ = {
+			isa = PBXGroup;
+			children = (
+				180DA06B21AFE1AF00BA6926 /* SelectPopover */,
+				180E2AE221AE2EEC0066F66E /* NetworkListViewController.swift */,
+				180E2AEA21AE62F20066F66E /* NetworkListTableViewCell.swift */,
+				180E2B0121AF8AD90066F66E /* NetworkListEmptyTableViewCell.swift */,
+			);
+			path = NetworkList;
+			sourceTree = "<group>";
+		};
+		180E2AF021AEA4EC0066F66E /* Menu */ = {
+			isa = PBXGroup;
+			children = (
+				1866DF6D21FAEE4E00A29331 /* DeletingDevices */,
+				180E2AF121AEA50C0066F66E /* MenuViewController.swift */,
+				1891AA3B21CD0502000EEFCB /* MenuTitleTableViewCell.swift */,
+				1891AA3D21CD0537000EEFCB /* MenuNetworkStatusTableViewCell.swift */,
+				1891AA3F21CD055C000EEFCB /* MenuMyNetworkTableViewCell.swift */,
+				1891AA4121CD056B000EEFCB /* MenuMyGroupsTableViewCell.swift */,
+				1891AA4321CD057E000EEFCB /* MenuFirmwareUpgradeTableViewCell.swift */,
+				1866DF6B21FAD6A000A29331 /* MenuDeletingDevicesTableViewCell.swift */,
+			);
+			path = Menu;
+			sourceTree = "<group>";
+		};
+		180E2AF821AEB8D50066F66E /* PopOverView */ = {
+			isa = PBXGroup;
+			children = (
+				180E2AFD21AEBA6C0066F66E /* AlwaysPopoverPresentationController.swift */,
+				180E2AFF21AEBBD00066F66E /* PopoverChoiceTableViewController.swift */,
+				1814B4EB21E77FD100A6FD77 /* PopoverTableViewCell.swift */,
+				1814B4ED21E77FE700A6FD77 /* PopoverViewController.swift */,
+			);
+			path = PopOverView;
+			sourceTree = "<group>";
+		};
+		181044FA21B65485002ECCBC /* GroupList */ = {
+			isa = PBXGroup;
+			children = (
+				181044FB21B6549F002ECCBC /* GroupListViewController.swift */,
+				181044FF21B65607002ECCBC /* GroupListTableViewCell.swift */,
+				1810450121B65618002ECCBC /* GroupListEmptyTableViewCell.swift */,
+			);
+			path = GroupList;
+			sourceTree = "<group>";
+		};
+		184A9BAB21BA57BF005A1CF7 /* DeviceList */ = {
+			isa = PBXGroup;
+			children = (
+				18C081D921B7A8BD00A166F8 /* GroupDetailsDeviceListViewController.swift */,
+				184A9BAD21BA57FB005A1CF7 /* DeviceListEmptyTableViewCell.swift */,
+				184A9BAF21BA580B005A1CF7 /* DeviceListTableViewCell.swift */,
+			);
+			path = DeviceList;
+			sourceTree = "<group>";
+		};
+		184A9BAC21BA57C7005A1CF7 /* Controls */ = {
+			isa = PBXGroup;
+			children = (
+				18C081D721B7A8A000A166F8 /* GroupDetailsControlsViewController.swift */,
+			);
+			path = Controls;
+			sourceTree = "<group>";
+		};
+		184F8CC022B23CE7006CDB19 /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				184F8CC122B23D13006CDB19 /* PublicationConfigureViewController.swift */,
+				18A3A28922AFCCCA007D4B6F /* LightLCSettingsViewController.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
+		1866DF6D21FAEE4E00A29331 /* DeletingDevices */ = {
+			isa = PBXGroup;
+			children = (
+				1866DF6E21FAF1E700A29331 /* DeletingDevicesViewController.swift */,
+				1866DF7421FB157800A29331 /* DeletingDevicesEmptyTableViewCell.swift */,
+				1866DF7621FB158A00A29331 /* DeletingDevicesTableViewCell.swift */,
+			);
+			path = DeletingDevices;
+			sourceTree = "<group>";
+		};
+		1868D5792190382A00CC27FB = {
+			isa = PBXGroup;
+			children = (
+				1868D5842190382A00CC27FB /* MeshApp */,
+				1868D5832190382A00CC27FB /* Products */,
+				1868D59E21903BCC00CC27FB /* Frameworks */,
+			);
+			sourceTree = "<group>";
+		};
+		1868D5832190382A00CC27FB /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				1868D5822190382A00CC27FB /* MeshApp.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		1868D5842190382A00CC27FB /* MeshApp */ = {
+			isa = PBXGroup;
+			children = (
+				180E2AD221ABDC780066F66E /* Helper */,
+				180E2AC221AB86010066F66E /* Scene */,
+				180E2AB821A6982B0066F66E /* Model */,
+				1868D5A321903C4500CC27FB /* MeshApp.entitlements */,
+				1868D5852190382A00CC27FB /* AppDelegate.swift */,
+				1868D5892190382A00CC27FB /* Main.storyboard */,
+				1868D58C2190382B00CC27FB /* Assets.xcassets */,
+				1868D58E2190382B00CC27FB /* LaunchScreen.storyboard */,
+				1868D5912190382B00CC27FB /* Info.plist */,
+				188A102D240E22DE00A93534 /* Settings.bundle */,
+			);
+			path = MeshApp;
+			sourceTree = "<group>";
+		};
+		1868D59E21903BCC00CC27FB /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				1868DBB92194530200CC27FB /* MeshFramework.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		1891A5A521CA4FE2000EEFCB /* ProvisioningStatus */ = {
+			isa = PBXGroup;
+			children = (
+				183179822372B4BD008D84A3 /* ScanProvisionTestViewController.swift */,
+				1891AA3421CB7709000EEFCB /* ProvisioningStatusPopoverViewController.swift */,
+			);
+			path = ProvisioningStatus;
+			sourceTree = "<group>";
+		};
+		1892374A222D205F00A1DEC8 /* Sensor */ = {
+			isa = PBXGroup;
+			children = (
+				1892374D222D293C00A1DEC8 /* SensorViewController.swift */,
+				1892374F222D295A00A1DEC8 /* SensorSettingViewController.swift */,
+				18B17CC922A7E35E00AF9D06 /* VendorSpecificDataViewController.swift */,
+			);
+			path = Sensor;
+			sourceTree = "<group>";
+		};
+		18B6A98521D07D9300B10AB1 /* FirmwareUpgrade */ = {
+			isa = PBXGroup;
+			children = (
+				18B6A98D21D0A9D600B10AB1 /* OTA */,
+				18B6A98821D07E3600B10AB1 /* FirmwareUpgradeViewController.swift */,
+				18B6A98621D07DA700B10AB1 /* FirmwareUpgradeTableViewCell.swift */,
+				18B6A98A21D081BA00B10AB1 /* FirmwareUpgradeEmptyTableViewCell.swift */,
+			);
+			path = FirmwareUpgrade;
+			sourceTree = "<group>";
+		};
+		18B6A98D21D0A9D600B10AB1 /* OTA */ = {
+			isa = PBXGroup;
+			children = (
+				18B6A98E21D0A9FE00B10AB1 /* DeviceOtaUpgradeViewController.swift */,
+				1896378522530AEF00DD8E22 /* MeshOtaDfuViewController.swift */,
+			);
+			path = OTA;
+			sourceTree = "<group>";
+		};
+		18C081D421B79E5700A166F8 /* GroupDetails */ = {
+			isa = PBXGroup;
+			children = (
+				184A9BAC21BA57C7005A1CF7 /* Controls */,
+				184A9BAB21BA57BF005A1CF7 /* DeviceList */,
+				18C081D521B79E8300A166F8 /* GroupDetailsViewController.swift */,
+			);
+			path = GroupDetails;
+			sourceTree = "<group>";
+		};
+		18FA6CD021C0EF07005C9148 /* Component */ = {
+			isa = PBXGroup;
+			children = (
+				184F8CC022B23CE7006CDB19 /* Settings */,
+				1892374A222D205F00A1DEC8 /* Sensor */,
+				18FA6CD121C0EF24005C9148 /* ComponentViewController.swift */,
+			);
+			path = Component;
+			sourceTree = "<group>";
+		};
+		18FA6CD521C35B35005C9148 /* AddDevice */ = {
+			isa = PBXGroup;
+			children = (
+				1891A5A521CA4FE2000EEFCB /* ProvisioningStatus */,
+				18FA6CD621C35CB8005C9148 /* UnprovisionedDevicesViewController.swift */,
+				1891A5A121CA2AC4000EEFCB /* UnprovisionedDeviceListEmptyTableViewCell.swift */,
+				1891A5A321CA2AD5000EEFCB /* UnprovisionedDeviceListTableViewCell.swift */,
+			);
+			path = AddDevice;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		1868D5812190382A00CC27FB /* MeshApp */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1868D5942190382B00CC27FB /* Build configuration list for PBXNativeTarget "MeshApp" */;
+			buildPhases = (
+				1868D57E2190382A00CC27FB /* Sources */,
+				1868D57F2190382A00CC27FB /* Frameworks */,
+				1868D5802190382A00CC27FB /* Resources */,
+				1868DBB72194523D00CC27FB /* Embed Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MeshApp;
+			productName = MeshApp;
+			productReference = 1868D5822190382A00CC27FB /* MeshApp.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		1868D57A2190382A00CC27FB /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastSwiftUpdateCheck = 1010;
+				LastUpgradeCheck = 1010;
+				ORGANIZATIONNAME = "Cypress Semiconductor";
+				TargetAttributes = {
+					1868D5812190382A00CC27FB = {
+						CreatedOnToolsVersion = 10.1;
+						LastSwiftMigration = 1020;
+						SystemCapabilities = {
+							com.apple.BackgroundModes = {
+								enabled = 1;
+							};
+							com.apple.HomeKit = {
+								enabled = 0;
+							};
+						};
+					};
+				};
+			};
+			buildConfigurationList = 1868D57D2190382A00CC27FB /* Build configuration list for PBXProject "MeshApp" */;
+			compatibilityVersion = "Xcode 9.3";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 1868D5792190382A00CC27FB;
+			productRefGroup = 1868D5832190382A00CC27FB /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				1868D5812190382A00CC27FB /* MeshApp */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		1868D5802190382A00CC27FB /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				188A102E240E22DE00A93534 /* Settings.bundle in Resources */,
+				1868D5902190382B00CC27FB /* LaunchScreen.storyboard in Resources */,
+				1868D58D2190382B00CC27FB /* Assets.xcassets in Resources */,
+				1868D58B2190382A00CC27FB /* Main.storyboard in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		1868D57E2190382A00CC27FB /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				180E2AD421ABDCC10066F66E /* MeshAppConstants.swift in Sources */,
+				1891AA3521CB7709000EEFCB /* ProvisioningStatusPopoverViewController.swift in Sources */,
+				1891AA3C21CD0502000EEFCB /* MenuTitleTableViewCell.swift in Sources */,
+				180E2AFE21AEBA6C0066F66E /* AlwaysPopoverPresentationController.swift in Sources */,
+				180E2AF221AEA50C0066F66E /* MenuViewController.swift in Sources */,
+				1891A5A221CA2AC4000EEFCB /* UnprovisionedDeviceListEmptyTableViewCell.swift in Sources */,
+				1810450021B65607002ECCBC /* GroupListTableViewCell.swift in Sources */,
+				18B6A98921D07E3600B10AB1 /* FirmwareUpgradeViewController.swift in Sources */,
+				1866DF6C21FAD6A000A29331 /* MenuDeletingDevicesTableViewCell.swift in Sources */,
+				1891AA3E21CD0537000EEFCB /* MenuNetworkStatusTableViewCell.swift in Sources */,
+				1891AA4021CD055C000EEFCB /* MenuMyNetworkTableViewCell.swift in Sources */,
+				180E2AEB21AE62F20066F66E /* NetworkListTableViewCell.swift in Sources */,
+				184A9BB021BA580B005A1CF7 /* DeviceListTableViewCell.swift in Sources */,
+				18A3A28A22AFCCCA007D4B6F /* LightLCSettingsViewController.swift in Sources */,
+				18B6A98721D07DA700B10AB1 /* FirmwareUpgradeTableViewCell.swift in Sources */,
+				184F8CC222B23D13006CDB19 /* PublicationConfigureViewController.swift in Sources */,
+				180E2ADA21ABFE0C0066F66E /* SignUpViewController.swift in Sources */,
+				180DA06F21AFE25E00BA6926 /* SelectNetworkPopoverTableViewCell.swift in Sources */,
+				1896378622530AEF00DD8E22 /* MeshOtaDfuViewController.swift in Sources */,
+				184A9BAE21BA57FB005A1CF7 /* DeviceListEmptyTableViewCell.swift in Sources */,
+				180E2AD821ABDED40066F66E /* StartViewController.swift in Sources */,
+				18C081D621B79E8300A166F8 /* GroupDetailsViewController.swift in Sources */,
+				18310CAF222FB0B200D54229 /* CustomDropDownButton.swift in Sources */,
+				1866DF6F21FAF1E700A29331 /* DeletingDevicesViewController.swift in Sources */,
+				1891AA4221CD056B000EEFCB /* MenuMyGroupsTableViewCell.swift in Sources */,
+				181044FC21B6549F002ECCBC /* GroupListViewController.swift in Sources */,
+				18FA6CD221C0EF24005C9148 /* ComponentViewController.swift in Sources */,
+				1814B4EE21E77FE700A6FD77 /* PopoverViewController.swift in Sources */,
+				1891A5A421CA2AD5000EEFCB /* UnprovisionedDeviceListTableViewCell.swift in Sources */,
+				180E2AE321AE2EEC0066F66E /* NetworkListViewController.swift in Sources */,
+				1892374E222D293C00A1DEC8 /* SensorViewController.swift in Sources */,
+				180E2ABE21A8286B0066F66E /* NetworkManager.swift in Sources */,
+				1891AA3721CCBCC7000EEFCB /* ProfileSettingsViewController.swift in Sources */,
+				180E2ABA21A698720066F66E /* UserSettings.swift in Sources */,
+				18C081D821B7A8A000A166F8 /* GroupDetailsControlsViewController.swift in Sources */,
+				180E2ACD21AB8AD20066F66E /* LoginViewController.swift in Sources */,
+				18B6A98B21D081BA00B10AB1 /* FirmwareUpgradeEmptyTableViewCell.swift in Sources */,
+				1866DF7721FB158A00A29331 /* DeletingDevicesTableViewCell.swift in Sources */,
+				1891AA4421CD057E000EEFCB /* MenuFirmwareUpgradeTableViewCell.swift in Sources */,
+				18B17CCA22A7E35E00AF9D06 /* VendorSpecificDataViewController.swift in Sources */,
+				1810450221B65618002ECCBC /* GroupListEmptyTableViewCell.swift in Sources */,
+				18B41EA9224A339E0002BDAB /* CustomLayoutButton.swift in Sources */,
+				180DA06D21AFE22300BA6926 /* SelectNetworkPopoverViewController.swift in Sources */,
+				180E2ADC21ACDC760066F66E /* UtilityManager.swift in Sources */,
+				1814B4EC21E77FD100A6FD77 /* PopoverTableViewCell.swift in Sources */,
+				18C081DA21B7A8BD00A166F8 /* GroupDetailsDeviceListViewController.swift in Sources */,
+				18B6A98F21D0A9FE00B10AB1 /* DeviceOtaUpgradeViewController.swift in Sources */,
+				180E2AE921AE40C10066F66E /* CustomRoundedRectButton.swift in Sources */,
+				180E2B0021AEBBD00066F66E /* PopoverChoiceTableViewController.swift in Sources */,
+				18B6A99121D0CD6700B10AB1 /* CustomDropDownView.swift in Sources */,
+				1868D5862190382A00CC27FB /* AppDelegate.swift in Sources */,
+				18FA6CD721C35CB8005C9148 /* UnprovisionedDevicesViewController.swift in Sources */,
+				180E2ADF21ACECAB0066F66E /* CustomIndicatorView.swift in Sources */,
+				180E2B0621AFC5EB0066F66E /* CustomRadioButton.swift in Sources */,
+				181044F821B50B30002ECCBC /* TransitionViewController.swift in Sources */,
+				180E2B0221AF8AD90066F66E /* NetworkListEmptyTableViewCell.swift in Sources */,
+				180E2AE721AE3E030066F66E /* CustomCardView.swift in Sources */,
+				183179832372B4BD008D84A3 /* ScanProvisionTestViewController.swift in Sources */,
+				1866DF7521FB157800A29331 /* DeletingDevicesEmptyTableViewCell.swift in Sources */,
+				18923750222D295A00A1DEC8 /* SensorSettingViewController.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXVariantGroup section */
+		1868D5892190382A00CC27FB /* Main.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				1868D58A2190382A00CC27FB /* Base */,
+			);
+			name = Main.storyboard;
+			sourceTree = "<group>";
+		};
+		1868D58E2190382B00CC27FB /* LaunchScreen.storyboard */ = {
+			isa = PBXVariantGroup;
+			children = (
+				1868D58F2190382B00CC27FB /* Base */,
+			);
+			name = LaunchScreen.storyboard;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		1868D5922190382B00CC27FB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 9.1;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				VALID_ARCHS = "$(ARCHS_STANDARD) armv7s arm64e i386 x86_64";
+			};
+			name = Debug;
+		};
+		1868D5932190382B00CC27FB /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 9.1;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "";
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				VALIDATE_PRODUCT = YES;
+				VALID_ARCHS = "$(ARCHS_STANDARD) armv7s arm64e";
+			};
+			name = Release;
+		};
+		1868D5952190382B00CC27FB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 32;
+				DEVELOPMENT_TEAM = LCV43QB9EG;
+				INFOPLIST_FILE = MeshApp/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.21;
+				PRODUCT_BUNDLE_IDENTIFIER = com.cypress.iot.le.mesh.MeshApp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = iot_le_mesh_meshapp_20200716;
+				SWIFT_OBJC_BRIDGING_HEADER = "";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALID_ARCHS = "$(inherited)";
+			};
+			name = Debug;
+		};
+		1868D5962190382B00CC27FB /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_IDENTITY = "iPhone Distribution";
+				CODE_SIGN_STYLE = Manual;
+				CURRENT_PROJECT_VERSION = 32;
+				DEVELOPMENT_TEAM = LCV43QB9EG;
+				INFOPLIST_FILE = MeshApp/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0.21;
+				PRODUCT_BUNDLE_IDENTIFIER = com.cypress.iot.le.mesh.MeshApp;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE_SPECIFIER = cypress.iot.le.mesh.meshapp.production;
+				SWIFT_OBJC_BRIDGING_HEADER = "";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALID_ARCHS = "$(inherited)";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		1868D57D2190382A00CC27FB /* Build configuration list for PBXProject "MeshApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1868D5922190382B00CC27FB /* Debug */,
+				1868D5932190382B00CC27FB /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		1868D5942190382B00CC27FB /* Build configuration list for PBXNativeTarget "MeshApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1868D5952190382B00CC27FB /* Debug */,
+				1868D5962190382B00CC27FB /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 1868D57A2190382A00CC27FB /* Project object */;
+}

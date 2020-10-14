@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/MeshApp.iml" filepath="$PROJECT_DIR$/MeshApp.iml" />
+      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/meshcore/meshcore.iml" filepath="$PROJECT_DIR$/meshcore/meshcore.iml" />
+      <module fileurl="file://$PROJECT_DIR$/meshframework/meshframework.iml" filepath="$PROJECT_DIR$/meshframework/meshframework.iml" />
+    </modules>
+  </component>
+</project>

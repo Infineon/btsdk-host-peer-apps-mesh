@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="14460.31" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" launchScreen="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="01J-lp-oVM">
+    <device id="retina4_0" orientation="portrait">
+        <adaptation id="fullscreen"/>
+    </device>
+    <dependencies>
+        <deployment identifier="iOS"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="14460.20"/>
+        <capability name="Safe area layout guides" minToolsVersion="9.0"/>
+        <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
+    </dependencies>
+    <scenes>
+        <!--View Controller-->
+        <scene sceneID="EHf-IW-A2E">
+            <objects>
+                <viewController id="01J-lp-oVM" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="Ze5-6b-2t3">
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="El3-8t-NnP">
+                                <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                                <subviews>
+                                    <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="slash_portrait" translatesAutoresizingMaskIntoConstraints="NO" id="P6v-22-Zjr">
+                                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                                    </imageView>
+                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Loading ..." textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="f1U-cD-Fdd">
+                                        <rect key="frame" x="120" y="273.5" width="80" height="21"/>
+                                        <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                        <nil key="textColor"/>
+                                        <nil key="highlightedColor"/>
+                                    </label>
+                                </subviews>
+                                <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <constraints>
+                                    <constraint firstItem="f1U-cD-Fdd" firstAttribute="centerY" secondItem="El3-8t-NnP" secondAttribute="centerY" id="Mb1-CL-2GR"/>
+                                    <constraint firstAttribute="trailing" secondItem="P6v-22-Zjr" secondAttribute="trailing" id="Uaz-Je-PFr"/>
+                                    <constraint firstAttribute="bottom" secondItem="P6v-22-Zjr" secondAttribute="bottom" id="WUm-CI-8cn"/>
+                                    <constraint firstItem="P6v-22-Zjr" firstAttribute="leading" secondItem="El3-8t-NnP" secondAttribute="leading" id="hEP-Eq-OBg"/>
+                                    <constraint firstItem="P6v-22-Zjr" firstAttribute="top" secondItem="El3-8t-NnP" secondAttribute="top" id="mlq-dF-c3u"/>
+                                    <constraint firstItem="f1U-cD-Fdd" firstAttribute="centerX" secondItem="El3-8t-NnP" secondAttribute="centerX" id="xLm-TH-oO2"/>
+                                </constraints>
+                            </view>
+                        </subviews>
+                        <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                        <constraints>
+                            <constraint firstItem="6Tk-OE-BBY" firstAttribute="trailing" secondItem="El3-8t-NnP" secondAttribute="trailing" id="KPb-Om-YBM"/>
+                            <constraint firstItem="El3-8t-NnP" firstAttribute="top" secondItem="Ze5-6b-2t3" secondAttribute="top" id="T6C-4i-7Ir"/>
+                            <constraint firstItem="6Tk-OE-BBY" firstAttribute="bottom" secondItem="El3-8t-NnP" secondAttribute="bottom" id="V18-QE-TJv"/>
+                            <constraint firstItem="El3-8t-NnP" firstAttribute="leading" secondItem="6Tk-OE-BBY" secondAttribute="leading" id="ydH-HB-0Vy"/>
+                        </constraints>
+                        <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
+                    </view>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="iYj-Kq-Ea1" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="50.625" y="373.94366197183098"/>
+        </scene>
+    </scenes>
+    <resources>
+        <image name="slash_portrait" width="302" height="426"/>
+    </resources>
+</document>

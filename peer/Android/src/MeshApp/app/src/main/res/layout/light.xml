@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:weightSum="2"
+    android:layout_margin="20dp">
+    <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:orientation="vertical"
+        android:layout_width="match_parent"
+        android:layout_margin="@dimen/activity_horizontal_margin"
+        android:layout_height="match_parent">
+
+
+        <TextView
+            android:layout_width="150dp"
+            android:layout_height="wrap_content"
+            android:text="COLOR"
+            android:id="@+id/textView24"
+            android:layout_marginLeft="@dimen/activity_vertical_margin"
+            android:layout_toEndOf="@+id/imageView1"
+            android:layout_alignBottom="@+id/imageView2" />
+
+        <Switch
+            android:id="@+id/brightness"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="@dimen/activity_horizontal_margin"
+            android:progressBackgroundTint="@color/accent"
+            android:layout_marginLeft="@dimen/activity_horizontal_margin"
+            android:theme="@style/CustomSwitch"
+            android:layout_below="@+id/textView24"
+            android:layout_marginTop="20dp"
+            android:layout_alignParentEnd="true"
+            android:layout_toEndOf="@+id/textView25" />
+        <TextView
+            android:layout_width="150dp"
+            android:layout_height="wrap_content"
+            android:text="ON/OFF"
+
+            android:layout_marginLeft="@dimen/activity_vertical_margin"
+            android:layout_marginRight="@dimen/activity_vertical_margin"
+            android:id="@+id/textView25"
+            android:layout_alignTop="@+id/brightness"
+            android:layout_toEndOf="@+id/imageView1" />
+
+
+
+        <ImageButton
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:id="@+id/imageButton4"
+            android:layout_marginRight="@dimen/activity_horizontal_margin"
+
+            android:layout_alignBottom="@+id/textView24"
+            android:layout_alignStart="@+id/brightness"
+            android:layout_alignParentEnd="true" />
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/imageView1"
+            android:src="@drawable/brightness"
+            android:layout_alignBottom="@+id/textView25"
+            android:layout_alignParentStart="true" />
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/imageView2"
+            android:src="@drawable/colorimg"
+            android:layout_alignParentTop="true"
+            android:layout_alignParentStart="true" />
+
+
+        <TextView
+            android:layout_width="150dp"
+            android:layout_height="wrap_content"
+            android:text="TRANSITION TIME"
+            android:id="@+id/textView8"
+            android:layout_alignBottom="@+id/imageView"
+            android:layout_alignStart="@+id/textView25" />
+
+        <TextView
+            android:id="@+id/trans_time"
+            android:layout_width="100dp"
+            android:layout_height="wrap_content"
+            android:layout_alignTop="@+id/textView8"
+            android:singleLine="true"
+            android:layout_alignBaseline="@+id/editText5"
+            android:textSize="20dp"
+            android:layout_marginEnd="10dp"
+            android:textAlignment="textEnd"
+            android:layout_alignStart="@+id/brightness"
+            android:layout_toLeftOf="@+id/editText5" />
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/imageView"
+            android:src="@drawable/transtime"
+            android:layout_below="@+id/brightness"
+            android:layout_toStartOf="@+id/textView25" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/editText5"
+            android:text="ms"
+            android:textSize="20dp"
+            android:layout_alignEnd="@+id/brightness"
+            android:layout_below="@+id/brightness"
+            />
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/imageView3"
+            android:layout_marginTop="@dimen/activity_vertical_margin"
+            android:src="@drawable/brightness_onoff"
+            android:layout_below="@+id/imageView"
+            android:layout_alignParentStart="true" />
+        <TextView
+            android:layout_width="150dp"
+            android:layout_height="wrap_content"
+            android:text="BRIGHTNESS"
+            android:id="@+id/textView9"
+            android:layout_marginTop="@dimen/activity_vertical_margin"
+            android:layout_below="@+id/textView8"
+            android:gravity="bottom"
+            android:layout_alignStart="@+id/textView25"
+            android:layout_alignBottom="@+id/imageView3"/>
+        <android.support.v7.widget.AppCompatSeekBar
+            android:id="@+id/brightnessbar"
+            android:layout_width="150dp"
+            android:layout_height="wrap_content"
+            android:progressBackgroundTint="@color/accent"
+            android:theme="@style/CustomSwitch"
+            android:layout_alignBottom="@+id/textView9"
+            android:layout_alignStart="@+id/trans_time" />
+    </RelativeLayout>
+
+</LinearLayout>

@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="match_parent"
+    android:layout_height="match_parent">
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="Add Network"
+        android:gravity="center"
+        android:id="@+id/textView"
+        android:textColor="@color/primary"
+        android:layout_alignParentTop="true"
+        android:layout_margin="@dimen/activity_horizontal_margin"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentEnd="true" />
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="Name"
+        android:id="@+id/textView6"
+        android:textAllCaps="true"
+        android:layout_below="@+id/textView"
+        android:layout_alignParentStart="true"
+        android:layout_margin="@dimen/activity_horizontal_margin" />
+
+    <EditText
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/networkName"
+        android:backgroundTint="@color/accent"
+        android:layout_alignStart="@id/textView6"
+        android:layout_below="@id/textView6"
+        android:layout_alignParentEnd="true" />
+</RelativeLayout>

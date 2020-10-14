@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="wrap_content"
+    android:layout_margin="@dimen/activity_horizontal_margin"
+    android:layout_height="wrap_content"
+    android:id="@+id/addDevicePop">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceLarge"
+        android:text="Add Lights/Lightsets"
+        android:gravity="center"
+        android:id="@+id/textView5"
+        android:textColor="@color/primary"
+        android:layout_alignParentTop="true"
+        android:layout_margin="@dimen/activity_horizontal_margin"
+        android:layout_alignParentStart="true" />
+
+
+    <ListView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/listView6"
+        android:layout_below="@+id/textView5"
+        android:drawSelectorOnTop="false"
+        android:listSelector="@color/light_primary"
+        android:entries="@array/device_array"
+        android:layout_alignParentStart="true" />
+</RelativeLayout>

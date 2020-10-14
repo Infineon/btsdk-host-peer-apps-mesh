@@ -1,0 +1,825 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 50;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		180E2AAF21A53EA40066F66E /* MeshDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 180E2AAE21A53EA40066F66E /* MeshDevice.swift */; };
+		180E2AB521A65CE60066F66E /* MeshStorageSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 180E2AB421A65CE60066F66E /* MeshStorageSettings.swift */; };
+		180E2AB721A66FC70066F66E /* MeshUtility.swift in Sources */ = {isa = PBXBuildFile; fileRef = 180E2AB621A66FC70066F66E /* MeshUtility.swift */; };
+		180E2ABC21A6C5D10066F66E /* MeshConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 180E2ABB21A6C5D10066F66E /* MeshConstants.swift */; };
+		1828D3292384EB6E0006479C /* wiced_mesh_client.h in Headers */ = {isa = PBXBuildFile; fileRef = 1828D3232384EB6E0006479C /* wiced_mesh_client.h */; };
+		1828D32A2384EB6E0006479C /* meshdb.c in Sources */ = {isa = PBXBuildFile; fileRef = 1828D3242384EB6E0006479C /* meshdb.c */; };
+		1828D32B2384EB6E0006479C /* meshdb.h in Headers */ = {isa = PBXBuildFile; fileRef = 1828D3252384EB6E0006479C /* meshdb.h */; };
+		1828D32C2384EB6E0006479C /* wiced_bt_mesh_db.h in Headers */ = {isa = PBXBuildFile; fileRef = 1828D3262384EB6E0006479C /* wiced_bt_mesh_db.h */; };
+		1828D32D2384EB6E0006479C /* wiced_bt_mesh_db.c in Sources */ = {isa = PBXBuildFile; fileRef = 1828D3272384EB6E0006479C /* wiced_bt_mesh_db.c */; };
+		1828D32E2384EB6E0006479C /* wiced_mesh_client.c in Sources */ = {isa = PBXBuildFile; fileRef = 1828D3282384EB6E0006479C /* wiced_mesh_client.c */; };
+		1828D39D2384FC080006479C /* p_256_ecc_pp.c in Sources */ = {isa = PBXBuildFile; fileRef = 1828D38B2384FC070006479C /* p_256_ecc_pp.c */; };
+		1828D39E2384FC080006479C /* p_256_curvepara.c in Sources */ = {isa = PBXBuildFile; fileRef = 1828D38C2384FC070006479C /* p_256_curvepara.c */; };
+		1828D3A12384FC080006479C /* aes_cmac.h in Headers */ = {isa = PBXBuildFile; fileRef = 1828D38F2384FC070006479C /* aes_cmac.h */; };
+		1828D3A42384FC080006479C /* aes.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1828D3922384FC070006479C /* aes.cpp */; };
+		1828D3A72384FC080006479C /* aes_cmac.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1828D3952384FC070006479C /* aes_cmac.cpp */; };
+		1828D3A82384FC080006479C /* wiced_bt_app_common.h in Headers */ = {isa = PBXBuildFile; fileRef = 1828D3962384FC070006479C /* wiced_bt_app_common.h */; };
+		1828D3AC2384FC080006479C /* ccm.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 1828D39A2384FC080006479C /* ccm.cpp */; };
+		1828D3E82384FE380006479C /* p_256_multprecision.c in Sources */ = {isa = PBXBuildFile; fileRef = 1828D3E72384FE380006479C /* p_256_multprecision.c */; };
+		1828D43E23850E160006479C /* bt_target.h in Headers */ = {isa = PBXBuildFile; fileRef = 1828D43D23850E160006479C /* bt_target.h */; };
+		1865F5A6221D442900263C8B /* OtaUpgrader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1865F5A5221D442900263C8B /* OtaUpgrader.swift */; };
+		1865F5A8221D487000263C8B /* OtaConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1865F5A7221D487000263C8B /* OtaConstants.swift */; };
+		1865F5AC221D5D1400263C8B /* OtaManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1865F5AB221D5D1400263C8B /* OtaManager.swift */; };
+		1865F5AE221E3D2700263C8B /* OtaDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1865F5AD221E3D2700263C8B /* OtaDevice.swift */; };
+		1868D95D2193E67300CC27FB /* MeshFramework.h in Headers */ = {isa = PBXBuildFile; fileRef = 1868D95B2193E67300CC27FB /* MeshFramework.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		1868D9642193E6A300CC27FB /* MeshFrameworkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1868D9632193E6A300CC27FB /* MeshFrameworkManager.swift */; };
+		1868DB802194354B00CC27FB /* trace.c in Sources */ = {isa = PBXBuildFile; fileRef = 1868DB3D2194354A00CC27FB /* trace.c */; };
+		1868DBA02194354B00CC27FB /* mesh_main.h in Headers */ = {isa = PBXBuildFile; fileRef = 1868DB5F2194354A00CC27FB /* mesh_main.h */; };
+		1868DBA12194354B00CC27FB /* trace.h in Headers */ = {isa = PBXBuildFile; fileRef = 1868DB602194354A00CC27FB /* trace.h */; };
+		1868DBA32194354B00CC27FB /* mesh_main.c in Sources */ = {isa = PBXBuildFile; fileRef = 1868DB622194354A00CC27FB /* mesh_main.c */; };
+		1868DBA42194354B00CC27FB /* mesh_app.c in Sources */ = {isa = PBXBuildFile; fileRef = 1868DB632194354A00CC27FB /* mesh_app.c */; };
+		1868DBA52194354B00CC27FB /* MeshNativeHelper.m in Sources */ = {isa = PBXBuildFile; fileRef = 1868DB642194354A00CC27FB /* MeshNativeHelper.m */; };
+		1868DBA62194354B00CC27FB /* IMeshNativeCallback.h in Headers */ = {isa = PBXBuildFile; fileRef = 1868DB652194354A00CC27FB /* IMeshNativeCallback.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		1868DBA72194354B00CC27FB /* MeshNativeHelper.h in Headers */ = {isa = PBXBuildFile; fileRef = 1868DB662194354A00CC27FB /* MeshNativeHelper.h */; settings = {ATTRIBUTES = (Public, ); }; };
+		1868DBAF219446F100CC27FB /* MeshGattClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1868DBAE219446F100CC27FB /* MeshGattClient.swift */; };
+		1868DBB3219448DC00CC27FB /* libwicedmesh.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 1868DBB2219448DC00CC27FB /* libwicedmesh.a */; };
+		186BF712238F741D0046247C /* ecdh.h in Headers */ = {isa = PBXBuildFile; fileRef = 186BF708238F741D0046247C /* ecdh.h */; };
+		186BF713238F741D0046247C /* ccm.h in Headers */ = {isa = PBXBuildFile; fileRef = 186BF709238F741D0046247C /* ccm.h */; };
+		186BF714238F741D0046247C /* platform.h in Headers */ = {isa = PBXBuildFile; fileRef = 186BF70A238F741D0046247C /* platform.h */; };
+		186BF715238F741D0046247C /* brg_endian.h in Headers */ = {isa = PBXBuildFile; fileRef = 186BF70B238F741D0046247C /* brg_endian.h */; };
+		186BF716238F741D0046247C /* brg_types.h in Headers */ = {isa = PBXBuildFile; fileRef = 186BF70C238F741D0046247C /* brg_types.h */; };
+		186BF717238F741D0046247C /* p_256_ecc_pp.h in Headers */ = {isa = PBXBuildFile; fileRef = 186BF70D238F741D0046247C /* p_256_ecc_pp.h */; };
+		186BF718238F741D0046247C /* aes.h in Headers */ = {isa = PBXBuildFile; fileRef = 186BF70E238F741D0046247C /* aes.h */; };
+		186BF719238F741D0046247C /* mode_hdr.h in Headers */ = {isa = PBXBuildFile; fileRef = 186BF70F238F741D0046247C /* mode_hdr.h */; };
+		186BF71A238F741D0046247C /* p_256_multprecision.h in Headers */ = {isa = PBXBuildFile; fileRef = 186BF710238F741D0046247C /* p_256_multprecision.h */; };
+		186BF71B238F741D0046247C /* p_256_types.h in Headers */ = {isa = PBXBuildFile; fileRef = 186BF711238F741D0046247C /* p_256_types.h */; };
+		186FD7DB251C3E3A00C17DF2 /* wiced_bt_dev.h in Headers */ = {isa = PBXBuildFile; fileRef = 186FD7D2251C3E3900C17DF2 /* wiced_bt_dev.h */; };
+		186FD7DC251C3E3A00C17DF2 /* wiced_bt_types.h in Headers */ = {isa = PBXBuildFile; fileRef = 186FD7D3251C3E3A00C17DF2 /* wiced_bt_types.h */; };
+		186FD7DD251C3E3A00C17DF2 /* wiced_bt_ble.h in Headers */ = {isa = PBXBuildFile; fileRef = 186FD7D4251C3E3A00C17DF2 /* wiced_bt_ble.h */; };
+		186FD7DE251C3E3A00C17DF2 /* wiced_result.h in Headers */ = {isa = PBXBuildFile; fileRef = 186FD7D5251C3E3A00C17DF2 /* wiced_result.h */; };
+		186FD7DF251C3E3A00C17DF2 /* wiced.h in Headers */ = {isa = PBXBuildFile; fileRef = 186FD7D6251C3E3A00C17DF2 /* wiced.h */; };
+		186FD7E0251C3E3A00C17DF2 /* wiced_bt_gatt.h in Headers */ = {isa = PBXBuildFile; fileRef = 186FD7D7251C3E3A00C17DF2 /* wiced_bt_gatt.h */; };
+		186FD7E1251C3E3A00C17DF2 /* wiced_bt_gatt_util.h in Headers */ = {isa = PBXBuildFile; fileRef = 186FD7D8251C3E3A00C17DF2 /* wiced_bt_gatt_util.h */; };
+		186FD7E2251C3E3A00C17DF2 /* wiced_bt_cfg.h in Headers */ = {isa = PBXBuildFile; fileRef = 186FD7D9251C3E3A00C17DF2 /* wiced_bt_cfg.h */; };
+		186FD7E3251C3E3A00C17DF2 /* wiced_bt_uuid.h in Headers */ = {isa = PBXBuildFile; fileRef = 186FD7DA251C3E3A00C17DF2 /* wiced_bt_uuid.h */; };
+		186FD7F4251C3E6F00C17DF2 /* wiced_bt_mesh_model_defs.h in Headers */ = {isa = PBXBuildFile; fileRef = 186FD7E6251C3E6F00C17DF2 /* wiced_bt_mesh_model_defs.h */; };
+		186FD7F5251C3E6F00C17DF2 /* wiced_bt_mesh_client.h in Headers */ = {isa = PBXBuildFile; fileRef = 186FD7E7251C3E6F00C17DF2 /* wiced_bt_mesh_client.h */; };
+		186FD7F6251C3E6F00C17DF2 /* wiced_bt_mesh_provision.h in Headers */ = {isa = PBXBuildFile; fileRef = 186FD7E8251C3E6F00C17DF2 /* wiced_bt_mesh_provision.h */; };
+		186FD7F7251C3E6F00C17DF2 /* wiced_bt_mesh_core.h in Headers */ = {isa = PBXBuildFile; fileRef = 186FD7E9251C3E6F00C17DF2 /* wiced_bt_mesh_core.h */; };
+		186FD7F8251C3E6F00C17DF2 /* wiced_bt_mesh_model_utils.h in Headers */ = {isa = PBXBuildFile; fileRef = 186FD7EA251C3E6F00C17DF2 /* wiced_bt_mesh_model_utils.h */; };
+		186FD7F9251C3E6F00C17DF2 /* wiced_bt_mesh_models.h in Headers */ = {isa = PBXBuildFile; fileRef = 186FD7EB251C3E6F00C17DF2 /* wiced_bt_mesh_models.h */; };
+		186FD7FA251C3E6F00C17DF2 /* wiced_bt_mesh_event.h in Headers */ = {isa = PBXBuildFile; fileRef = 186FD7EC251C3E6F00C17DF2 /* wiced_bt_mesh_event.h */; };
+		186FD7FB251C3E6F00C17DF2 /* wiced_bt_mesh_cfg.h in Headers */ = {isa = PBXBuildFile; fileRef = 186FD7ED251C3E6F00C17DF2 /* wiced_bt_mesh_cfg.h */; };
+		186FD7FC251C3E6F00C17DF2 /* wiced_bt_ota_firmware_upgrade.h in Headers */ = {isa = PBXBuildFile; fileRef = 186FD7EE251C3E6F00C17DF2 /* wiced_bt_ota_firmware_upgrade.h */; };
+		186FD7FD251C3E6F00C17DF2 /* wiced_bt_mesh_app.h in Headers */ = {isa = PBXBuildFile; fileRef = 186FD7EF251C3E6F00C17DF2 /* wiced_bt_mesh_app.h */; };
+		186FD7FE251C3E6F00C17DF2 /* sha2.h in Headers */ = {isa = PBXBuildFile; fileRef = 186FD7F0251C3E6F00C17DF2 /* sha2.h */; };
+		186FD7FF251C3E6F00C17DF2 /* wiced_bt_mesh_dfu.h in Headers */ = {isa = PBXBuildFile; fileRef = 186FD7F1251C3E6F00C17DF2 /* wiced_bt_mesh_dfu.h */; };
+		186FD800251C3E6F00C17DF2 /* wiced_firmware_upgrade.h in Headers */ = {isa = PBXBuildFile; fileRef = 186FD7F2251C3E6F00C17DF2 /* wiced_firmware_upgrade.h */; };
+		186FD801251C3E6F00C17DF2 /* hci_control_api.h in Headers */ = {isa = PBXBuildFile; fileRef = 186FD7F3251C3E6F00C17DF2 /* hci_control_api.h */; };
+		186FD808251C3EC800C17DF2 /* wiced_hal_rand.h in Headers */ = {isa = PBXBuildFile; fileRef = 186FD804251C3EC800C17DF2 /* wiced_hal_rand.h */; };
+		186FD809251C3EC800C17DF2 /* wiced_timer.h in Headers */ = {isa = PBXBuildFile; fileRef = 186FD805251C3EC800C17DF2 /* wiced_timer.h */; };
+		186FD80A251C3EC800C17DF2 /* wiced_hal_nvram.h in Headers */ = {isa = PBXBuildFile; fileRef = 186FD806251C3EC800C17DF2 /* wiced_hal_nvram.h */; };
+		186FD80B251C3EC800C17DF2 /* wiced_hal_wdog.h in Headers */ = {isa = PBXBuildFile; fileRef = 186FD807251C3EC800C17DF2 /* wiced_hal_wdog.h */; };
+		186FD811251C3F0C00C17DF2 /* typedef.h in Headers */ = {isa = PBXBuildFile; fileRef = 186FD80E251C3F0C00C17DF2 /* typedef.h */; };
+		186FD812251C3F0C00C17DF2 /* brcm_fw_types.h in Headers */ = {isa = PBXBuildFile; fileRef = 186FD80F251C3F0C00C17DF2 /* brcm_fw_types.h */; };
+		186FD813251C3F0C00C17DF2 /* rtc.h in Headers */ = {isa = PBXBuildFile; fileRef = 186FD810251C3F0C00C17DF2 /* rtc.h */; };
+		186FD81C251C3F5E00C17DF2 /* data_types.h in Headers */ = {isa = PBXBuildFile; fileRef = 186FD817251C3F5E00C17DF2 /* data_types.h */; };
+		186FD81D251C3F5E00C17DF2 /* gattdefs.h in Headers */ = {isa = PBXBuildFile; fileRef = 186FD818251C3F5E00C17DF2 /* gattdefs.h */; };
+		186FD81E251C3F5E00C17DF2 /* bt_types.h in Headers */ = {isa = PBXBuildFile; fileRef = 186FD819251C3F5E00C17DF2 /* bt_types.h */; };
+		186FD81F251C3F5E00C17DF2 /* l2cdefs.h in Headers */ = {isa = PBXBuildFile; fileRef = 186FD81A251C3F5E00C17DF2 /* l2cdefs.h */; };
+		186FD820251C3F5E00C17DF2 /* hcidefs.h in Headers */ = {isa = PBXBuildFile; fileRef = 186FD81B251C3F5E00C17DF2 /* hcidefs.h */; };
+		18A24B3A2519A263000A6883 /* wiced_memory.h in Headers */ = {isa = PBXBuildFile; fileRef = 18A24B342519A263000A6883 /* wiced_memory.h */; };
+		18A24B3B2519A263000A6883 /* wiced_bt_trace.h in Headers */ = {isa = PBXBuildFile; fileRef = 18A24B352519A263000A6883 /* wiced_bt_trace.h */; };
+		18A24B472519A7EC000A6883 /* clock_timer.h in Headers */ = {isa = PBXBuildFile; fileRef = 18A24B432519A7EC000A6883 /* clock_timer.h */; };
+		18A692D821B906BC00E4B3DC /* PlatformManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18A692D721B906BC00E4B3DC /* PlatformManager.swift */; };
+		18C0813A21B6866400A166F8 /* TrackingHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18C0813921B6866400A166F8 /* TrackingHelper.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		180E2AAE21A53EA40066F66E /* MeshDevice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshDevice.swift; sourceTree = "<group>"; };
+		180E2AB421A65CE60066F66E /* MeshStorageSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshStorageSettings.swift; sourceTree = "<group>"; };
+		180E2AB621A66FC70066F66E /* MeshUtility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshUtility.swift; sourceTree = "<group>"; };
+		180E2ABB21A6C5D10066F66E /* MeshConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshConstants.swift; sourceTree = "<group>"; };
+		1828D3232384EB6E0006479C /* wiced_mesh_client.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = wiced_mesh_client.h; path = ../../../../../../../../mesh_client_lib/wiced_mesh_client.h; sourceTree = "<group>"; };
+		1828D3242384EB6E0006479C /* meshdb.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = meshdb.c; path = ../../../../../../../../mesh_client_lib/meshdb.c; sourceTree = "<group>"; };
+		1828D3252384EB6E0006479C /* meshdb.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = meshdb.h; path = ../../../../../../../../mesh_client_lib/meshdb.h; sourceTree = "<group>"; };
+		1828D3262384EB6E0006479C /* wiced_bt_mesh_db.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = wiced_bt_mesh_db.h; path = ../../../../../../../../mesh_client_lib/wiced_bt_mesh_db.h; sourceTree = "<group>"; };
+		1828D3272384EB6E0006479C /* wiced_bt_mesh_db.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = wiced_bt_mesh_db.c; path = ../../../../../../../../mesh_client_lib/wiced_bt_mesh_db.c; sourceTree = "<group>"; };
+		1828D3282384EB6E0006479C /* wiced_mesh_client.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = wiced_mesh_client.c; path = ../../../../../../../../mesh_client_lib/wiced_mesh_client.c; sourceTree = "<group>"; };
+		1828D38B2384FC070006479C /* p_256_ecc_pp.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = p_256_ecc_pp.c; sourceTree = "<group>"; };
+		1828D38C2384FC070006479C /* p_256_curvepara.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = p_256_curvepara.c; sourceTree = "<group>"; };
+		1828D38F2384FC070006479C /* aes_cmac.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = aes_cmac.h; sourceTree = "<group>"; };
+		1828D3922384FC070006479C /* aes.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = aes.cpp; sourceTree = "<group>"; };
+		1828D3952384FC070006479C /* aes_cmac.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = aes_cmac.cpp; sourceTree = "<group>"; };
+		1828D3962384FC070006479C /* wiced_bt_app_common.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = wiced_bt_app_common.h; sourceTree = "<group>"; };
+		1828D39A2384FC080006479C /* ccm.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; path = ccm.cpp; sourceTree = "<group>"; };
+		1828D3E72384FE380006479C /* p_256_multprecision.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = p_256_multprecision.c; sourceTree = "<group>"; };
+		1828D43D23850E160006479C /* bt_target.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = bt_target.h; sourceTree = "<group>"; };
+		1865F5A5221D442900263C8B /* OtaUpgrader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OtaUpgrader.swift; sourceTree = "<group>"; };
+		1865F5A7221D487000263C8B /* OtaConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OtaConstants.swift; sourceTree = "<group>"; };
+		1865F5AB221D5D1400263C8B /* OtaManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OtaManager.swift; sourceTree = "<group>"; };
+		1865F5AD221E3D2700263C8B /* OtaDevice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OtaDevice.swift; sourceTree = "<group>"; };
+		1868D9582193E67300CC27FB /* MeshFramework.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = MeshFramework.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		1868D95B2193E67300CC27FB /* MeshFramework.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = MeshFramework.h; sourceTree = "<group>"; };
+		1868D95C2193E67300CC27FB /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		1868D9632193E6A300CC27FB /* MeshFrameworkManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshFrameworkManager.swift; sourceTree = "<group>"; };
+		1868DB3D2194354A00CC27FB /* trace.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = trace.c; sourceTree = "<group>"; };
+		1868DB5F2194354A00CC27FB /* mesh_main.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = mesh_main.h; sourceTree = "<group>"; };
+		1868DB602194354A00CC27FB /* trace.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = trace.h; sourceTree = "<group>"; };
+		1868DB622194354A00CC27FB /* mesh_main.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = mesh_main.c; sourceTree = "<group>"; };
+		1868DB632194354A00CC27FB /* mesh_app.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = mesh_app.c; sourceTree = "<group>"; };
+		1868DB642194354A00CC27FB /* MeshNativeHelper.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = MeshNativeHelper.m; sourceTree = "<group>"; };
+		1868DB652194354A00CC27FB /* IMeshNativeCallback.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = IMeshNativeCallback.h; sourceTree = "<group>"; };
+		1868DB662194354A00CC27FB /* MeshNativeHelper.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = MeshNativeHelper.h; sourceTree = "<group>"; };
+		1868DBAE219446F100CC27FB /* MeshGattClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshGattClient.swift; sourceTree = "<group>"; };
+		1868DBB2219448DC00CC27FB /* libwicedmesh.a */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = libwicedmesh.a; path = meshcore/libwicedmesh/libs/libwicedmesh.a; sourceTree = "<group>"; };
+		186BF708238F741D0046247C /* ecdh.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ecdh.h; sourceTree = "<group>"; };
+		186BF709238F741D0046247C /* ccm.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ccm.h; sourceTree = "<group>"; };
+		186BF70A238F741D0046247C /* platform.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = platform.h; sourceTree = "<group>"; };
+		186BF70B238F741D0046247C /* brg_endian.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = brg_endian.h; sourceTree = "<group>"; };
+		186BF70C238F741D0046247C /* brg_types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = brg_types.h; sourceTree = "<group>"; };
+		186BF70D238F741D0046247C /* p_256_ecc_pp.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = p_256_ecc_pp.h; sourceTree = "<group>"; };
+		186BF70E238F741D0046247C /* aes.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = aes.h; sourceTree = "<group>"; };
+		186BF70F238F741D0046247C /* mode_hdr.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = mode_hdr.h; sourceTree = "<group>"; };
+		186BF710238F741D0046247C /* p_256_multprecision.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = p_256_multprecision.h; sourceTree = "<group>"; };
+		186BF711238F741D0046247C /* p_256_types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = p_256_types.h; sourceTree = "<group>"; };
+		186FD7D2251C3E3900C17DF2 /* wiced_bt_dev.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = wiced_bt_dev.h; path = ../../../../../../../include/wiced_bt_dev.h; sourceTree = "<group>"; };
+		186FD7D3251C3E3A00C17DF2 /* wiced_bt_types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = wiced_bt_types.h; path = ../../../../../../../include/wiced_bt_types.h; sourceTree = "<group>"; };
+		186FD7D4251C3E3A00C17DF2 /* wiced_bt_ble.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = wiced_bt_ble.h; path = ../../../../../../../include/wiced_bt_ble.h; sourceTree = "<group>"; };
+		186FD7D5251C3E3A00C17DF2 /* wiced_result.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = wiced_result.h; path = ../../../../../../../include/wiced_result.h; sourceTree = "<group>"; };
+		186FD7D6251C3E3A00C17DF2 /* wiced.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = wiced.h; path = ../../../../../../../include/wiced.h; sourceTree = "<group>"; };
+		186FD7D7251C3E3A00C17DF2 /* wiced_bt_gatt.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = wiced_bt_gatt.h; path = ../../../../../../../include/wiced_bt_gatt.h; sourceTree = "<group>"; };
+		186FD7D8251C3E3A00C17DF2 /* wiced_bt_gatt_util.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = wiced_bt_gatt_util.h; path = ../../../../../../../include/wiced_bt_gatt_util.h; sourceTree = "<group>"; };
+		186FD7D9251C3E3A00C17DF2 /* wiced_bt_cfg.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = wiced_bt_cfg.h; path = ../../../../../../../include/wiced_bt_cfg.h; sourceTree = "<group>"; };
+		186FD7DA251C3E3A00C17DF2 /* wiced_bt_uuid.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = wiced_bt_uuid.h; path = ../../../../../../../include/wiced_bt_uuid.h; sourceTree = "<group>"; };
+		186FD7E6251C3E6F00C17DF2 /* wiced_bt_mesh_model_defs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = wiced_bt_mesh_model_defs.h; path = ../../../../../../../../include/wiced_bt_mesh_model_defs.h; sourceTree = "<group>"; };
+		186FD7E7251C3E6F00C17DF2 /* wiced_bt_mesh_client.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = wiced_bt_mesh_client.h; path = ../../../../../../../../include/wiced_bt_mesh_client.h; sourceTree = "<group>"; };
+		186FD7E8251C3E6F00C17DF2 /* wiced_bt_mesh_provision.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = wiced_bt_mesh_provision.h; path = ../../../../../../../../include/wiced_bt_mesh_provision.h; sourceTree = "<group>"; };
+		186FD7E9251C3E6F00C17DF2 /* wiced_bt_mesh_core.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = wiced_bt_mesh_core.h; path = ../../../../../../../../include/wiced_bt_mesh_core.h; sourceTree = "<group>"; };
+		186FD7EA251C3E6F00C17DF2 /* wiced_bt_mesh_model_utils.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = wiced_bt_mesh_model_utils.h; path = ../../../../../../../../include/wiced_bt_mesh_model_utils.h; sourceTree = "<group>"; };
+		186FD7EB251C3E6F00C17DF2 /* wiced_bt_mesh_models.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = wiced_bt_mesh_models.h; path = ../../../../../../../../include/wiced_bt_mesh_models.h; sourceTree = "<group>"; };
+		186FD7EC251C3E6F00C17DF2 /* wiced_bt_mesh_event.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = wiced_bt_mesh_event.h; path = ../../../../../../../../include/wiced_bt_mesh_event.h; sourceTree = "<group>"; };
+		186FD7ED251C3E6F00C17DF2 /* wiced_bt_mesh_cfg.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = wiced_bt_mesh_cfg.h; path = ../../../../../../../../include/wiced_bt_mesh_cfg.h; sourceTree = "<group>"; };
+		186FD7EE251C3E6F00C17DF2 /* wiced_bt_ota_firmware_upgrade.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = wiced_bt_ota_firmware_upgrade.h; path = ../../../../../../../../include/wiced_bt_ota_firmware_upgrade.h; sourceTree = "<group>"; };
+		186FD7EF251C3E6F00C17DF2 /* wiced_bt_mesh_app.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = wiced_bt_mesh_app.h; path = ../../../../../../../../include/wiced_bt_mesh_app.h; sourceTree = "<group>"; };
+		186FD7F0251C3E6F00C17DF2 /* sha2.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = sha2.h; path = ../../../../../../../../include/sha2.h; sourceTree = "<group>"; };
+		186FD7F1251C3E6F00C17DF2 /* wiced_bt_mesh_dfu.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = wiced_bt_mesh_dfu.h; path = ../../../../../../../../include/wiced_bt_mesh_dfu.h; sourceTree = "<group>"; };
+		186FD7F2251C3E6F00C17DF2 /* wiced_firmware_upgrade.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = wiced_firmware_upgrade.h; path = ../../../../../../../../include/wiced_firmware_upgrade.h; sourceTree = "<group>"; };
+		186FD7F3251C3E6F00C17DF2 /* hci_control_api.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = hci_control_api.h; path = ../../../../../../../../include/hci_control_api.h; sourceTree = "<group>"; };
+		186FD804251C3EC800C17DF2 /* wiced_hal_rand.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = wiced_hal_rand.h; path = ../../../../../../../../include/wiced_hal_rand.h; sourceTree = "<group>"; };
+		186FD805251C3EC800C17DF2 /* wiced_timer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = wiced_timer.h; path = ../../../../../../../../include/wiced_timer.h; sourceTree = "<group>"; };
+		186FD806251C3EC800C17DF2 /* wiced_hal_nvram.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = wiced_hal_nvram.h; path = ../../../../../../../../include/wiced_hal_nvram.h; sourceTree = "<group>"; };
+		186FD807251C3EC800C17DF2 /* wiced_hal_wdog.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = wiced_hal_wdog.h; path = ../../../../../../../../include/wiced_hal_wdog.h; sourceTree = "<group>"; };
+		186FD80E251C3F0C00C17DF2 /* typedef.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = typedef.h; path = ../../../../../../../../include/typedef.h; sourceTree = "<group>"; };
+		186FD80F251C3F0C00C17DF2 /* brcm_fw_types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = brcm_fw_types.h; path = ../../../../../../../../include/brcm_fw_types.h; sourceTree = "<group>"; };
+		186FD810251C3F0C00C17DF2 /* rtc.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = rtc.h; path = ../../../../../../../../include/rtc.h; sourceTree = "<group>"; };
+		186FD817251C3F5E00C17DF2 /* data_types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = data_types.h; path = ../../../../../../../../include/data_types.h; sourceTree = "<group>"; };
+		186FD818251C3F5E00C17DF2 /* gattdefs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = gattdefs.h; path = ../../../../../../../../include/gattdefs.h; sourceTree = "<group>"; };
+		186FD819251C3F5E00C17DF2 /* bt_types.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = bt_types.h; path = ../../../../../../../../include/bt_types.h; sourceTree = "<group>"; };
+		186FD81A251C3F5E00C17DF2 /* l2cdefs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = l2cdefs.h; path = ../../../../../../../../include/l2cdefs.h; sourceTree = "<group>"; };
+		186FD81B251C3F5E00C17DF2 /* hcidefs.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = hcidefs.h; path = ../../../../../../../../include/hcidefs.h; sourceTree = "<group>"; };
+		18A24B342519A263000A6883 /* wiced_memory.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = wiced_memory.h; sourceTree = "<group>"; };
+		18A24B352519A263000A6883 /* wiced_bt_trace.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = wiced_bt_trace.h; sourceTree = "<group>"; };
+		18A24B432519A7EC000A6883 /* clock_timer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = clock_timer.h; sourceTree = "<group>"; };
+		18A692D721B906BC00E4B3DC /* PlatformManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlatformManager.swift; sourceTree = "<group>"; };
+		18C0813921B6866400A166F8 /* TrackingHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackingHelper.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		1868D9552193E67300CC27FB /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1868DBB3219448DC00CC27FB /* libwicedmesh.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		1865F5A4221D440700263C8B /* FirmwareOta */ = {
+			isa = PBXGroup;
+			children = (
+				1865F5A5221D442900263C8B /* OtaUpgrader.swift */,
+				1865F5A7221D487000263C8B /* OtaConstants.swift */,
+				1865F5AB221D5D1400263C8B /* OtaManager.swift */,
+				1865F5AD221E3D2700263C8B /* OtaDevice.swift */,
+			);
+			path = FirmwareOta;
+			sourceTree = "<group>";
+		};
+		1868D94E2193E67300CC27FB = {
+			isa = PBXGroup;
+			children = (
+				1868DB1D2194354A00CC27FB /* meshcore */,
+				1868D95A2193E67300CC27FB /* MeshFramework */,
+				1868D9592193E67300CC27FB /* Products */,
+				1868D9652193E72800CC27FB /* Frameworks */,
+			);
+			sourceTree = "<group>";
+		};
+		1868D9592193E67300CC27FB /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				1868D9582193E67300CC27FB /* MeshFramework.framework */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		1868D95A2193E67300CC27FB /* MeshFramework */ = {
+			isa = PBXGroup;
+			children = (
+				1865F5A4221D440700263C8B /* FirmwareOta */,
+				1868D95B2193E67300CC27FB /* MeshFramework.h */,
+				1868D95C2193E67300CC27FB /* Info.plist */,
+				1868D9632193E6A300CC27FB /* MeshFrameworkManager.swift */,
+				1868DBAE219446F100CC27FB /* MeshGattClient.swift */,
+				180E2AAE21A53EA40066F66E /* MeshDevice.swift */,
+				180E2AB421A65CE60066F66E /* MeshStorageSettings.swift */,
+				180E2AB621A66FC70066F66E /* MeshUtility.swift */,
+				180E2ABB21A6C5D10066F66E /* MeshConstants.swift */,
+				18C0813921B6866400A166F8 /* TrackingHelper.swift */,
+				18A692D721B906BC00E4B3DC /* PlatformManager.swift */,
+			);
+			path = MeshFramework;
+			sourceTree = "<group>";
+		};
+		1868D9652193E72800CC27FB /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				1868DBB2219448DC00CC27FB /* libwicedmesh.a */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		1868DB1D2194354A00CC27FB /* meshcore */ = {
+			isa = PBXGroup;
+			children = (
+				1868DB1E2194354A00CC27FB /* libwicedmesh */,
+				1868DB642194354A00CC27FB /* MeshNativeHelper.m */,
+				1868DB652194354A00CC27FB /* IMeshNativeCallback.h */,
+				1868DB662194354A00CC27FB /* MeshNativeHelper.h */,
+			);
+			path = meshcore;
+			sourceTree = "<group>";
+		};
+		1868DB1E2194354A00CC27FB /* libwicedmesh */ = {
+			isa = PBXGroup;
+			children = (
+				18CB44B222F05F27007B2DFD /* include */,
+				1868DB3C2194354A00CC27FB /* src */,
+			);
+			path = libwicedmesh;
+			sourceTree = "<group>";
+		};
+		1868DB3C2194354A00CC27FB /* src */ = {
+			isa = PBXGroup;
+			children = (
+				1868DB632194354A00CC27FB /* mesh_app.c */,
+				18CB44FF22F193C3007B2DFD /* mesh_client_lib */,
+				18CB442522F05C69007B2DFD /* mesh_libs */,
+				1868DB622194354A00CC27FB /* mesh_main.c */,
+				1868DB5F2194354A00CC27FB /* mesh_main.h */,
+				1868DB3D2194354A00CC27FB /* trace.c */,
+				1868DB602194354A00CC27FB /* trace.h */,
+			);
+			path = src;
+			sourceTree = "<group>";
+		};
+		18CB442522F05C69007B2DFD /* mesh_libs */ = {
+			isa = PBXGroup;
+			children = (
+				1828D3952384FC070006479C /* aes_cmac.cpp */,
+				1828D38F2384FC070006479C /* aes_cmac.h */,
+				1828D3922384FC070006479C /* aes.cpp */,
+				186BF70E238F741D0046247C /* aes.h */,
+				186BF70B238F741D0046247C /* brg_endian.h */,
+				186BF70C238F741D0046247C /* brg_types.h */,
+				1828D39A2384FC080006479C /* ccm.cpp */,
+				186BF709238F741D0046247C /* ccm.h */,
+				186BF708238F741D0046247C /* ecdh.h */,
+				186BF70F238F741D0046247C /* mode_hdr.h */,
+				1828D38C2384FC070006479C /* p_256_curvepara.c */,
+				1828D38B2384FC070006479C /* p_256_ecc_pp.c */,
+				186BF70D238F741D0046247C /* p_256_ecc_pp.h */,
+				1828D3E72384FE380006479C /* p_256_multprecision.c */,
+				186BF710238F741D0046247C /* p_256_multprecision.h */,
+				186BF711238F741D0046247C /* p_256_types.h */,
+				186BF70A238F741D0046247C /* platform.h */,
+				1828D3962384FC070006479C /* wiced_bt_app_common.h */,
+			);
+			path = mesh_libs;
+			sourceTree = "<group>";
+		};
+		18CB44B222F05F27007B2DFD /* include */ = {
+			isa = PBXGroup;
+			children = (
+				186FD7D4251C3E3A00C17DF2 /* wiced_bt_ble.h */,
+				186FD7D9251C3E3A00C17DF2 /* wiced_bt_cfg.h */,
+				186FD7D2251C3E3900C17DF2 /* wiced_bt_dev.h */,
+				186FD7D8251C3E3A00C17DF2 /* wiced_bt_gatt_util.h */,
+				186FD7D7251C3E3A00C17DF2 /* wiced_bt_gatt.h */,
+				186FD7D3251C3E3A00C17DF2 /* wiced_bt_types.h */,
+				186FD7DA251C3E3A00C17DF2 /* wiced_bt_uuid.h */,
+				186FD7D5251C3E3A00C17DF2 /* wiced_result.h */,
+				186FD7D6251C3E3A00C17DF2 /* wiced.h */,
+				18CB44C322F05F27007B2DFD /* common */,
+				18CB44B422F05F27007B2DFD /* hal */,
+				18CB44BC22F05F27007B2DFD /* internal */,
+				18CB44D422F05F27007B2DFD /* stack */,
+			);
+			path = include;
+			sourceTree = "<group>";
+		};
+		18CB44B422F05F27007B2DFD /* hal */ = {
+			isa = PBXGroup;
+			children = (
+				186FD806251C3EC800C17DF2 /* wiced_hal_nvram.h */,
+				186FD804251C3EC800C17DF2 /* wiced_hal_rand.h */,
+				186FD807251C3EC800C17DF2 /* wiced_hal_wdog.h */,
+				186FD805251C3EC800C17DF2 /* wiced_timer.h */,
+				18A24B352519A263000A6883 /* wiced_bt_trace.h */,
+				18A24B342519A263000A6883 /* wiced_memory.h */,
+			);
+			path = hal;
+			sourceTree = "<group>";
+		};
+		18CB44BC22F05F27007B2DFD /* internal */ = {
+			isa = PBXGroup;
+			children = (
+				186FD80F251C3F0C00C17DF2 /* brcm_fw_types.h */,
+				186FD810251C3F0C00C17DF2 /* rtc.h */,
+				186FD80E251C3F0C00C17DF2 /* typedef.h */,
+				1828D43D23850E160006479C /* bt_target.h */,
+				18A24B432519A7EC000A6883 /* clock_timer.h */,
+			);
+			path = internal;
+			sourceTree = "<group>";
+		};
+		18CB44C322F05F27007B2DFD /* common */ = {
+			isa = PBXGroup;
+			children = (
+				186FD7F3251C3E6F00C17DF2 /* hci_control_api.h */,
+				186FD7F0251C3E6F00C17DF2 /* sha2.h */,
+				186FD7EF251C3E6F00C17DF2 /* wiced_bt_mesh_app.h */,
+				186FD7ED251C3E6F00C17DF2 /* wiced_bt_mesh_cfg.h */,
+				186FD7E7251C3E6F00C17DF2 /* wiced_bt_mesh_client.h */,
+				186FD7E9251C3E6F00C17DF2 /* wiced_bt_mesh_core.h */,
+				186FD7F1251C3E6F00C17DF2 /* wiced_bt_mesh_dfu.h */,
+				186FD7EC251C3E6F00C17DF2 /* wiced_bt_mesh_event.h */,
+				186FD7E6251C3E6F00C17DF2 /* wiced_bt_mesh_model_defs.h */,
+				186FD7EA251C3E6F00C17DF2 /* wiced_bt_mesh_model_utils.h */,
+				186FD7EB251C3E6F00C17DF2 /* wiced_bt_mesh_models.h */,
+				186FD7E8251C3E6F00C17DF2 /* wiced_bt_mesh_provision.h */,
+				186FD7EE251C3E6F00C17DF2 /* wiced_bt_ota_firmware_upgrade.h */,
+				186FD7F2251C3E6F00C17DF2 /* wiced_firmware_upgrade.h */,
+			);
+			path = common;
+			sourceTree = "<group>";
+		};
+		18CB44D422F05F27007B2DFD /* stack */ = {
+			isa = PBXGroup;
+			children = (
+				186FD819251C3F5E00C17DF2 /* bt_types.h */,
+				186FD817251C3F5E00C17DF2 /* data_types.h */,
+				186FD818251C3F5E00C17DF2 /* gattdefs.h */,
+				186FD81B251C3F5E00C17DF2 /* hcidefs.h */,
+				186FD81A251C3F5E00C17DF2 /* l2cdefs.h */,
+			);
+			path = stack;
+			sourceTree = "<group>";
+		};
+		18CB44FF22F193C3007B2DFD /* mesh_client_lib */ = {
+			isa = PBXGroup;
+			children = (
+				1828D3242384EB6E0006479C /* meshdb.c */,
+				1828D3252384EB6E0006479C /* meshdb.h */,
+				1828D3272384EB6E0006479C /* wiced_bt_mesh_db.c */,
+				1828D3262384EB6E0006479C /* wiced_bt_mesh_db.h */,
+				1828D3282384EB6E0006479C /* wiced_mesh_client.c */,
+				1828D3232384EB6E0006479C /* wiced_mesh_client.h */,
+			);
+			path = mesh_client_lib;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXHeadersBuildPhase section */
+		1868D9532193E67300CC27FB /* Headers */ = {
+			isa = PBXHeadersBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				186FD7F7251C3E6F00C17DF2 /* wiced_bt_mesh_core.h in Headers */,
+				186FD813251C3F0C00C17DF2 /* rtc.h in Headers */,
+				186FD7DE251C3E3A00C17DF2 /* wiced_result.h in Headers */,
+				1868DBA62194354B00CC27FB /* IMeshNativeCallback.h in Headers */,
+				1828D3A82384FC080006479C /* wiced_bt_app_common.h in Headers */,
+				1828D43E23850E160006479C /* bt_target.h in Headers */,
+				186BF718238F741D0046247C /* aes.h in Headers */,
+				186FD81C251C3F5E00C17DF2 /* data_types.h in Headers */,
+				186BF714238F741D0046247C /* platform.h in Headers */,
+				186FD7DD251C3E3A00C17DF2 /* wiced_bt_ble.h in Headers */,
+				186FD7FB251C3E6F00C17DF2 /* wiced_bt_mesh_cfg.h in Headers */,
+				186FD80B251C3EC800C17DF2 /* wiced_hal_wdog.h in Headers */,
+				186FD7F4251C3E6F00C17DF2 /* wiced_bt_mesh_model_defs.h in Headers */,
+				186FD81D251C3F5E00C17DF2 /* gattdefs.h in Headers */,
+				186FD801251C3E6F00C17DF2 /* hci_control_api.h in Headers */,
+				18A24B3B2519A263000A6883 /* wiced_bt_trace.h in Headers */,
+				186FD800251C3E6F00C17DF2 /* wiced_firmware_upgrade.h in Headers */,
+				186FD7DC251C3E3A00C17DF2 /* wiced_bt_types.h in Headers */,
+				186FD811251C3F0C00C17DF2 /* typedef.h in Headers */,
+				186FD80A251C3EC800C17DF2 /* wiced_hal_nvram.h in Headers */,
+				186BF71A238F741D0046247C /* p_256_multprecision.h in Headers */,
+				1868DBA72194354B00CC27FB /* MeshNativeHelper.h in Headers */,
+				186FD7E3251C3E3A00C17DF2 /* wiced_bt_uuid.h in Headers */,
+				186FD7FF251C3E6F00C17DF2 /* wiced_bt_mesh_dfu.h in Headers */,
+				1828D32C2384EB6E0006479C /* wiced_bt_mesh_db.h in Headers */,
+				186FD7FC251C3E6F00C17DF2 /* wiced_bt_ota_firmware_upgrade.h in Headers */,
+				186FD7F9251C3E6F00C17DF2 /* wiced_bt_mesh_models.h in Headers */,
+				186FD7DB251C3E3A00C17DF2 /* wiced_bt_dev.h in Headers */,
+				186FD808251C3EC800C17DF2 /* wiced_hal_rand.h in Headers */,
+				18A24B3A2519A263000A6883 /* wiced_memory.h in Headers */,
+				1868DBA12194354B00CC27FB /* trace.h in Headers */,
+				1828D3A12384FC080006479C /* aes_cmac.h in Headers */,
+				186FD7DF251C3E3A00C17DF2 /* wiced.h in Headers */,
+				186FD81F251C3F5E00C17DF2 /* l2cdefs.h in Headers */,
+				1868D95D2193E67300CC27FB /* MeshFramework.h in Headers */,
+				186FD812251C3F0C00C17DF2 /* brcm_fw_types.h in Headers */,
+				186FD7E1251C3E3A00C17DF2 /* wiced_bt_gatt_util.h in Headers */,
+				186FD7E0251C3E3A00C17DF2 /* wiced_bt_gatt.h in Headers */,
+				186BF719238F741D0046247C /* mode_hdr.h in Headers */,
+				186BF713238F741D0046247C /* ccm.h in Headers */,
+				186BF716238F741D0046247C /* brg_types.h in Headers */,
+				186FD7F5251C3E6F00C17DF2 /* wiced_bt_mesh_client.h in Headers */,
+				186FD7FE251C3E6F00C17DF2 /* sha2.h in Headers */,
+				186FD7E2251C3E3A00C17DF2 /* wiced_bt_cfg.h in Headers */,
+				186BF71B238F741D0046247C /* p_256_types.h in Headers */,
+				18A24B472519A7EC000A6883 /* clock_timer.h in Headers */,
+				186FD7FA251C3E6F00C17DF2 /* wiced_bt_mesh_event.h in Headers */,
+				1828D32B2384EB6E0006479C /* meshdb.h in Headers */,
+				186BF715238F741D0046247C /* brg_endian.h in Headers */,
+				186BF712238F741D0046247C /* ecdh.h in Headers */,
+				186FD820251C3F5E00C17DF2 /* hcidefs.h in Headers */,
+				186FD809251C3EC800C17DF2 /* wiced_timer.h in Headers */,
+				186FD7F6251C3E6F00C17DF2 /* wiced_bt_mesh_provision.h in Headers */,
+				1828D3292384EB6E0006479C /* wiced_mesh_client.h in Headers */,
+				186BF717238F741D0046247C /* p_256_ecc_pp.h in Headers */,
+				186FD81E251C3F5E00C17DF2 /* bt_types.h in Headers */,
+				186FD7F8251C3E6F00C17DF2 /* wiced_bt_mesh_model_utils.h in Headers */,
+				186FD7FD251C3E6F00C17DF2 /* wiced_bt_mesh_app.h in Headers */,
+				1868DBA02194354B00CC27FB /* mesh_main.h in Headers */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXHeadersBuildPhase section */
+
+/* Begin PBXNativeTarget section */
+		1868D9572193E67300CC27FB /* MeshFramework */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1868D9602193E67300CC27FB /* Build configuration list for PBXNativeTarget "MeshFramework" */;
+			buildPhases = (
+				1868D9532193E67300CC27FB /* Headers */,
+				1868DBAC2194406500CC27FB /* ShellScript */,
+				1868D9542193E67300CC27FB /* Sources */,
+				1868D9552193E67300CC27FB /* Frameworks */,
+				1868D9562193E67300CC27FB /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = MeshFramework;
+			productName = MeshFramework;
+			productReference = 1868D9582193E67300CC27FB /* MeshFramework.framework */;
+			productType = "com.apple.product-type.framework";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		1868D94F2193E67300CC27FB /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 1140;
+				ORGANIZATIONNAME = "Cypress Semiconductor";
+				TargetAttributes = {
+					1868D9572193E67300CC27FB = {
+						CreatedOnToolsVersion = 10.1;
+						LastSwiftMigration = 1020;
+					};
+				};
+			};
+			buildConfigurationList = 1868D9522193E67300CC27FB /* Build configuration list for PBXProject "MeshFramework" */;
+			compatibilityVersion = "Xcode 9.3";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 1868D94E2193E67300CC27FB;
+			productRefGroup = 1868D9592193E67300CC27FB /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				1868D9572193E67300CC27FB /* MeshFramework */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		1868D9562193E67300CC27FB /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		1868DBAC2194406500CC27FB /* ShellScript */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# Type a script or drag a script file from your workspace to insert its path.\n###############################################################################\n# This script is used to update libs/libwicedmesh.a automatically based on\n# the build configuration of Debug or Release.\n# Dudley Du <dudl@cypress.com>\n###############################################################################\nLIBSDIR=\"$SRCROOT/meshcore/libwicedmesh/libs\"\nif [[ ! -d \"$LIBSDIR\" ]]; then\necho \"error: not found directory: \\\"$SRCROOT/$PROJECT_NAME/meshcore/libwicedmesh/libs\\\"\"\nexit 1\nfi\n\nif [[ \"$CONFIGURATION\" == \"Debug\" && -f \"$LIBSDIR/debug/libwicedmesh.a\" ]]; then\ndiff \"$LIBSDIR/libwicedmesh.a\" \"$LIBSDIR/debug/libwicedmesh.a\" 2>/dev/null 1>&2\nif [ $? -ne 0 ]; then\nrm -f \"$LIBSDIR/libwicedmesh.a\"\ncp -f \"$LIBSDIR/debug/libwicedmesh.a\" \"$LIBSDIR/\"\nfi\nfi\n\nif [[ \"$CONFIGURATION\" == \"Release\" && -f \"$LIBSDIR/release/libwicedmesh.a\" ]]; then\ndiff \"$LIBSDIR/libwicedmesh.a\" \"$LIBSDIR/release/libwicedmesh.a\" 2>/dev/null 1>&2\nif [ $? -ne 0 ]; then\nrm -f \"$LIBSDIR/libwicedmesh.a\"\ncp -f \"$LIBSDIR/release/libwicedmesh.a\" \"$LIBSDIR/\"\nfi\nfi\n\nif [[ ! -f \"$LIBSDIR/libwicedmesh.a\" ]]; then\necho \"error: fail to install $CONFIGURATION libwicedmesh.a library file, not found. Path: \\\"$LIBSDIR\\\"/libwicedmesh.a\"\nelse\necho \"success, install $CONFIGURATION libwicedmesh.a library to \\\"$LIBSDIR/libwicedmesh.a\\\"\"\nfi\n###############################################################################\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		1868D9542193E67300CC27FB /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1868D9642193E6A300CC27FB /* MeshFrameworkManager.swift in Sources */,
+				1828D3A42384FC080006479C /* aes.cpp in Sources */,
+				1828D3A72384FC080006479C /* aes_cmac.cpp in Sources */,
+				1868DBA52194354B00CC27FB /* MeshNativeHelper.m in Sources */,
+				180E2AB521A65CE60066F66E /* MeshStorageSettings.swift in Sources */,
+				18A692D821B906BC00E4B3DC /* PlatformManager.swift in Sources */,
+				1828D3E82384FE380006479C /* p_256_multprecision.c in Sources */,
+				1828D32E2384EB6E0006479C /* wiced_mesh_client.c in Sources */,
+				1828D3AC2384FC080006479C /* ccm.cpp in Sources */,
+				1868DBA42194354B00CC27FB /* mesh_app.c in Sources */,
+				1865F5AE221E3D2700263C8B /* OtaDevice.swift in Sources */,
+				1828D32A2384EB6E0006479C /* meshdb.c in Sources */,
+				1828D39D2384FC080006479C /* p_256_ecc_pp.c in Sources */,
+				1865F5A6221D442900263C8B /* OtaUpgrader.swift in Sources */,
+				18C0813A21B6866400A166F8 /* TrackingHelper.swift in Sources */,
+				1828D32D2384EB6E0006479C /* wiced_bt_mesh_db.c in Sources */,
+				1828D39E2384FC080006479C /* p_256_curvepara.c in Sources */,
+				1868DBA32194354B00CC27FB /* mesh_main.c in Sources */,
+				1865F5AC221D5D1400263C8B /* OtaManager.swift in Sources */,
+				1868DBAF219446F100CC27FB /* MeshGattClient.swift in Sources */,
+				180E2AAF21A53EA40066F66E /* MeshDevice.swift in Sources */,
+				180E2AB721A66FC70066F66E /* MeshUtility.swift in Sources */,
+				1865F5A8221D487000263C8B /* OtaConstants.swift in Sources */,
+				180E2ABC21A6C5D10066F66E /* MeshConstants.swift in Sources */,
+				1868DB802194354B00CC27FB /* trace.c in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		1868D95E2193E67300CC27FB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEFINES_MODULE = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+					"MESH_OVER_GATT_ONLY=1",
+					"PB_GATT_SUPPORTED=1",
+					"WICED_BT_TRACE_ENABLE=1",
+					"WICED_BT_MESH_TRACE_ENABLE=1",
+					MESH_DFU_SUPPORTED,
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				OTHER_LDFLAGS = "-ObjC";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				VALID_ARCHS = "arm64 arm64e armv7 armv7s x86_64 i386";
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Debug;
+		};
+		1868D95F2193E67300CC27FB /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEFINES_MODULE = NO;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"MESH_OVER_GATT_ONLY=1",
+					"PB_GATT_SUPPORTED=1",
+					MESH_DFU_SUPPORTED,
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 9.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				OTHER_LDFLAGS = "-ObjC";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				VALIDATE_PRODUCT = YES;
+				VERSIONING_SYSTEM = "apple-generic";
+				VERSION_INFO_PREFIX = "";
+			};
+			name = Release;
+		};
+		1868D9612193E67300CC27FB /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_IDENTITY = "";
+				CODE_SIGN_STYLE = Automatic;
+				DEFINES_MODULE = YES;
+				DEVELOPMENT_TEAM = LCV43QB9EG;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				GCC_PREPROCESSOR_DEFINITIONS = "$(inherited)";
+				INFOPLIST_FILE = MeshFramework/Info.plist;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/meshcore/libwicedmesh/libs",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.cypress.le.mesh.MeshFramework;
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SKIP_INSTALL = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALID_ARCHS = "$(ARCHS_STANDARD) arm64e armv7s i386 x86_64";
+			};
+			name = Debug;
+		};
+		1868D9622193E67300CC27FB /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES = YES;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_IDENTITY = "";
+				CODE_SIGN_STYLE = Automatic;
+				DEFINES_MODULE = YES;
+				DEVELOPMENT_TEAM = LCV43QB9EG;
+				DYLIB_COMPATIBILITY_VERSION = 1;
+				DYLIB_CURRENT_VERSION = 1;
+				DYLIB_INSTALL_NAME_BASE = "@rpath";
+				GCC_PREPROCESSOR_DEFINITIONS = "$(inherited)";
+				INFOPLIST_FILE = MeshFramework/Info.plist;
+				INSTALL_PATH = "$(LOCAL_LIBRARY_DIR)/Frameworks";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/meshcore/libwicedmesh/libs",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.cypress.le.mesh.MeshFramework;
+				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
+				SKIP_INSTALL = YES;
+				SWIFT_OBJC_BRIDGING_HEADER = "";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALID_ARCHS = "$(ARCHS_STANDARD) arm64e armv7s";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		1868D9522193E67300CC27FB /* Build configuration list for PBXProject "MeshFramework" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1868D95E2193E67300CC27FB /* Debug */,
+				1868D95F2193E67300CC27FB /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		1868D9602193E67300CC27FB /* Build configuration list for PBXNativeTarget "MeshFramework" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				1868D9612193E67300CC27FB /* Debug */,
+				1868D9622193E67300CC27FB /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 1868D94F2193E67300CC27FB /* Project object */;
+}

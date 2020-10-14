@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+*
+* Copyright Cypress Semiconductor $
+*
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android" >
+
+    <item android:id="@android:id/background">
+        <shape>
+            <corners android:radius="2dp" />
+
+            <gradient
+                android:angle="270"
+                android:centerColor="#aaa"
+                android:centerY="0.75"
+                android:endColor="#ccc"
+                android:startColor="#eee" />
+        </shape>
+    </item>
+    <item android:id="@android:id/progress">
+        <clip>
+            <shape>
+                <corners android:radius="2dp" />
+
+                <gradient
+                    android:angle="270"
+                    android:endColor="#003760"
+                    android:startColor="#005794" />
+            </shape>
+        </clip>
+    </item>
+
+</layer-list>

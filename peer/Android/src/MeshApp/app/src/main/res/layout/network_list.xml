@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical" android:layout_width="wrap_content"
+    android:layout_margin="@dimen/activity_horizontal_margin"
+    android:layout_height="wrap_content">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_margin="@dimen/activity_horizontal_margin"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="Avaliable Networks"
+        android:textAllCaps="true"
+        android:id="@+id/textView4"
+        android:textColor="@color/primary"
+        android:layout_marginBottom="@dimen/activity_horizontal_margin"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentStart="true" />
+
+    <ListView
+        android:layout_width="wrap_content"
+        android:layout_margin="@dimen/activity_horizontal_margin"
+        android:layout_height="wrap_content"
+        android:id="@+id/listView3"
+        android:entries="@array/network_list"
+        android:layout_below="@+id/textView4"
+        android:drawSelectorOnTop="false"
+        android:listSelector="@color/light_primary"
+        android:choiceMode="singleChoice"
+       />
+</RelativeLayout>

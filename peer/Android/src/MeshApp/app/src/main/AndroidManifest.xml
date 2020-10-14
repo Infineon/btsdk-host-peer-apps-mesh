@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    package="com.cypress.le.mesh.meshapp">
+    <uses-permission android:name="android.permission.BLUETOOTH" />
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.GET_ACCOUNTS" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.READ_INTERNAL_STORAGE" />
+    <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.MANAGE_DOCUMENTS" />
+    <uses-permission android:name="android.permission.WRITE_INTERNAL_STORAGE" />
+    <application
+        android:name=".MeshApp"
+        android:allowBackup= "false"
+        android:icon="@mipmap/bulbs_red"
+        android:label="@string/app_name"
+        android:largeHeap="true"
+        android:screenOrientation="portrait"
+        android:supportsRtl="true"
+        android:windowSoftInputMode="adjustPan"
+        android:usesCleartextTraffic="true"
+        android:theme="@style/AppTheme">
+        <activity
+            android:name=".Splash"
+            android:label="@string/app_name">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name=".ActivityGroup"
+            android:label="@string/title_activity_group"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".ActivityDfu"
+            android:label="DFU Upgrade"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="stateHidden" />
+        <activity
+            android:name=".ActivityOta"
+            android:label="OTA Upgrade"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".NewRoom"
+            android:label="@string/title_activity_add_group"
+            android:screenOrientation="portrait"
+            android:windowSoftInputMode="stateHidden" />
+        <activity
+            android:name=".Delete"
+            android:label="@string/title_activity_delete"
+            android:screenOrientation="portrait" />
+
+        <service
+            android:name=".LightingService"
+            android:enabled="true"
+            android:exported="true" />
+
+        <activity
+            android:name=".MainActivity"
+            android:label="@string/title_activity_splash"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".ActivityModel"
+            android:label="@string/title_activity_activity_model"
+            android:parentActivityName=".ActivityGroup"
+            android:theme="@style/Theme.AppCompat.DayNight.DarkActionBar">
+
+            <!-- <meta-data -->
+            <!-- android:name="android.support.PARENT_ACTIVITY" -->
+            <!-- android:value=".ActivityGroup" -->
+            <!-- tools:replace= "android:value"/> -->
+        </activity>
+
+        <service android:name="com.cypress.le.mesh.meshframework.MeshService"></service>
+        <service
+            android:name=".MeshAm"
+            android:exported="true">
+        </service>
+
+        <activity android:name=".SensorSetting"
+            android:theme="@style/Theme.AppCompat.DayNight.DarkActionBar"></activity>
+        <activity android:name=".LightController"
+            android:theme="@style/Theme.AppCompat.DayNight.DarkActionBar"></activity>
+        <uses-library android:name ="org.apache.http.legacy" android:required ="false"/>
+    </application>
+
+</manifest>
