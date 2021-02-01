@@ -2,9 +2,9 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/Prebuild.iml" filepath="$PROJECT_DIR$/Prebuild.iml" />
-      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
-      <module fileurl="file://$PROJECT_DIR$/wicedmesh/wicedmesh.iml" filepath="$PROJECT_DIR$/wicedmesh/wicedmesh.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/app/Prebuild.app.iml" filepath="$PROJECT_DIR$/.idea/modules/app/Prebuild.app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/wicedmesh/Prebuild.wicedmesh.iml" filepath="$PROJECT_DIR$/.idea/modules/wicedmesh/Prebuild.wicedmesh.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/src.Prebuild.iml" filepath="$PROJECT_DIR$/.idea/modules/src.Prebuild.iml" />
     </modules>
   </component>
 </project>

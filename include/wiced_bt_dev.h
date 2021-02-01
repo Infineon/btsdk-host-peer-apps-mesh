@@ -4,12 +4,12 @@
 * Provides the API declarations for device management.
 *
 *//*****************************************************************************
-* Copyright 2016-2020, Cypress Semiconductor Corporation or a subsidiary of
-* Cypress Semiconductor Corporation. All Rights Reserved.
+* Copyright 2016-2021, Cypress Semiconductor Corporation (an Infineon company) or
+* an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
 *
 * This software, including source code, documentation and related
-* materials ("Software"), is owned by Cypress Semiconductor Corporation
-* or one of its subsidiaries ("Cypress") and is protected by and subject to
+* materials ("Software") is owned by Cypress Semiconductor Corporation
+* or one of its affiliates ("Cypress") and is protected by and subject to
 * worldwide patent protection (United States and foreign),
 * United States copyright laws and international treaty provisions.
 * Therefore, you may use this Software only as provided in the license
@@ -18,7 +18,7 @@
 * If no EULA applies, Cypress hereby grants you a personal, non-exclusive,
 * non-transferable license to copy, modify, and compile the Software
 * source code solely for use in connection with Cypress's
-* integrated circuit products. Any reproduction, modification, translation,
+* integrated circuit products.  Any reproduction, modification, translation,
 * compilation, or representation of this Software except as specified
 * above is prohibited without the express written permission of Cypress.
 *
@@ -1974,6 +1974,18 @@ wiced_bool_t wiced_bt_get_identity_address( wiced_bt_device_address_t bd_addr,
 wiced_result_t wiced_bt_dev_set_link_policy(wiced_bt_device_address_t remote_bda,
         uint16_t *settings);
 
+#define wiced_bt_set_device_class BTM_SetDeviceClass
+/**
+ * Function         wiced_bt_set_device_class
+ *
+ *                  This function is called to set the local device class
+ *
+ * @param[in]       dev_class      : local device class
+ *
+ * @return          wiced_result_t
+*/
+
+wiced_result_t wiced_bt_set_device_class(wiced_bt_dev_class_t dev_class);
 
 /** \} group_dev_functions_sec */
 

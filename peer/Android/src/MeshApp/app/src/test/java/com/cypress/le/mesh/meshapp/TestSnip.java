@@ -26,8 +26,8 @@ package com.cypress.le.mesh.meshapp;
 import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
-import android.support.annotation.Nullable;
-import android.support.v4.graphics.ColorUtils;
+import androidx.annotation.Nullable;
+import androidx.core.graphics.ColorUtils;
 
 import com.cypress.le.mesh.meshframework.IMeshControllerCallback;
 import com.cypress.le.mesh.meshframework.MeshController;

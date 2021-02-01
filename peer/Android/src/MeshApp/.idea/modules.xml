@@ -2,10 +2,10 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/MeshApp.iml" filepath="$PROJECT_DIR$/MeshApp.iml" />
-      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
-      <module fileurl="file://$PROJECT_DIR$/meshcore/meshcore.iml" filepath="$PROJECT_DIR$/meshcore/meshcore.iml" />
-      <module fileurl="file://$PROJECT_DIR$/meshframework/meshframework.iml" filepath="$PROJECT_DIR$/meshframework/meshframework.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/app/MeshApp.app.iml" filepath="$PROJECT_DIR$/.idea/modules/app/MeshApp.app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/meshcore/MeshApp.meshcore.iml" filepath="$PROJECT_DIR$/.idea/modules/meshcore/MeshApp.meshcore.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/meshframework/MeshApp.meshframework.iml" filepath="$PROJECT_DIR$/.idea/modules/meshframework/MeshApp.meshframework.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/src.MeshApp.iml" filepath="$PROJECT_DIR$/.idea/modules/src.MeshApp.iml" />
     </modules>
   </component>
 </project>

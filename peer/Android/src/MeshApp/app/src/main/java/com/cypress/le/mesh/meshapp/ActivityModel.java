@@ -31,8 +31,8 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.os.Bundle;
 import android.os.IBinder;
-import android.support.v7.app.ActionBar;
-import android.support.v7.app.AppCompatActivity;
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.text.method.ScrollingMovementMethod;
 import android.util.Log;
@@ -49,11 +49,9 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.cypress.le.mesh.meshapp.Adapter.GrpDeviceListAdapter;
 import com.cypress.le.mesh.meshapp.Adapter.NodeAdapter;
 import com.cypress.le.mesh.meshapp.LightingService.IServiceCallback;
 import com.cypress.le.mesh.meshframework.IMeshControllerCallback;
-import com.cypress.le.mesh.meshframework.MeshController;
 
 import java.util.ArrayList;
 import java.util.Arrays;

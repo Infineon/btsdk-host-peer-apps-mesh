@@ -1,10 +1,10 @@
 /*
-* Copyright 2016-2020, Cypress Semiconductor Corporation or a subsidiary of
-* Cypress Semiconductor Corporation. All Rights Reserved.
+* Copyright 2016-2021, Cypress Semiconductor Corporation (an Infineon company) or
+* an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
 *
 * This software, including source code, documentation and related
-* materials ("Software"), is owned by Cypress Semiconductor Corporation
-* or one of its subsidiaries ("Cypress") and is protected by and subject to
+* materials ("Software") is owned by Cypress Semiconductor Corporation
+* or one of its affiliates ("Cypress") and is protected by and subject to
 * worldwide patent protection (United States and foreign),
 * United States copyright laws and international treaty provisions.
 * Therefore, you may use this Software only as provided in the license
@@ -13,7 +13,7 @@
 * If no EULA applies, Cypress hereby grants you a personal, non-exclusive,
 * non-transferable license to copy, modify, and compile the Software
 * source code solely for use in connection with Cypress's
-* integrated circuit products. Any reproduction, modification, translation,
+* integrated circuit products.  Any reproduction, modification, translation,
 * compilation, or representation of this Software except as specified
 * above is prohibited without the express written permission of Cypress.
 *
@@ -259,7 +259,7 @@ int main()
 wiced_bt_mesh_db_mesh_t *mesh_json_read_file(FILE *fp)
 {
     char tagname[MAX_TAG_NAME];
-    char c1;
+    char c1, c_temp;
     uint32_t tags = 0;
     wiced_bt_mesh_db_mesh_t *p_mesh = NULL;
     wiced_bool_t failed = WICED_FALSE;
@@ -398,7 +398,7 @@ wiced_bt_mesh_db_mesh_t *mesh_json_read_file(FILE *fp)
         if (skip_space(fp) != ',')
             break;
 
-        c1 = skip_space(fp);
+        c_temp = skip_space(fp);
     }
     // All the fields are retrieved. Verify that all mandatory fields are present
     if (failed || ((tags & MESH_JSON_TAG_MANDATORY) != MESH_JSON_TAG_MANDATORY))
@@ -719,7 +719,9 @@ int mesh_json_read_uint8(FILE *fp, char prefix, uint8_t *value)
     {
         if ((c1 < '0') || (c1 > '9'))
         {
-            fseek(fp, -1, SEEK_CUR);
+            if (fseek(fp, -1, SEEK_CUR) != 0)
+                return 0;
+
             *value = (uint8_t)temp;
             return 1;
         }
@@ -744,7 +746,9 @@ int mesh_json_read_uint16(FILE *fp, char prefix, uint16_t *value)
     {
         if ((c1 < '0') || (c1 > '9'))
         {
-            fseek(fp, -1, SEEK_CUR);
+            if (fseek(fp, -1, SEEK_CUR) != 0)
+                return 0;
+
             *value = (uint16_t)temp;
             return 1;
         }
@@ -769,7 +773,9 @@ int mesh_json_read_uint32(FILE *fp, char prefix, uint32_t *value)
     {
         if ((c1 < '0') || (c1 > '9'))
         {
-            fseek(fp, -1, SEEK_CUR);
+            if (fseek(fp, -1, SEEK_CUR) != 0)
+                return 0;
+
             *value = (uint32_t)temp;
             return 1;
         }
@@ -864,7 +870,9 @@ int mesh_json_read_name(FILE *fp, char prefix, int max_len, char **p_name)
     if (*p_name == NULL)
         return 0;
 
-    fseek(fp, -namelen, SEEK_CUR);
+    if (fseek(fp, -namelen, SEEK_CUR) != 0)
+        return 0;
+
     return mesh_json_read_string(fp, *p_name, namelen);
 }
 
@@ -880,7 +888,9 @@ int mesh_json_read_security(FILE *fp, char prefix, uint8_t *security)
     pos = ftell(fp);
 
     namelen = mesh_json_read_string(fp, NULL, 512);
-    fseek(fp, -namelen, SEEK_CUR);
+
+    if (fseek(fp, -namelen, SEEK_CUR) != 0)
+        return 0;
 
     if (namelen == 4)
     {

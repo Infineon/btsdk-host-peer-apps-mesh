@@ -13,10 +13,10 @@ add_definitions(-DMESH_DFU_SUPPORTED)
 
 set(INCLUDE_DIR
   "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../../../../../../../dev-kit/btsdk-include/"
-  "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../../../../../../../dev-kit/baselib/20819A1/include/hal/"
-  "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../../../../../../../dev-kit/baselib/20819A1/include/internal"
-  "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../../../../../../../dev-kit/baselib/20819A1/include/stack/"
-  "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../../../../../../../dev-kit/baselib/20819A1/include/"
+  "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../../../../../../../dev-kit/baselib/20819A1/COMPONENT_20819A1/include/hal/"
+  "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../../../../../../../dev-kit/baselib/20819A1/COMPONENT_20819A1/include/internal"
+  "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../../../../../../../dev-kit/baselib/20819A1/COMPONENT_20819A1/include/stack/"
+  "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../../../../../../../dev-kit/baselib/20819A1/COMPONENT_20819A1/include/"
   "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../../../../../../../dev-kit/libraries/internal/mesh_core_lib/"
   "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../../../../../../../dev-kit/libraries/internal/mesh_models_lib/"
   "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../../../../../../../dev-kit/libraries/internal/mesh_provisioner_lib/"

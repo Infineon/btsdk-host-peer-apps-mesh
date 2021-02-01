@@ -1,10 +1,10 @@
 #
-# Copyright 2016-2020, Cypress Semiconductor Corporation or a subsidiary of
-# Cypress Semiconductor Corporation. All Rights Reserved.
+# Copyright 2016-2021, Cypress Semiconductor Corporation (an Infineon company) or
+# an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
 #
 # This software, including source code, documentation and related
-# materials ("Software"), is owned by Cypress Semiconductor Corporation
-# or one of its subsidiaries ("Cypress") and is protected by and subject to
+# materials ("Software") is owned by Cypress Semiconductor Corporation
+# or one of its affiliates ("Cypress") and is protected by and subject to
 # worldwide patent protection (United States and foreign),
 # United States copyright laws and international treaty provisions.
 # Therefore, you may use this Software only as provided in the license
@@ -13,7 +13,7 @@
 # If no EULA applies, Cypress hereby grants you a personal, non-exclusive,
 # non-transferable license to copy, modify, and compile the Software
 # source code solely for use in connection with Cypress's
-# integrated circuit products. Any reproduction, modification, translation,
+# integrated circuit products.  Any reproduction, modification, translation,
 # compilation, or representation of this Software except as specified
 # above is prohibited without the express written permission of Cypress.
 #
@@ -37,11 +37,11 @@ MESH_DFU_SUPPORT := FALSE
 include $(CLEAR_VARS)
 LOCAL_MODULE    := ccStaticLibrary
 LOCAL_SRC_FILES := prebuild/$(TARGET_ARCH_ABI)/libwicedmesh.a
-LOCAL_C_INCLUDES := $(wildcard $(LOCAL_PATH)/../../../../../../../../../../dev-kit/baselib/20819A1/include)
+LOCAL_C_INCLUDES := $(wildcard $(LOCAL_PATH)/../../../../../../../../../../dev-kit/baselib/20819A1/COMPONENT_20819A1/include)
 LOCAL_C_INCLUDES += $(wildcard $(LOCAL_PATH)/../../../../../../../../../../dev-kit/btsdk-include)
-LOCAL_C_INCLUDES += $(wildcard $(LOCAL_PATH)/../../../../../../../../../../dev-kit/baselib/20819A1/include/hal)
-LOCAL_C_INCLUDES += $(wildcard $(LOCAL_PATH)/../../../../../../../../../../dev-kit/baselib/20819A1/include/internal)
-LOCAL_C_INCLUDES += $(wildcard $(LOCAL_PATH)/../../../../../../../../../../dev-kit/baselib/20819A1/include/stack)
+LOCAL_C_INCLUDES += $(wildcard $(LOCAL_PATH)/../../../../../../../../../../dev-kit/baselib/20819A1/COMPONENT_20819A1/include/hal)
+LOCAL_C_INCLUDES += $(wildcard $(LOCAL_PATH)/../../../../../../../../../../dev-kit/baselib/20819A1/COMPONENT_20819A1/include/internal)
+LOCAL_C_INCLUDES += $(wildcard $(LOCAL_PATH)/../../../../../../../../../../dev-kit/baselib/20819A1/COMPONENT_20819A1/include/stack)
 LOCAL_C_INCLUDES += $(wildcard $(LOCAL_PATH)/../../../../../../../../include)
 #LOCAL_C_INCLUDES += $(wildcard $(LOCAL_PATH)/../../../../../../../../include/common)
 #LOCAL_C_INCLUDES += $(wildcard $(LOCAL_PATH)/../../../../../../../../include/hal)
@@ -80,11 +80,11 @@ LOCAL_SRC_FILES := $(MY_CPP_LIST:$(LOCAL_PATH)/%=%)
 LOCAL_STATIC_LIBRARIES := ccStaticLibrary
 LOCAL_CFLAGS += -fno-stack-protector
 LOCAL_LDLIBS := -llog
-LOCAL_C_INCLUDES := $(wildcard $(LOCAL_PATH)/../../../../../../../../../../dev-kit/baselib/20819A1/include)
+LOCAL_C_INCLUDES := $(wildcard $(LOCAL_PATH)/../../../../../../../../../../dev-kit/baselib/20819A1/COMPONENT_20819A1/include)
 LOCAL_C_INCLUDES += $(wildcard $(LOCAL_PATH)/../../../../../../../../../../dev-kit/btsdk-include)
-LOCAL_C_INCLUDES += $(wildcard $(LOCAL_PATH)/../../../../../../../../../../dev-kit/baselib/20819A1/include/hal)
-LOCAL_C_INCLUDES += $(wildcard $(LOCAL_PATH)/../../../../../../../../../../dev-kit/baselib/20819A1/include/internal)
-LOCAL_C_INCLUDES += $(wildcard $(LOCAL_PATH)/../../../../../../../../../../dev-kit/baselib/20819A1/include/stack)
+LOCAL_C_INCLUDES += $(wildcard $(LOCAL_PATH)/../../../../../../../../../../dev-kit/baselib/20819A1/COMPONENT_20819A1/include/hal)
+LOCAL_C_INCLUDES += $(wildcard $(LOCAL_PATH)/../../../../../../../../../../dev-kit/baselib/20819A1/COMPONENT_20819A1/include/internal)
+LOCAL_C_INCLUDES += $(wildcard $(LOCAL_PATH)/../../../../../../../../../../dev-kit/baselib/20819A1/COMPONENT_20819A1/include/stack)
 LOCAL_C_INCLUDES += $(wildcard $(LOCAL_PATH)/../../../../../../../../include)
 #LOCAL_C_INCLUDES += $(wildcard $(LOCAL_PATH)/../../../../../../../../include/common)
 #LOCAL_C_INCLUDES += $(wildcard $(LOCAL_PATH)/../../../../../../../../include/hal)

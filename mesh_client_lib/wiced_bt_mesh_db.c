@@ -1,10 +1,10 @@
 /*
-* Copyright 2016-2020, Cypress Semiconductor Corporation or a subsidiary of
-* Cypress Semiconductor Corporation. All Rights Reserved.
+* Copyright 2016-2021, Cypress Semiconductor Corporation (an Infineon company) or
+* an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
 *
 * This software, including source code, documentation and related
-* materials ("Software"), is owned by Cypress Semiconductor Corporation
-* or one of its subsidiaries ("Cypress") and is protected by and subject to
+* materials ("Software") is owned by Cypress Semiconductor Corporation
+* or one of its affiliates ("Cypress") and is protected by and subject to
 * worldwide patent protection (United States and foreign),
 * United States copyright laws and international treaty provisions.
 * Therefore, you may use this Software only as provided in the license
@@ -13,7 +13,7 @@
 * If no EULA applies, Cypress hereby grants you a personal, non-exclusive,
 * non-transferable license to copy, modify, and compile the Software
 * source code solely for use in connection with Cypress's
-* integrated circuit products. Any reproduction, modification, translation,
+* integrated circuit products.  Any reproduction, modification, translation,
 * compilation, or representation of this Software except as specified
 * above is prohibited without the express written permission of Cypress.
 *
@@ -271,6 +271,7 @@ char *wiced_bt_mesh_db_get_all_networks(void)
     n = scandir(".", &namelist, parse_ext, alphasort);
     if (n < 0) {
         perror("scandir");
+        wiced_bt_free_buffer(buf);
         return NULL;
     }
     else {
@@ -310,7 +311,10 @@ char *wiced_bt_mesh_db_get_all_networks(void)
 
     p_buf = buf;
     if ((hFile = _findfirst("*.json", &json_file)) == -1L)
+    {
+        wiced_bt_free_buffer(buf);
         return NULL;
+    }
     do
     {
         strcpy(p_buf, json_file.name);
@@ -1190,10 +1194,10 @@ uint16_t *wiced_bt_mesh_db_get_element_group_list(wiced_bt_mesh_db_mesh_t *mesh_
     // publication can also add a group
     num_subscriptions += 2;
 
-    if ((p_group_list = (uint16_t *)wiced_bt_get_buffer(sizeof(p_group_list) * num_subscriptions)) == NULL)
+    if ((p_group_list = (uint16_t *)wiced_bt_get_buffer(sizeof(uint16_t) * num_subscriptions)) == NULL)
         return NULL;
 
-    memset(p_group_list, 0, (sizeof(p_group_list) * num_subscriptions));
+    memset(p_group_list, 0, (sizeof(uint16_t) * num_subscriptions));
 
     for (model_idx = 0; model_idx < element->num_models; model_idx++)
     {
@@ -2502,7 +2506,7 @@ wiced_bool_t wiced_bt_mesh_db_node_config_complete(wiced_bt_mesh_db_mesh_t *mesh
 wiced_bool_t wiced_bt_mesh_db_node_model_pub_get(wiced_bt_mesh_db_mesh_t *mesh_db, uint16_t element_addr, uint16_t company_id, uint16_t model_id, uint16_t *pub_addr, uint16_t *app_key_idx, uint8_t *publish_ttl, uint32_t *publish_period, uint16_t *publish_retransmit_count, uint32_t *publish_retransmit_interval, uint8_t *credentials)
 {
     wiced_bt_mesh_db_model_t *model = find_node_model(mesh_db, element_addr, company_id, model_id);
-    if (model == NULL)
+    if ((model == NULL) || (model->pub.address == 0))
         return WICED_FALSE;
 
     *pub_addr = model->pub.address;

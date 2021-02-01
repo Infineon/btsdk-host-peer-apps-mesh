@@ -1,10 +1,10 @@
 /*
- * Copyright 2016-2020, Cypress Semiconductor Corporation or a subsidiary of
- * Cypress Semiconductor Corporation. All Rights Reserved.
+ * Copyright 2016-2021, Cypress Semiconductor Corporation (an Infineon company) or
+ * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
  *
  * This software, including source code, documentation and related
- * materials ("Software"), is owned by Cypress Semiconductor Corporation
- * or one of its subsidiaries ("Cypress") and is protected by and subject to
+ * materials ("Software") is owned by Cypress Semiconductor Corporation
+ * or one of its affiliates ("Cypress") and is protected by and subject to
  * worldwide patent protection (United States and foreign),
  * United States copyright laws and international treaty provisions.
  * Therefore, you may use this Software only as provided in the license
@@ -13,7 +13,7 @@
  * If no EULA applies, Cypress hereby grants you a personal, non-exclusive,
  * non-transferable license to copy, modify, and compile the Software
  * source code solely for use in connection with Cypress's
- * integrated circuit products. Any reproduction, modification, translation,
+ * integrated circuit products.  Any reproduction, modification, translation,
  * compilation, or representation of this Software except as specified
  * above is prohibited without the express written permission of Cypress.
  *
@@ -270,6 +270,9 @@ void process_core_seq_changed(uint8_t *p_buffer, uint16_t len)
 void process_core_raw_model_data(uint8_t *p_buffer, uint16_t len)
 {
     wiced_bt_mesh_event_t *p_event = wiced_bt_mesh_event_from_hci_header(&p_buffer, &len);
+    if (p_event == NULL)
+        return;
+
     if ((p_buffer[0] & (MESH_APP_PAYLOAD_OP_LONG | MESH_APP_PAYLOAD_OP_MANUF_SPECIFIC)) == (MESH_APP_PAYLOAD_OP_LONG | MESH_APP_PAYLOAD_OP_MANUF_SPECIFIC))
     {
         p_event->opcode = p_buffer[0] & ~(MESH_APP_PAYLOAD_OP_LONG | MESH_APP_PAYLOAD_OP_MANUF_SPECIFIC);
@@ -377,6 +380,7 @@ void process_provision_end(uint8_t *p_buffer, uint16_t len)
     wiced_bt_mesh_event_t *p_event = wiced_bt_mesh_event_from_hci_header(&p_buffer, &len);
     if (p_event == NULL)
         return;
+
     data.provisioner_addr = p_buffer[0] + ((uint16_t)p_buffer[1] << 8);
     data.addr             = p_buffer[2] + ((uint16_t)p_buffer[3] << 8);
     data.net_key_idx      = p_buffer[4] + ((uint16_t)p_buffer[5] << 8);
@@ -391,6 +395,7 @@ void process_proxy_connection_status(uint8_t *p_buffer, uint16_t len)
     wiced_bt_mesh_event_t *p_event = wiced_bt_mesh_event_from_hci_header(&p_buffer, &len);
     if (p_event == NULL)
         return;
+
     data.provisioner_addr = p_buffer[0] + ((uint16_t)p_buffer[1] << 8);
     data.addr             = p_buffer[2] + ((uint16_t)p_buffer[3] << 8);
     data.connected        = p_buffer[4];
@@ -404,6 +409,7 @@ void process_provision_link_report(uint8_t *p_buffer, uint16_t len)
     wiced_bt_mesh_event_t *p_event = wiced_bt_mesh_event_from_hci_header(&p_buffer, &len);
     if (p_event == NULL)
         return;
+
     data.link_status = p_buffer[0];
     data.rpr_state = p_buffer[1];
     data.reason = p_buffer[2];
@@ -417,6 +423,7 @@ void process_provision_device_capabilities(uint8_t *p_buffer, uint16_t len)
     wiced_bt_mesh_event_t *p_event = wiced_bt_mesh_event_from_hci_header(&p_buffer, &len);
     if (p_event == NULL)
         return;
+
     data.provisioner_addr  = p_buffer[0] + ((uint16_t)p_buffer[1] << 8);
     data.elements_num      = p_buffer[2];
     data.algorithms        = p_buffer[3] + ((uint16_t)p_buffer[4] << 8);
@@ -435,6 +442,7 @@ void process_provision_oob_data(uint8_t *p_buffer, uint16_t len)
     wiced_bt_mesh_event_t *p_event = wiced_bt_mesh_event_from_hci_header(&p_buffer, &len);
     if (p_event == NULL)
         return;
+
     data.provisioner_addr = p_buffer[0] + ((uint16_t)p_buffer[1] << 8);
     data.type = p_buffer[2];
     data.size = p_buffer[3];
@@ -483,8 +491,10 @@ void process_composition_data_status(uint8_t *p_buffer, uint16_t len)
 
     wiced_bt_mesh_config_composition_data_status_data_t *p_comp_data = (wiced_bt_mesh_config_composition_data_status_data_t *)wiced_bt_get_buffer(sizeof(wiced_bt_mesh_config_composition_data_status_data_t) + len - 1);
     if (p_comp_data == NULL)
+    {
+        wiced_bt_mesh_release_event(p_event);
         return;
-
+    }
     p_comp_data->page_number = p_buffer[0];
     p_comp_data->data_len    = len - 1;
     memcpy(p_comp_data->data, &p_buffer[1], len - 1);
@@ -718,96 +728,95 @@ void process_on_off_status(uint8_t *p_buffer, uint16_t len)
 {
     wiced_bt_mesh_onoff_status_data_t data;
     wiced_bt_mesh_event_t *p_event = wiced_bt_mesh_event_from_hci_header(&p_buffer, &len);
+    if (p_event == NULL)
+        return;
 
-    if (p_event != NULL)
-    {
-        data.present_onoff = p_buffer[0];
-        data.target_onoff = p_buffer[1];
-        data.remaining_time = p_buffer[2] + ((uint32_t)p_buffer[3] << 8) + ((uint32_t)p_buffer[4] << 16) + ((uint32_t)p_buffer[5] << 24);
+    data.present_onoff = p_buffer[0];
+    data.target_onoff = p_buffer[1];
+    data.remaining_time = p_buffer[2] + ((uint32_t)p_buffer[3] << 8) + ((uint32_t)p_buffer[4] << 16) + ((uint32_t)p_buffer[5] << 24);
 
-        mesh_provision_process_event(WICED_BT_MESH_ONOFF_STATUS, p_event, &data);
-    }
+    mesh_provision_process_event(WICED_BT_MESH_ONOFF_STATUS, p_event, &data);
 }
 
 void process_level_status(uint8_t *p_buffer, uint16_t len)
 {
     wiced_bt_mesh_level_status_data_t data;
     wiced_bt_mesh_event_t *p_event = wiced_bt_mesh_event_from_hci_header(&p_buffer, &len);
-    if (p_event != NULL)
-    {
-        data.present_level = p_buffer[0] + ((uint16_t)p_buffer[1] << 8);;
-        data.target_level = p_buffer[2] + ((uint16_t)p_buffer[3] << 8);
-        data.remaining_time = p_buffer[4] + ((uint32_t)p_buffer[5] << 8) + ((uint32_t)p_buffer[6] << 16) + ((uint32_t)p_buffer[7] << 24);
+    if (p_event == NULL)
+        return;
 
-        mesh_provision_process_event(WICED_BT_MESH_LEVEL_STATUS, p_event, &data);
-    }
+    data.present_level = p_buffer[0] + ((uint16_t)p_buffer[1] << 8);;
+    data.target_level = p_buffer[2] + ((uint16_t)p_buffer[3] << 8);
+    data.remaining_time = p_buffer[4] + ((uint32_t)p_buffer[5] << 8) + ((uint32_t)p_buffer[6] << 16) + ((uint32_t)p_buffer[7] << 24);
+
+    mesh_provision_process_event(WICED_BT_MESH_LEVEL_STATUS, p_event, &data);
 }
 
 void process_lightness_status(uint8_t *p_buffer, uint16_t len)
 {
     wiced_bt_mesh_light_lightness_status_data_t data;
     wiced_bt_mesh_event_t *p_event = wiced_bt_mesh_event_from_hci_header(&p_buffer, &len);
-    if (p_event != NULL)
-    {
-        data.present = p_buffer[0] + ((uint16_t)p_buffer[1] << 8);;
-        data.target = p_buffer[2] + ((uint16_t)p_buffer[3] << 8);
-        data.remaining_time = p_buffer[4] + ((uint32_t)p_buffer[5] << 8) + ((uint32_t)p_buffer[6] << 16) + ((uint32_t)p_buffer[7] << 24);
+    if (p_event == NULL)
+        return;
 
-        mesh_provision_process_event(WICED_BT_MESH_LIGHT_LIGHTNESS_STATUS, p_event, &data);
-    }
+    data.present = p_buffer[0] + ((uint16_t)p_buffer[1] << 8);;
+    data.target = p_buffer[2] + ((uint16_t)p_buffer[3] << 8);
+    data.remaining_time = p_buffer[4] + ((uint32_t)p_buffer[5] << 8) + ((uint32_t)p_buffer[6] << 16) + ((uint32_t)p_buffer[7] << 24);
+
+    mesh_provision_process_event(WICED_BT_MESH_LIGHT_LIGHTNESS_STATUS, p_event, &data);
 }
 
 void process_hsl_status(uint8_t *p_buffer, uint16_t len)
 {
     wiced_bt_mesh_light_hsl_status_data_t data;
     wiced_bt_mesh_event_t *p_event = wiced_bt_mesh_event_from_hci_header(&p_buffer, &len);
-    if (p_event != NULL)
-    {
-        data.present.lightness = p_buffer[0] + ((uint16_t)p_buffer[1] << 8);;
-        data.present.hue = p_buffer[2] + ((uint16_t)p_buffer[3] << 8);
-        data.present.saturation = p_buffer[4] + ((uint16_t)p_buffer[5] << 8);
-        data.remaining_time = p_buffer[6] + ((uint32_t)p_buffer[7] << 8) + ((uint32_t)p_buffer[8] << 16) + ((uint32_t)p_buffer[9] << 24);
+    if (p_event == NULL)
+        return;
 
-        mesh_provision_process_event(WICED_BT_MESH_LIGHT_HSL_STATUS, p_event, &data);
-    }
+    data.present.lightness = p_buffer[0] + ((uint16_t)p_buffer[1] << 8);;
+    data.present.hue = p_buffer[2] + ((uint16_t)p_buffer[3] << 8);
+    data.present.saturation = p_buffer[4] + ((uint16_t)p_buffer[5] << 8);
+    data.remaining_time = p_buffer[6] + ((uint32_t)p_buffer[7] << 8) + ((uint32_t)p_buffer[8] << 16) + ((uint32_t)p_buffer[9] << 24);
+
+    mesh_provision_process_event(WICED_BT_MESH_LIGHT_HSL_STATUS, p_event, &data);
 }
 
 void process_ctl_status(uint8_t *p_buffer, uint16_t len)
 {
     wiced_bt_mesh_light_ctl_status_data_t data;
     wiced_bt_mesh_event_t *p_event = wiced_bt_mesh_event_from_hci_header(&p_buffer, &len);
-    if (p_event != NULL)
-    {
-        data.present.lightness = p_buffer[0] + ((uint16_t)p_buffer[1] << 8);;
-        data.present.temperature = p_buffer[2] + ((uint16_t)p_buffer[3] << 8);
-        data.target.lightness = p_buffer[4] + ((uint16_t)p_buffer[5] << 8);
-        data.target.temperature = p_buffer[6] + ((uint16_t)p_buffer[7] << 8);
-        data.remaining_time = p_buffer[8] + ((uint32_t)p_buffer[9] << 8) + ((uint32_t)p_buffer[10] << 16) + ((uint32_t)p_buffer[11] << 24);
+    if (p_event == NULL)
+        return;
 
-        mesh_provision_process_event(WICED_BT_MESH_LIGHT_CTL_STATUS, p_event, &data);
-    }
+    data.present.lightness = p_buffer[0] + ((uint16_t)p_buffer[1] << 8);;
+    data.present.temperature = p_buffer[2] + ((uint16_t)p_buffer[3] << 8);
+    data.target.lightness = p_buffer[4] + ((uint16_t)p_buffer[5] << 8);
+    data.target.temperature = p_buffer[6] + ((uint16_t)p_buffer[7] << 8);
+    data.remaining_time = p_buffer[8] + ((uint32_t)p_buffer[9] << 8) + ((uint32_t)p_buffer[10] << 16) + ((uint32_t)p_buffer[11] << 24);
+
+    mesh_provision_process_event(WICED_BT_MESH_LIGHT_CTL_STATUS, p_event, &data);
 }
 
 void process_sensor_descriptor_status(uint8_t *p_buffer, uint16_t len)
 {
     wiced_bt_mesh_sensor_descriptor_status_data_t data = { 0 };
     wiced_bt_mesh_event_t *p_event = wiced_bt_mesh_event_from_hci_header(&p_buffer, &len);
-    if (p_event != NULL)
+    if (p_event == NULL)
+        return;
+
+    while (len >= 9)
     {
-        while (len >= 9)
-        {
-            data.descriptor_list[data.num_descriptors].property_id = p_buffer[0] + ((uint16_t)p_buffer[1] << 8);;
-            data.descriptor_list[data.num_descriptors].positive_tolerance = p_buffer[2] + ((uint16_t)p_buffer[3] << 8);
-            data.descriptor_list[data.num_descriptors].negative_tolerance = p_buffer[4] + ((uint16_t)p_buffer[5] << 8);
-            data.descriptor_list[data.num_descriptors].sampling_function = p_buffer[6];
-            data.descriptor_list[data.num_descriptors].measurement_period = p_buffer[7];
-            data.descriptor_list[data.num_descriptors].update_interval = p_buffer[8];
-            data.num_descriptors++;
-            len -= 9;
-        }
-        mesh_sensor_process_event(p_event->src, WICED_BT_MESH_SENSOR_DESCRIPTOR_STATUS, &data);
-        wiced_bt_mesh_release_event(p_event);
+        data.descriptor_list[data.num_descriptors].property_id = p_buffer[0] + ((uint16_t)p_buffer[1] << 8);;
+        data.descriptor_list[data.num_descriptors].positive_tolerance = p_buffer[2] + ((uint16_t)p_buffer[3] << 8);
+        data.descriptor_list[data.num_descriptors].negative_tolerance = p_buffer[4] + ((uint16_t)p_buffer[5] << 8);
+        data.descriptor_list[data.num_descriptors].sampling_function = p_buffer[6];
+        data.descriptor_list[data.num_descriptors].measurement_period = p_buffer[7];
+        data.descriptor_list[data.num_descriptors].update_interval = p_buffer[8];
+        data.num_descriptors++;
+        len -= 9;
     }
+    mesh_sensor_process_event(p_event->src, WICED_BT_MESH_SENSOR_DESCRIPTOR_STATUS, &data);
+    wiced_bt_mesh_release_event(p_event);
 }
 
 void process_sensor_settings_status(uint8_t *p_buffer, uint16_t len)
@@ -815,6 +824,8 @@ void process_sensor_settings_status(uint8_t *p_buffer, uint16_t len)
     wiced_bt_mesh_sensor_settings_status_data_t data = { 0 };
     int i = 0;
     wiced_bt_mesh_event_t *p_event = wiced_bt_mesh_event_from_hci_header(&p_buffer, &len);
+    if (p_event == NULL)
+        return;
 
     data.property_id = p_buffer[0] + ((uint16_t)p_buffer[1] << 8);
     while (len >= 4)
@@ -831,6 +842,8 @@ void process_sensor_cadence_status(uint8_t *p_buffer, uint16_t len)
 {
     wiced_bt_mesh_sensor_cadence_status_data_t data = { 0 };
     wiced_bt_mesh_event_t *p_event = wiced_bt_mesh_event_from_hci_header(&p_buffer, &len);
+    if (p_event == NULL)
+        return;
 
     data.property_id = p_buffer[0] + ((uint16_t)p_buffer[1] << 8);
     if (len > 2)
@@ -851,6 +864,8 @@ void process_sensor_data_status(uint8_t *p_buffer, uint16_t len)
 {
     wiced_bt_mesh_sensor_status_data_t data = { 0 };
     wiced_bt_mesh_event_t *p_event = wiced_bt_mesh_event_from_hci_header(&p_buffer, &len);
+    if (p_event == NULL)
+        return;
 
     data.property_id = p_buffer[0] + ((uint16_t)p_buffer[1] << 8);
     data.prop_value_len = p_buffer[2];
@@ -862,9 +877,12 @@ void process_sensor_data_status(uint8_t *p_buffer, uint16_t len)
 
 void process_properties_status(uint8_t *p_buffer, uint16_t len)
 {
-    wiced_bt_mesh_event_t *p_event = wiced_bt_mesh_event_from_hci_header(&p_buffer, &len);
     uint16_t event = 0;
     int i = 0;
+    wiced_bt_mesh_event_t *p_event = wiced_bt_mesh_event_from_hci_header(&p_buffer, &len);
+    if (p_event == NULL)
+        return;
+
     if (len < 1)
     {
         wiced_bt_mesh_release_event(p_event);
@@ -899,14 +917,18 @@ void process_properties_status(uint8_t *p_buffer, uint16_t len)
 
 void process_property_status(uint8_t *p_buffer, uint16_t len)
 {
-    wiced_bt_mesh_event_t *p_event = wiced_bt_mesh_event_from_hci_header(&p_buffer, &len);
     uint16_t event = 0;
+    wiced_bt_mesh_event_t *p_event = wiced_bt_mesh_event_from_hci_header(&p_buffer, &len);
+    if (p_event == NULL)
+        return;
+
     if (len < 4)
     {
         wiced_bt_mesh_release_event(p_event);
         return;
     }
-    wiced_bt_mesh_property_status_data_t *p_data = (wiced_bt_mesh_property_status_data_t *)wiced_bt_get_buffer(sizeof(wiced_bt_mesh_property_status_data_t) + len - 5);
+
+    wiced_bt_mesh_property_status_data_t* p_data = (wiced_bt_mesh_property_status_data_t*)wiced_bt_get_buffer(sizeof(wiced_bt_mesh_property_status_data_t) + len - 5);
     if (p_data == NULL)
     {
         wiced_bt_mesh_release_event(p_event);
@@ -929,6 +951,9 @@ void process_property_status(uint8_t *p_buffer, uint16_t len)
 void process_vendor_data(uint8_t *p_buffer, uint16_t len)
 {
     wiced_bt_mesh_event_t *p_event = wiced_bt_mesh_event_from_hci_header(&p_buffer, &len);
+    if (p_event == NULL)
+        return;
+
     p_event->data_len = len;
     mesh_provision_process_event(WICED_BT_MESH_VENDOR_DATA, p_event, p_buffer);
 }
@@ -938,6 +963,9 @@ wiced_bool_t wiced_bt_mesh_provision_connect(wiced_bt_mesh_event_t *p_event, wic
     uint8_t buffer[128];
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
     int i;
+
+    wiced_bt_mesh_release_event(p_event);
+
     if (p == NULL)
         return WICED_FALSE;
 
@@ -954,6 +982,8 @@ wiced_bool_t wiced_bt_mesh_provision_start(wiced_bt_mesh_event_t *p_event, wiced
 {
     uint8_t buffer[128];
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_FALSE;
@@ -976,6 +1006,8 @@ wiced_bool_t wiced_bt_mesh_provision_client_set_oob(wiced_bt_mesh_event_t *p_eve
     uint8_t buffer[128];
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
 
+    wiced_bt_mesh_release_event(p_event);
+
     if (p == NULL)
         return WICED_FALSE;
 
@@ -989,6 +1021,8 @@ wiced_bool_t wiced_bt_mesh_provision_disconnect(wiced_bt_mesh_event_t *p_event)
 {
     uint8_t buffer[128];
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_FALSE;
@@ -1049,6 +1083,7 @@ wiced_result_t wiced_bt_mesh_core_send(wiced_bt_mesh_event_t *p_event, const uin
     p += params_len;
 
     wiced_hci_send(HCI_CONTROL_MESH_COMMAND_RAW_MODEL_DATA, buffer, (uint16_t)(p - buffer));
+    wiced_bt_mesh_release_event(p_event);
     return WICED_BT_SUCCESS;
 }
 
@@ -1117,10 +1152,8 @@ wiced_bool_t wiced_bt_mesh_config_netkey_change(wiced_bt_mesh_event_t *p_event, 
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
 
     if (p == NULL)
-    {
-        wiced_bt_mesh_release_event(p_event);
         return WICED_FALSE;
-    }
+
     *p++ = p_data->net_key_idx & 0xff;
     *p++ = (p_data->net_key_idx >> 8) & 0xff;
 
@@ -1192,10 +1225,8 @@ wiced_bool_t wiced_bt_mesh_config_model_app_bind(wiced_bt_mesh_event_t *p_event,
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
 
     if (p == NULL)
-    {
-        wiced_bt_mesh_release_event(p_event);
         return WICED_FALSE;
-    }
+
     *p++ = p_data->element_addr & 0xff;
     *p++ = (p_data->element_addr >> 8) & 0xff;
     *p++ = p_data->company_id & 0xff;
@@ -1238,10 +1269,8 @@ wiced_bool_t wiced_bt_mesh_config_model_publication_set(wiced_bt_mesh_event_t *p
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
 
     if (p == NULL)
-    {
-        wiced_bt_mesh_release_event(p_event);
         return WICED_FALSE;
-    }
+
     *p++ = p_set->element_addr & 0xff;
     *p++ = (p_set->element_addr >> 8) & 0xff;
     *p++ = p_set->company_id & 0xff;
@@ -1316,10 +1345,8 @@ wiced_bool_t wiced_bt_mesh_config_network_transmit_params_set(wiced_bt_mesh_even
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
 
     if (p == NULL)
-    {
-        wiced_bt_mesh_release_event(p_event);
         return WICED_FALSE;
-    }
+
     *p++ = p_data->count;
     *p++ = p_data->interval & 0xff;
     *p++ = (p_data->interval >> 8) & 0xff;
@@ -1334,10 +1361,8 @@ wiced_bool_t wiced_bt_mesh_config_default_ttl_set(wiced_bt_mesh_event_t *p_event
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
 
     if (p == NULL)
-    {
-        wiced_bt_mesh_release_event(p_event);
         return WICED_FALSE;
-    }
+
     *p++ = p_data->ttl;
 
     wiced_hci_send(HCI_CONTROL_MESH_COMMAND_CONFIG_DEFAULT_TTL_SET, buffer, (uint16_t)(p - buffer));
@@ -1349,11 +1374,10 @@ wiced_bool_t wiced_bt_mesh_config_relay_set(wiced_bt_mesh_event_t *p_event, wice
     uint8_t buffer[128];
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
 
+
     if (p == NULL)
-    {
-        wiced_bt_mesh_release_event(p_event);
         return WICED_FALSE;
-    }
+
     *p++ = p_data->state;
     *p++ = p_data->retransmit_count;
     *p++ = p_data->retransmit_interval & 0xff;
@@ -1369,10 +1393,8 @@ wiced_bool_t wiced_bt_mesh_config_friend_set(wiced_bt_mesh_event_t *p_event, wic
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
 
     if (p == NULL)
-    {
-        wiced_bt_mesh_release_event(p_event);
         return WICED_FALSE;
-    }
+
     *p++ = p_data->state;
 
     wiced_hci_send(HCI_CONTROL_MESH_COMMAND_CONFIG_FRIEND_SET, buffer, (uint16_t)(p - buffer));
@@ -1385,10 +1407,8 @@ wiced_bool_t wiced_bt_mesh_config_gatt_proxy_set(wiced_bt_mesh_event_t *p_event,
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
 
     if (p == NULL)
-    {
-        wiced_bt_mesh_release_event(p_event);
         return WICED_FALSE;
-    }
+
     *p++ = p_data->state;
 
     wiced_hci_send(HCI_CONTROL_MESH_COMMAND_CONFIG_GATT_PROXY_SET, buffer, (uint16_t)(p - buffer));
@@ -1401,10 +1421,8 @@ wiced_bool_t wiced_bt_mesh_config_beacon_set(wiced_bt_mesh_event_t *p_event, wic
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
 
     if (p == NULL)
-    {
-        wiced_bt_mesh_release_event(p_event);
         return WICED_FALSE;
-    }
+
     *p++ = p_data->state;
 
     wiced_hci_send(HCI_CONTROL_MESH_COMMAND_CONFIG_BEACON_SET, buffer, (uint16_t)(p - buffer));
@@ -1428,6 +1446,8 @@ wiced_bool_t wiced_bt_mesh_health_attention_set(wiced_bt_mesh_event_t *p_event, 
     uint8_t buffer[128];
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
 
+    wiced_bt_mesh_release_event(p_event);
+
     if (p == NULL)
         return WICED_FALSE;
 
@@ -1441,6 +1461,8 @@ wiced_bool_t wiced_bt_mesh_config_node_identity_set(wiced_bt_mesh_event_t *p_eve
 {
     uint8_t buffer[128];
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_FALSE;
@@ -1476,6 +1498,8 @@ wiced_bool_t wiced_bt_mesh_provision_scan_capabilities_get(wiced_bt_mesh_event_t
     uint8_t buffer[128];
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
 
+    wiced_bt_mesh_release_event(p_event);
+
     if (p == NULL)
         return WICED_FALSE;
 
@@ -1487,6 +1511,8 @@ wiced_bool_t wiced_bt_mesh_provision_scan_get(wiced_bt_mesh_event_t *p_event)
 {
     uint8_t buffer[128];
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_FALSE;
@@ -1502,6 +1528,8 @@ wiced_bool_t wiced_bt_mesh_provision_scan_start(wiced_bt_mesh_event_t *p_event, 
 {
     uint8_t  buffer[35];
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_FALSE;
@@ -1525,6 +1553,8 @@ wiced_bool_t wiced_bt_mesh_provision_scan_stop(wiced_bt_mesh_event_t *p_event)
     uint8_t  buffer[30];
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
 
+    wiced_bt_mesh_release_event(p_event);
+
     if (p == NULL)
         return WICED_FALSE;
 
@@ -1540,6 +1570,8 @@ wiced_bool_t wiced_bt_mesh_provision_scan_extended_start(wiced_bt_mesh_event_t *
     int i;
     uint8_t  buffer[50];
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_FALSE;
@@ -1621,22 +1653,22 @@ wiced_result_t wiced_bt_mesh_model_default_transition_time_client_send_set(wiced
 wiced_result_t wiced_bt_mesh_model_onoff_client_send_get(wiced_bt_mesh_event_t *p_event)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_ONOFF_GET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_ONOFF_GET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_onoff_client_send_set(wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_onoff_set_data_t *p_data)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
@@ -1649,30 +1681,28 @@ wiced_result_t wiced_bt_mesh_model_onoff_client_send_set(wiced_bt_mesh_event_t *
     *p++ = p_data->delay & 0xff;
     *p++ = (p_data->delay >> 8) & 0xff;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_ONOFF_SET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_ONOFF_SET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_battery_client_send_get(wiced_bt_mesh_event_t *p_event)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_BATTERY_GET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_BATTERY_GET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_property_client_send_properties_get(wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_properties_get_data_t *p_data)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
@@ -1681,16 +1711,15 @@ wiced_result_t wiced_bt_mesh_model_property_client_send_properties_get(wiced_bt_
     *p++ = p_data->starting_id & 0xff;
     *p++ = (p_data->starting_id >> 8) & 0xff;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_PROPERTIES_GET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_PROPERTIES_GET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_property_client_send_property_get(wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_property_get_data_t *p_data)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
@@ -1699,16 +1728,15 @@ wiced_result_t wiced_bt_mesh_model_property_client_send_property_get(wiced_bt_me
     *p++ = p_data->id & 0xff;
     *p++ = (p_data->id >> 8) & 0xff;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_PROPERTY_GET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_PROPERTY_GET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_property_client_send_property_set(wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_property_set_data_t *p_data)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
@@ -1723,90 +1751,84 @@ wiced_result_t wiced_bt_mesh_model_property_client_send_property_set(wiced_bt_me
     memcpy(p, p_data->value, p_data->len);
     p += p_data->len;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_PROPERTY_SET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_PROPERTY_SET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_light_lc_client_send_mode_get(wiced_bt_mesh_event_t *p_event)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_LC_MODE_GET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_LC_MODE_GET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_light_lc_client_send_mode_set(wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_light_lc_mode_set_data_t *p_data)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
 
     *p++ = p_data->mode;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_LC_MODE_SET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_LC_MODE_SET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_light_lc_client_send_occupancy_mode_get(wiced_bt_mesh_event_t *p_event)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_LC_OCCUPANCY_MODE_GET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_LC_OCCUPANCY_MODE_GET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_light_lc_client_send_occupancy_mode_set(wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_light_lc_occupancy_mode_set_data_t *p_data)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
 
     *p++ = p_data->mode;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_LC_OCCUPANCY_MODE_SET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_LC_OCCUPANCY_MODE_SET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_light_lc_client_send_light_onoff_get(wiced_bt_mesh_event_t *p_event)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_LC_ONOFF_GET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_LC_ONOFF_GET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_light_lc_client_send_light_onoff_set(wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_light_lc_light_onoff_set_data_t *p_data)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
@@ -1819,16 +1841,15 @@ wiced_result_t wiced_bt_mesh_model_light_lc_client_send_light_onoff_set(wiced_bt
     *p++ = p_data->delay & 0xff;
     *p++ = (p_data->delay >> 8) & 0xff;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_LC_ONOFF_SET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_LC_ONOFF_SET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_light_lc_client_send_property_get(wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_light_lc_property_get_data_t *p_data)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
@@ -1836,16 +1857,15 @@ wiced_result_t wiced_bt_mesh_model_light_lc_client_send_property_get(wiced_bt_me
     *p++ = p_data->id & 0xff;
     *p++ = (p_data->id >> 8) & 0xff;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_LC_PROPERTY_GET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_LC_PROPERTY_GET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_light_lc_client_send_property_set(wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_light_lc_property_set_data_t *p_data)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
@@ -1857,30 +1877,28 @@ wiced_result_t wiced_bt_mesh_model_light_lc_client_send_property_set(wiced_bt_me
     memcpy(p, p_data->value, p_data->len);
     p += p_data->len;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_LC_PROPERTY_SET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_LC_PROPERTY_SET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_light_xyl_client_send_get(wiced_bt_mesh_event_t *p_event)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_XYL_GET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_XYL_GET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_light_xyl_client_send_set(wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_light_xyl_set_t *p_data)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
@@ -1898,44 +1916,41 @@ wiced_result_t wiced_bt_mesh_model_light_xyl_client_send_set(wiced_bt_mesh_event
     *p++ = p_data->delay & 0xff;
     *p++ = (p_data->delay >> 8) & 0xff;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_XYL_SET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_XYL_SET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_light_xyl_client_send_target_get(wiced_bt_mesh_event_t *p_event)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_XYL_TARGET_GET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_XYL_TARGET_GET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_light_xyl_client_send_range_get(wiced_bt_mesh_event_t *p_event)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_XYL_RANGE_GET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_XYL_RANGE_GET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_light_xyl_client_send_range_set(wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_light_xyl_range_set_data_t *p_data)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
@@ -1949,30 +1964,28 @@ wiced_result_t wiced_bt_mesh_model_light_xyl_client_send_range_set(wiced_bt_mesh
     *p++ = p_data->y_max & 0xff;
     *p++ = (p_data->y_max >> 8) & 0xff;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_XYL_RANGE_SET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_XYL_RANGE_SET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_light_xyl_client_send_default_get(wiced_bt_mesh_event_t *p_event)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_XYL_DEFAULT_GET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_XYL_DEFAULT_GET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_light_xyl_client_send_default_set(wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_light_xyl_default_data_t *p_data)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
@@ -1984,44 +1997,41 @@ wiced_result_t wiced_bt_mesh_model_light_xyl_client_send_default_set(wiced_bt_me
     *p++ = p_data->default_status.y & 0xff;
     *p++ = (p_data->default_status.y >> 8) & 0xff;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_XYL_DEFAULT_SET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_XYL_DEFAULT_SET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_location_client_send_global_get(wiced_bt_mesh_event_t *p_event)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LOCATION_GLOBAL_GET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LOCATION_GLOBAL_GET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_location_client_send_local_get(wiced_bt_mesh_event_t *p_event)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LOCATION_LOCAL_GET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LOCATION_LOCAL_GET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_location_client_send_global_set(wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_location_global_data_t *p_data)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
@@ -2037,16 +2047,15 @@ wiced_result_t wiced_bt_mesh_model_location_client_send_global_set(wiced_bt_mesh
     *p++ = p_data->global_altitude & 0xff;
     *p++ = (p_data->global_altitude >> 8) & 0xff;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LOCATION_GLOBAL_SET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LOCATION_GLOBAL_SET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_location_client_send_local_set(wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_location_local_data_t *p_data)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
@@ -2062,30 +2071,28 @@ wiced_result_t wiced_bt_mesh_model_location_client_send_local_set(wiced_bt_mesh_
     *p++ = p_data->update_time;
     *p++ = p_data->precision;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LOCATION_LOCAL_SET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LOCATION_LOCAL_SET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_power_level_client_send_get(wiced_bt_mesh_event_t *p_event)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_POWER_LEVEL_GET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_POWER_LEVEL_GET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_power_level_client_send_set(wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_power_level_set_level_t *p_data)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
@@ -2099,44 +2106,41 @@ wiced_result_t wiced_bt_mesh_model_power_level_client_send_set(wiced_bt_mesh_eve
     *p++ = p_data->delay & 0xff;
     *p++ = (p_data->delay >> 8) & 0xff;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_POWER_LEVEL_SET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_POWER_LEVEL_SET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_power_level_client_send_last_get(wiced_bt_mesh_event_t *p_event)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_POWER_LEVEL_LAST_GET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_POWER_LEVEL_LAST_GET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_power_level_client_send_default_get(wiced_bt_mesh_event_t *p_event)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_POWER_LEVEL_DEFAULT_GET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_POWER_LEVEL_DEFAULT_GET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_power_level_client_send_default_set(wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_power_default_data_t *p_data)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
@@ -2144,30 +2148,28 @@ wiced_result_t wiced_bt_mesh_model_power_level_client_send_default_set(wiced_bt_
     *p++ = p_data->power & 0xff;
     *p++ = (p_data->power >> 8) & 0xff;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_POWER_LEVEL_DEFAULT_SET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_POWER_LEVEL_DEFAULT_SET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_power_level_client_send_range_get(wiced_bt_mesh_event_t *p_event)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_POWER_LEVEL_RANGE_GET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_POWER_LEVEL_RANGE_GET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_power_level_client_send_range_set(wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_power_level_range_set_data_t *p_data)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
@@ -2177,60 +2179,56 @@ wiced_result_t wiced_bt_mesh_model_power_level_client_send_range_set(wiced_bt_me
     *p++ = p_data->power_max & 0xff;
     *p++ = (p_data->power_max >> 8) & 0xff;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_POWER_LEVEL_RANGE_SET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_POWER_LEVEL_RANGE_SET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t  wiced_bt_mesh_model_power_onoff_client_send_onpowerup_get(wiced_bt_mesh_event_t *p_event)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_ONPOWERUP_GET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_ONPOWERUP_GET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_power_onoff_client_send_onpowerup_set(wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_power_onoff_data_t *p_data)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
 
     *p++ = p_data->on_power_up;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_ONPOWERUP_SET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_ONPOWERUP_SET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_scheduler_client_send_get(wiced_bt_mesh_event_t *p_event)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_SCHEDULER_GET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_SCHEDULER_GET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_scheduler_client_send_action_get(wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_scheduler_action_get_t *p_data)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
@@ -2238,16 +2236,15 @@ wiced_result_t wiced_bt_mesh_model_scheduler_client_send_action_get(wiced_bt_mes
     *p++ = p_data->action_number & 0xff;
     *p++ = (p_data->action_number >> 8) & 0xff;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_SCHEDULER_ACTION_GET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_SCHEDULER_ACTION_GET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_scheduler_client_send_action_set(wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_scheduler_action_data_t *p_data)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
@@ -2269,32 +2266,29 @@ wiced_result_t wiced_bt_mesh_model_scheduler_client_send_action_set(wiced_bt_mes
     *p++ = p_data->scene_number & 0xff;
     *p++ = (p_data->scene_number >> 8) & 0xff;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_SCHEDULER_ACTION_SET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_SCHEDULER_ACTION_SET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_time_client_time_get_send(wiced_bt_mesh_event_t *p_event)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_TIME_GET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_TIME_GET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_time_client_time_set_send(wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_time_state_msg_t *p_data)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint16_t auth_delta;
-
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
@@ -2307,30 +2301,28 @@ wiced_result_t wiced_bt_mesh_model_time_client_time_set_send(wiced_bt_mesh_event
     UINT16_TO_STREAM(p, auth_delta);
     UINT8_TO_STREAM(p, p_data->time_zone_offset_current);
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_TIME_SET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_TIME_SET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_time_client_time_zone_get_send(wiced_bt_mesh_event_t *p_event)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_TIME_ZONE_GET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_TIME_ZONE_GET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_time_client_time_zone_set_send(wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_time_zone_set_t *p_data)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
@@ -2338,32 +2330,30 @@ wiced_result_t wiced_bt_mesh_model_time_client_time_zone_set_send(wiced_bt_mesh_
     UINT8_TO_STREAM(p, p_data->time_zone_offset_new);
     UINT40_TO_STREAM(p, p_data->tai_of_zone_change);
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_TIME_ZONE_SET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_TIME_ZONE_SET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_time_client_tai_utc_delta_get_send(wiced_bt_mesh_event_t *p_event)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_TIME_TAI_UTC_DELTA_GET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_TIME_TAI_UTC_DELTA_GET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_time_client_tai_utc_delta_set_send(wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_time_tai_utc_delta_set_t *p_data)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint16_t delta_new;
 
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
@@ -2372,60 +2362,56 @@ wiced_result_t wiced_bt_mesh_model_time_client_tai_utc_delta_set_send(wiced_bt_m
     UINT16_TO_STREAM(p, delta_new);
     UINT40_TO_STREAM(p, p_data->tai_of_delta_change);
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_TIME_TAI_UTC_DELTA_SET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_TIME_TAI_UTC_DELTA_SET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_time_client_time_role_get_send(wiced_bt_mesh_event_t *p_event)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_TIME_ROLE_GET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_TIME_ROLE_GET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_time_client_time_role_set_send(wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_time_role_msg_t *p_data)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
 
     UINT8_TO_STREAM(p, p_data->role);
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_TIME_ROLE_SET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_TIME_ROLE_SET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_level_client_send_get(wiced_bt_mesh_event_t *p_event)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LEVEL_GET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LEVEL_GET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_level_client_send_set(wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_level_set_level_t *p_data)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
@@ -2439,16 +2425,15 @@ wiced_result_t wiced_bt_mesh_model_level_client_send_set(wiced_bt_mesh_event_t *
     *p++ = p_data->delay & 0xff;
     *p++ = (p_data->delay >> 8) & 0xff;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LEVEL_SET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LEVEL_SET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_level_client_send_delta_set(wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_level_set_delta_t* p_data)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
@@ -2465,16 +2450,15 @@ wiced_result_t wiced_bt_mesh_model_level_client_send_delta_set(wiced_bt_mesh_eve
     *p++ = p_data->delay & 0xff;
     *p++ = (p_data->delay >> 8) & 0xff;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LEVEL_DELTA_SET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LEVEL_DELTA_SET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_level_client_send_move_set(wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_level_set_move_t* p_data)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
@@ -2489,30 +2473,28 @@ wiced_result_t wiced_bt_mesh_model_level_client_send_move_set(wiced_bt_mesh_even
     *p++ = p_data->delay & 0xff;
     *p++ = (p_data->delay >> 8) & 0xff;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LEVEL_MOVE_SET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LEVEL_MOVE_SET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_light_lightness_client_send_get(wiced_bt_mesh_event_t *p_event)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_LIGHTNESS_GET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_LIGHTNESS_GET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_light_lightness_client_send_set(wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_light_lightness_actual_set_t* p_data)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
@@ -2526,30 +2508,28 @@ wiced_result_t wiced_bt_mesh_model_light_lightness_client_send_set(wiced_bt_mesh
     *p++ = p_data->delay & 0xff;
     *p++ = (p_data->delay >> 8) & 0xff;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_LIGHTNESS_SET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_LIGHTNESS_SET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_light_hsl_client_send_get(wiced_bt_mesh_event_t *p_event)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_HSL_GET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_HSL_GET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_light_hsl_client_send_set(wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_light_hsl_set_t* p_data)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
@@ -2567,30 +2547,28 @@ wiced_result_t wiced_bt_mesh_model_light_hsl_client_send_set(wiced_bt_mesh_event
     *p++ = p_data->delay & 0xff;
     *p++ = (p_data->delay >> 8) & 0xff;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_HSL_SET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_HSL_SET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_light_hsl_client_send_hue_get(wiced_bt_mesh_event_t *p_event)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_HSL_HUE_GET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_HSL_HUE_GET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_light_hsl_client_send_hue_set(wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_light_hsl_hue_set_t* p_data)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
@@ -2604,30 +2582,28 @@ wiced_result_t wiced_bt_mesh_model_light_hsl_client_send_hue_set(wiced_bt_mesh_e
     *p++ = p_data->delay & 0xff;
     *p++ = (p_data->delay >> 8) & 0xff;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_HSL_HUE_SET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_HSL_HUE_SET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_light_hsl_client_send_saturation_get(wiced_bt_mesh_event_t *p_event)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_HSL_SATURATION_GET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_HSL_SATURATION_GET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_light_hsl_client_send_saturation_set(wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_light_hsl_saturation_set_t* p_data)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
@@ -2641,44 +2617,41 @@ wiced_result_t wiced_bt_mesh_model_light_hsl_client_send_saturation_set(wiced_bt
     *p++ = p_data->delay & 0xff;
     *p++ = (p_data->delay >> 8) & 0xff;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_HSL_SATURATION_SET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_HSL_SATURATION_SET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_light_hsl_client_send_target_get(wiced_bt_mesh_event_t *p_event)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_HSL_TARGET_GET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_HSL_TARGET_GET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_light_hsl_client_send_default_get(wiced_bt_mesh_event_t *p_event)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_HSL_DEFAULT_GET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_HSL_DEFAULT_GET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_light_hsl_client_send_default_set(wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_light_hsl_default_data_t* p_data)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
@@ -2690,30 +2663,28 @@ wiced_result_t wiced_bt_mesh_model_light_hsl_client_send_default_set(wiced_bt_me
     *p++ = p_data->default_status.saturation & 0xff;
     *p++ = (p_data->default_status.saturation >> 8) & 0xff;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_HSL_DEFAULT_SET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_HSL_DEFAULT_SET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_light_hsl_client_send_range_get(wiced_bt_mesh_event_t *p_event)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_HSL_RANGE_GET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_HSL_RANGE_GET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_light_hsl_client_send_range_set(wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_light_hsl_range_set_data_t* p_data)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
@@ -2727,30 +2698,28 @@ wiced_result_t wiced_bt_mesh_model_light_hsl_client_send_range_set(wiced_bt_mesh
     *p++ = p_data->saturation_max & 0xff;
     *p++ = (p_data->saturation_min >> 8) & 0xff;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_HSL_RANGE_SET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_HSL_RANGE_SET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_light_ctl_client_send_get(wiced_bt_mesh_event_t *p_event)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_CTL_GET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_CTL_GET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_light_ctl_client_send_set(wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_light_ctl_set_t* p_data)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
@@ -2768,16 +2737,15 @@ wiced_result_t wiced_bt_mesh_model_light_ctl_client_send_set(wiced_bt_mesh_event
     *p++ = p_data->delay & 0xff;
     *p++ = (p_data->delay >> 8) & 0xff;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_CTL_SET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_LIGHT_CTL_SET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_sensor_client_descriptor_send_get(wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_sensor_get_t *desc_get_data)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
@@ -2787,15 +2755,15 @@ wiced_result_t wiced_bt_mesh_model_sensor_client_descriptor_send_get(wiced_bt_me
         *p++ = desc_get_data->property_id & 0xff;
         *p++ = (desc_get_data->property_id >> 8) & 0xff;
     }
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_SENSOR_DESCRIPTOR_GET, buffer, (uint16_t)(p - buffer));
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_SENSOR_DESCRIPTOR_GET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_sensor_client_sensor_send_get(wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_sensor_get_t *sensor_get)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
@@ -2805,16 +2773,15 @@ wiced_result_t wiced_bt_mesh_model_sensor_client_sensor_send_get(wiced_bt_mesh_e
         *p++ = sensor_get->property_id & 0xff;
         *p++ = (sensor_get->property_id >> 8) & 0xff;
     }
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_SENSOR_GET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_SENSOR_GET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_sensor_client_sensor_column_send_get(wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_sensor_column_get_data_t *column_data)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
@@ -2824,17 +2791,19 @@ wiced_result_t wiced_bt_mesh_model_sensor_client_sensor_column_send_get(wiced_bt
     memcpy(p, column_data->raw_valuex, column_data->prop_value_len);
     p += column_data->prop_value_len;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_SENSOR_COLUMN_GET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_SENSOR_COLUMN_GET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_sensor_client_sensor_series_send_get(wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_sensor_series_get_data_t *series_data)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
     uint8_t len = series_data->prop_value_len;
+
+    wiced_bt_mesh_release_event(p_event);
+
+    if (p == NULL)
+        return WICED_BT_BADARG;
 
     *p++ = series_data->property_id & 0xff;
     *p++ = (series_data->property_id >> 8) & 0xff;
@@ -2846,32 +2815,36 @@ wiced_result_t wiced_bt_mesh_model_sensor_client_sensor_series_send_get(wiced_bt
         memcpy(p, series_data->raw_valuex2, len);
         p += len;
     }
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_SENSOR_SERIES_GET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_SENSOR_SERIES_GET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_sensor_client_sensor_setting_send_get(wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_sensor_setting_get_data_t *setting_data)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
+
+    if (p == NULL)
+        return WICED_BT_BADARG;
 
     *p++ = setting_data->property_id & 0xff;
     *p++ = (setting_data->property_id >> 8) & 0xff;
     *p++ = setting_data->setting_property_id & 0xff;
     *p++ = (setting_data->setting_property_id >> 8) & 0xff;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_SENSOR_SETTING_GET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_SENSOR_SETTING_GET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_sensor_client_sensor_setting_send_set(wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_sensor_setting_set_data_t *setting_data)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
+
+    if (p == NULL)
+        return WICED_BT_BADARG;
 
     *p++ = setting_data->property_id & 0xff;
     *p++ = (setting_data->property_id >> 8) & 0xff;
@@ -2880,42 +2853,50 @@ wiced_result_t wiced_bt_mesh_model_sensor_client_sensor_setting_send_set(wiced_b
     memcpy(p, setting_data->setting_raw_val, setting_data->prop_value_len);
     p += setting_data->prop_value_len;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_SENSOR_SETTING_SET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_SENSOR_SETTING_SET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_sensor_client_sensor_settings_send_get(wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_sensor_get_t *settings_data)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
+
+    if (p == NULL)
+        return WICED_BT_BADARG;
 
     *p++ = settings_data->property_id & 0xff;
     *p++ = (settings_data->property_id >> 8) & 0xff;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_SENSOR_SETTINGS_GET, buffer, (uint16_t)(p - buffer));
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_SENSOR_SETTINGS_GET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_sensor_client_sensor_cadence_send_get(wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_sensor_get_t *cadence_get)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
+
+    if (p == NULL)
+        return WICED_BT_BADARG;
 
     *p++ = cadence_get->property_id & 0xff;
     *p++ = (cadence_get->property_id >> 8) & 0xff;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_SENSOR_CADENCE_GET, buffer, (uint16_t)(p - buffer));
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_SENSOR_CADENCE_GET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_model_sensor_client_sensor_cadence_send_set(wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_sensor_cadence_set_data_t *cadence_set)
 {
     uint8_t buffer[128];
-    wiced_result_t res;
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
+
+    if (p == NULL)
+        return WICED_BT_BADARG;
 
     *p++ = cadence_set->property_id & 0xff;
     *p++ = (cadence_set->property_id >> 8) & 0xff;
@@ -2951,9 +2932,7 @@ wiced_result_t wiced_bt_mesh_model_sensor_client_sensor_cadence_send_set(wiced_b
     *p++ = (cadence_set->cadence_data.fast_cadence_high >> 16) & 0xff;
     *p++ = (cadence_set->cadence_data.fast_cadence_high >> 24) & 0xff;
 
-    res = wiced_hci_send(HCI_CONTROL_MESH_COMMAND_SENSOR_CADENCE_SET, buffer, (uint16_t)(p - buffer));
-    wiced_bt_mesh_release_event(p_event);
-    return res;
+    return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_SENSOR_CADENCE_SET, buffer, (uint16_t)(p - buffer));
 }
 
 wiced_result_t wiced_bt_mesh_client_vendor_data(wiced_bt_mesh_event_t *p_event, uint8_t *p_data, uint16_t data_len)
@@ -2963,8 +2942,10 @@ wiced_result_t wiced_bt_mesh_client_vendor_data(wiced_bt_mesh_event_t *p_event, 
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
 
     if (p == NULL)
+    {
+        wiced_bt_mesh_release_event(p_event);
         return WICED_BT_BADARG;
-
+    }
     if (data_len > sizeof(buffer) - (uint16_t)(p - buffer))
     {
         data_len = sizeof(buffer) - (uint16_t)(p - buffer);

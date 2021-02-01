@@ -1,10 +1,10 @@
 /*
- * Copyright 2016-2020, Cypress Semiconductor Corporation or a subsidiary of
- * Cypress Semiconductor Corporation. All Rights Reserved.
+ * Copyright 2016-2021, Cypress Semiconductor Corporation (an Infineon company) or
+ * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
  *
  * This software, including source code, documentation and related
- * materials ("Software"), is owned by Cypress Semiconductor Corporation
- * or one of its subsidiaries ("Cypress") and is protected by and subject to
+ * materials ("Software") is owned by Cypress Semiconductor Corporation
+ * or one of its affiliates ("Cypress") and is protected by and subject to
  * worldwide patent protection (United States and foreign),
  * United States copyright laws and international treaty provisions.
  * Therefore, you may use this Software only as provided in the license
@@ -13,7 +13,7 @@
  * If no EULA applies, Cypress hereby grants you a personal, non-exclusive,
  * non-transferable license to copy, modify, and compile the Software
  * source code solely for use in connection with Cypress's
- * integrated circuit products. Any reproduction, modification, translation,
+ * integrated circuit products.  Any reproduction, modification, translation,
  * compilation, or representation of this Software except as specified
  * above is prohibited without the express written permission of Cypress.
  *
@@ -48,6 +48,7 @@ SensorCfgDlg::SensorCfgDlg(QWidget *parent) :
     connect(ui->cbPublishTo, SIGNAL(currentIndexChanged(int)), this, SLOT(on_displayControls(int)));
     connect(ui->cbFastCadence, SIGNAL(currentIndexChanged(int)), this, SLOT(on_displayControls(int)));
     connect(ui->chbPubPeriod, SIGNAL(stateChanged(int)), this, SLOT(on_displayControls(int)));
+    property_id = 0;
     init();
 }
 
@@ -64,12 +65,6 @@ void SensorCfgDlg::onBtnConfigCadence()
 {
     bool bFastCadence = ui->chbFastCadence->isChecked();
     bool bTriggerPub = ui->chbPubPeriod->isChecked();
-
-    const char *publish_to_name = mesh_client_get_publication_target(component_name, FALSE, "SENSOR");
-    int current_period = mesh_client_get_publication_period(component_name, FALSE, "SENSOR");
-
-    char  * szName = (char *)ui->cbPublishTo->currentText().toStdString().c_str();
-    char * new_name= szName;
 
     int new_fast_cadence_period_divisor = 1;
     uint32_t new_fast_cadence_low = 0;

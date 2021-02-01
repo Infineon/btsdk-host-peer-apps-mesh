@@ -1,10 +1,10 @@
 /*
-* Copyright 2016-2020, Cypress Semiconductor Corporation or a subsidiary of
-* Cypress Semiconductor Corporation. All Rights Reserved.
+* Copyright 2016-2021, Cypress Semiconductor Corporation (an Infineon company) or
+* an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
 *
 * This software, including source code, documentation and related
-* materials ("Software"), is owned by Cypress Semiconductor Corporation
-* or one of its subsidiaries ("Cypress") and is protected by and subject to
+* materials ("Software") is owned by Cypress Semiconductor Corporation
+* or one of its affiliates ("Cypress") and is protected by and subject to
 * worldwide patent protection (United States and foreign),
 * United States copyright laws and international treaty provisions.
 * Therefore, you may use this Software only as provided in the license
@@ -13,7 +13,7 @@
 * If no EULA applies, Cypress hereby grants you a personal, non-exclusive,
 * non-transferable license to copy, modify, and compile the Software
 * source code solely for use in connection with Cypress's
-* integrated circuit products. Any reproduction, modification, translation,
+* integrated circuit products.  Any reproduction, modification, translation,
 * compilation, or representation of this Software except as specified
 * above is prohibited without the express written permission of Cypress.
 *
@@ -70,6 +70,8 @@
 #define DEVICE_TYPE_VENDOR_SPECIFIC         13
 #define DEVICE_TYPE_LOCATION_SERVER         14
 #define DEVICE_TYPE_LOCATION_CLIENT         15
+#define DEVICE_TYPE_BATTERY_SERVER          16
+#define DEVICE_TYPE_BATTERY_CLIENT          17
 
 #define DEFAULT_TRANSITION_TIME             0xFFFFFFFF
 
@@ -240,6 +242,7 @@ char *mesh_client_get_device_components(uint8_t *p_uuid);
 #define MESH_CONTROL_METHOD_VENDOR      "VENDOR_"
 #define MESH_CONTROL_METHOD_SENSOR      "SENSOR"
 #define MESH_CONTROL_METHOD_LOCATION    "LOCATION"
+#define MESH_CONTROL_METHOD_BATTERY     "BATTERY"
 
 char *mesh_client_get_target_methods(const char *component_name);
 

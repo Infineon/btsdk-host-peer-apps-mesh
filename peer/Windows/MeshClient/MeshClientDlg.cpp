@@ -1,10 +1,10 @@
 /*
-* Copyright 2016-2020, Cypress Semiconductor Corporation or a subsidiary of
-* Cypress Semiconductor Corporation. All Rights Reserved.
+* Copyright 2016-2021, Cypress Semiconductor Corporation (an Infineon company) or
+* an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
 *
 * This software, including source code, documentation and related
-* materials ("Software"), is owned by Cypress Semiconductor Corporation
-* or one of its subsidiaries ("Cypress") and is protected by and subject to
+* materials ("Software") is owned by Cypress Semiconductor Corporation
+* or one of its affiliates ("Cypress") and is protected by and subject to
 * worldwide patent protection (United States and foreign),
 * United States copyright laws and international treaty provisions.
 * Therefore, you may use this Software only as provided in the license
@@ -13,7 +13,7 @@
 * If no EULA applies, Cypress hereby grants you a personal, non-exclusive,
 * non-transferable license to copy, modify, and compile the Software
 * source code solely for use in connection with Cypress's
-* integrated circuit products. Any reproduction, modification, translation,
+* integrated circuit products.  Any reproduction, modification, translation,
 * compilation, or representation of this Software except as specified
 * above is prohibited without the express written permission of Cypress.
 *
@@ -1288,6 +1288,7 @@ void CMeshClientDlg::DisplayCurrentGroup()
         case DEVICE_TYPE_LIGHT_XYL:
         case DEVICE_TYPE_SENSOR_SERVER:
         case DEVICE_TYPE_LOCATION_SERVER:
+        case DEVICE_TYPE_BATTERY_SERVER:
             p_move_devs->AddString(szName);
             p_configure_control_devs->AddString(szName);
             p_target_devs_groups->AddString(szName);
@@ -1298,6 +1299,7 @@ void CMeshClientDlg::DisplayCurrentGroup()
         case DEVICE_TYPE_GENERIC_LEVEL_CLIENT:
         case DEVICE_TYPE_SENSOR_CLIENT:
         case DEVICE_TYPE_LOCATION_CLIENT:
+        case DEVICE_TYPE_BATTERY_CLIENT:
             p_target_devs_groups->AddString(szName);
             p_configure_control_devs->AddString(szName);
             p_configure_publish_to->AddString(szName);
@@ -2202,7 +2204,7 @@ void CMeshClientDlg::OnBnClickedGetComponentInfo()
 static bool ota_transfer_for_dfu = FALSE;
 
 #ifdef MESH_DFU_ENABLED
-BOOL read_dfu_image_info(CString sFilePath, mesh_dfu_fw_id_t* fwID, mesh_dfu_meta_data_t* vaData)
+BOOL read_dfu_image_info(CString sFilePath, mesh_dfu_fw_id_t* fwID, mesh_dfu_metadata_t* vaData)
 {
     CMeshClientDlg* pDlg = (CMeshClientDlg*)theApp.m_pMainWnd;
     FILE* pFile;
@@ -3131,7 +3133,7 @@ void CMeshClientDlg::GetDfuImageChunk(uint8_t *p_data, uint32_t offset, uint16_t
 BOOL CMeshClientDlg::GetDfuImageInfo(void *p_fw_id, void *p_va_data)
 {
     *(mesh_dfu_fw_id_t*)p_fw_id = m_DfuFwId;
-    *(mesh_dfu_meta_data_t*)p_va_data = m_DfuMetaData;
+    *(mesh_dfu_metadata_t*)p_va_data = m_DfuMetaData;
     return TRUE;
 }
 
@@ -3168,11 +3170,11 @@ extern "C" wiced_bool_t wiced_ota_fw_upgrade_set_transfer_mode(wiced_bool_t tran
     return WICED_TRUE;
 }
 
-extern "C" wiced_bool_t wiced_bt_get_upgrade_fw_info(uint32_t *p_fw_size, uint8_t *p_fw_id, uint8_t *p_fw_id_len, uint8_t *p_meta_data, uint8_t *p_meta_data_len)
+extern "C" wiced_bool_t wiced_bt_get_upgrade_fw_info(uint32_t *p_fw_size, uint8_t *p_fw_id, uint8_t *p_fw_id_len, uint8_t *p_metadata, uint8_t *p_metadata_len)
 {
     CMeshClientDlg *pDlg = (CMeshClientDlg *)theApp.m_pMainWnd;
     mesh_dfu_fw_id_t fwID;
-    mesh_dfu_meta_data_t vaData;
+    mesh_dfu_metadata_t vaData;
     wiced_bool_t got_data = WICED_FALSE;
 
     if (pDlg && pDlg->GetDfuImageInfo(&fwID, &vaData))
@@ -3186,12 +3188,12 @@ extern "C" wiced_bool_t wiced_bt_get_upgrade_fw_info(uint32_t *p_fw_size, uint8_
             memcpy(p_fw_id, fwID.fw_id, fwID.fw_id_len);
             *p_fw_id_len = fwID.fw_id_len;
         }
-        if (p_meta_data && p_meta_data_len)
+        if (p_metadata && p_metadata_len)
         {
-            if (*p_meta_data_len < vaData.len)
+            if (*p_metadata_len < vaData.len)
                 return WICED_FALSE;
-            memcpy(p_meta_data, vaData.data, vaData.len);
-            *p_meta_data_len = vaData.len;
+            memcpy(p_metadata, vaData.data, vaData.len);
+            *p_metadata_len = vaData.len;
         }
         got_data = WICED_TRUE;
     }

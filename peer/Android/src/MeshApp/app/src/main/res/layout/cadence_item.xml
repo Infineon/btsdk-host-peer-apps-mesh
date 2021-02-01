@@ -19,7 +19,7 @@
             android:textSize="20dp"
             android:textColor="@color/primary"/>
     </LinearLayout>
-    <android.support.v7.widget.CardView
+    <androidx.cardview.widget.CardView
         android:layout_width="match_parent"
         card_vziew:cardUseCompatPadding="true"
         android:layout_height="wrap_content">
@@ -110,8 +110,8 @@
             </LinearLayout>
 
         </LinearLayout>
-    </android.support.v7.widget.CardView>
-    <android.support.v7.widget.CardView
+    </androidx.cardview.widget.CardView>
+    <androidx.cardview.widget.CardView
         android:layout_width="match_parent"
         card_vziew:cardUseCompatPadding="true"
         android:layout_height="wrap_content">
@@ -182,7 +182,7 @@
                     android:inputType="number" />
             </LinearLayout>
         </LinearLayout>
-    </android.support.v7.widget.CardView>
+    </androidx.cardview.widget.CardView>
 
 
 </LinearLayout>

@@ -1,10 +1,10 @@
 ﻿/*
- * Copyright 2016-2020, Cypress Semiconductor Corporation or a subsidiary of
- * Cypress Semiconductor Corporation. All Rights Reserved.
+ * Copyright 2016-2021, Cypress Semiconductor Corporation (an Infineon company) or
+ * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
  *
  * This software, including source code, documentation and related
- * materials ("Software"), is owned by Cypress Semiconductor Corporation
- * or one of its subsidiaries ("Cypress") and is protected by and subject to
+ * materials ("Software") is owned by Cypress Semiconductor Corporation
+ * or one of its affiliates ("Cypress") and is protected by and subject to
  * worldwide patent protection (United States and foreign),
  * United States copyright laws and international treaty provisions.
  * Therefore, you may use this Software only as provided in the license
@@ -13,7 +13,7 @@
  * If no EULA applies, Cypress hereby grants you a personal, non-exclusive,
  * non-transferable license to copy, modify, and compile the Software
  * source code solely for use in connection with Cypress's
- * integrated circuit products. Any reproduction, modification, translation,
+ * integrated circuit products.  Any reproduction, modification, translation,
  * compilation, or representation of this Software except as specified
  * above is prohibited without the express written permission of Cypress.
  *
@@ -79,6 +79,7 @@ extern "C"
 #endif
 
 typedef unsigned int UINT32;
+#define wiced_bt_free_buffer free
 
 #define WICED_TRUE  1
 #define APP_DEFAULT_UIPC_PATH "./"
@@ -242,7 +243,6 @@ mesh_client_init_t mesh_client_init_callbacks =
 };
 
 void TraceHciPkt(BYTE type, BYTE *buffer, USHORT length, USHORT serial_port=1);
-extern void Log(WCHAR *fmt, ...);
 extern int FwDownload(char *sHCDFileName);
 void FwDownloadProcessEvent(LPBYTE p_data, DWORD len);
 extern "C" void wiced_hci_process_data(uint16_t opcode, uint8_t *p_buffer, uint16_t len);
@@ -334,27 +334,6 @@ extern "C" void ods(char *fmt, ...)
     log_to_file(s);
 }
 
-extern void Log(const WCHAR *fmt, ...)
-{
-    va_list cur_arg;
-    va_start(cur_arg, fmt);
-    WCHAR trace[1000];
-    QString s = QDateTime::currentDateTime().toString("hh:mm:ss.zzz: ");
-    memset(trace, 0, sizeof(trace));
-    vswprintf(trace, sizeof(trace), fmt, cur_arg);
-    QString strTrace;
-
-    QString strSpy = QString::fromStdWString(trace);
-    TraceHciPkt(0,(BYTE *)strSpy.toStdString().c_str(),strSpy.length(),1);
-
-    strTrace = s + QString::fromStdWString(trace);
-    va_end(cur_arg);
-
-    // add trace to file and UI screen in UI thread
-    emit gMainWindow->HandleTrace(new QString(strTrace));
-    log_to_file(s);
-}
-
 extern "C" void Log(const char *fmt, ...)
 {
     va_list cur_arg;
@@ -439,7 +418,6 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->btn_clear_trace, SIGNAL(clicked()), this, SLOT(on_btnClearTrace()));
     connect(ui->btnFindDfuFile, SIGNAL(clicked()), this ,SLOT(on_btnFindDfuFile()));
     connect(ui->btnConnectComm, SIGNAL(clicked()), this, SLOT(on_btnConnectComm()));
-    connect(ui->cbCommPort, SIGNAL(currentIndexChanged(int)), this, SLOT(on_cbCommPort(int)));
     connect(ui->btnNodeReset, SIGNAL(clicked()), this, SLOT(on_btnNodeReset()));
     connect(ui->btnIdentity, SIGNAL(clicked()), this, SLOT(on_btnIdentify()));
     connect(ui->cbControl, SIGNAL(currentIndexChanged(int)), this, SLOT(onCbControlIndexChanged(int)));
@@ -468,11 +446,23 @@ MainWindow::MainWindow(QWidget *parent) :
     FILE *fp = fopen("NetParameters.bin", "rb");
     if (fp)
     {
-        fread(&DeviceConfig, 1, sizeof(DeviceConfig), fp);
+        if(fread(&DeviceConfig, 1, sizeof(DeviceConfig), fp) !=  sizeof(DeviceConfig))
+        {
+            printf("fread failed");
+        }
         fclose(fp);
     }
 
     setActive();
+    m_scan_started = FALSE;
+    m_bConnecting = FALSE;
+    m_dfuMethod = 0;
+    m_bConnected = FALSE;
+    m_received_evt_len = 0;
+    m_event = 0;
+    m_state = STATE_IDLE;
+    m_pPatch = NULL;
+    m_dwPatchSize = 0;
     Log("Mesh Client ready");
 }
 
@@ -592,13 +582,12 @@ extern "C"
 extern wiced_bt_mesh_event_t *wiced_bt_mesh_event_from_hci_header(uint8_t **p_buffer, uint16_t *len);
 }
 
-void ProcessScanReport(LPBYTE p_data, DWORD len)
+void ProcessScanReport(LPBYTE p_data, uint16_t len)
 {
-    WCHAR buf[180];
-    wiced_bt_mesh_event_t *p_event = wiced_bt_mesh_event_from_hci_header(&p_data, (uint16_t *)&len);
+    wiced_bt_mesh_event_t *p_event = wiced_bt_mesh_event_from_hci_header(&p_data, &len);
     if (p_event == NULL)
         return;
-    WCHAR uuid[50] = { 0 };
+
     uint16_t provisioner_addr = p_event->src;
     int8_t   rssi = p_data[0];
     QString str_uuid;
@@ -617,6 +606,7 @@ void ProcessScanReport(LPBYTE p_data, DWORD len)
 
     str += QString::asprintf("OOB:%x URI hash:%x", oob, uri_hash);
     Log((char *)str.toStdString().c_str());
+    wiced_bt_free_buffer(p_event);
 }
 
 void MainWindow::ProcessData(DWORD opcode, LPBYTE p_data, DWORD len)
@@ -645,7 +635,7 @@ void MainWindow::ProcessData(DWORD opcode, LPBYTE p_data, DWORD len)
     }
     else if (opcode == HCI_CONTROL_MESH_EVENT_PROVISION_SCAN_REPORT)
     {
-        ProcessScanReport(p_data, len);
+        ProcessScanReport(p_data, (uint16_t)len);
         wiced_hci_process_data((uint16_t)opcode, p_data, (uint16_t)len);
     }
     else
@@ -866,7 +856,7 @@ void MainWindow::onCreateNetwork()
          }
          else
          {
-             Log(L"Failed to create network:%d", res);
+             Log("Failed to create network:%d", res);
          }
      }
 }
@@ -875,15 +865,16 @@ void MainWindow::on_btnOpen()
 {
     QString strMeshName = ui->cbNetwork->currentText();
     QString strProv = ui->edUser->text();
-    char * pUuid = provisioner_uuid;
+    char pUuid[100];
+    strncpy(pUuid, provisioner_uuid, 100-1);
     if (ui->cbProUUID->currentText() != "")
-        pUuid = (char *)ui->cbProUUID->currentText().left(48).toStdString().c_str();
+        strncpy(pUuid, (char *)ui->cbProUUID->currentText().left(48).toStdString().c_str(), 100-1);
     if (mesh_client_network_open(STR_TO_CHAR(strProv), pUuid, STR_TO_CHAR(strMeshName), network_opened) != MESH_CLIENT_SUCCESS)
     {
         messageBox(m_hWnd,  "Network Does Not Exists",STR_TO_CHAR(strMeshName), MB_ICONERROR);
         return;
     }
-    strcpy(m_szCurrentGroup,strMeshName.toStdString().c_str());
+    strncpy(m_szCurrentGroup,strMeshName.toStdString().c_str(), sizeof(m_szCurrentGroup)-1);
 
     DisplayCurrentGroup();
 }
@@ -902,8 +893,8 @@ void MainWindow::on_btnImport()
     QString fileName = QFileDialog::getSaveFileName(this,tr("JSON File"), "", tr("JSON Files (*.json)"));
     if (fileName.length() == 0)
         return;
-    FILE *fJsonFile;
-    if (fJsonFile = fopen(STR_TO_CHAR(fileName), "rb"))
+    FILE *fJsonFile = fopen(STR_TO_CHAR(fileName), "rb");
+    if (fJsonFile == NULL)
     {
         messageBox(0,"Failed to open the json file", "Error", 0);
         return;
@@ -911,14 +902,29 @@ void MainWindow::on_btnImport()
 
     // Load OTA FW file into memory
     fseek(fJsonFile, 0, SEEK_END);
-    size_t json_string_size = ftell(fJsonFile);
+    long json_string_size = ftell(fJsonFile);
     rewind(fJsonFile);
 
-    char *json_string = (char *)new BYTE[json_string_size];
-    if (json_string == NULL)
+    if(json_string_size <= 0)
+    {
+        fclose(fJsonFile);
         return;
-    fread(json_string, 1, json_string_size, fJsonFile);
-    char provisioner_name[80];
+    }
+
+    char *json_string = new char[json_string_size+1];
+    if (json_string == NULL)
+    {
+        fclose(fJsonFile);
+        return;
+    }
+    memset(json_string, 0, json_string_size+1);
+    strcpy(json_string, "");
+
+    if(fread(json_string, 1, json_string_size, fJsonFile) != (size_t)json_string_size)
+    {
+        Log("on_btnImport, fread error");
+    }
+    json_string[json_string_size] = 0;
     char *mesh_name;
 
     if ((mesh_name = mesh_client_network_import(ED_TO_CHAR(ui->edUser),
@@ -948,10 +954,12 @@ void MainWindow::on_btnImport()
             ui->cbNetwork->setCurrentIndex(sel);
         }
         QString strMesh(mesh_name);
-        strcpy(m_szCurrentGroup, strMesh.toStdString().c_str());
+        strncpy(m_szCurrentGroup, strMesh.toStdString().c_str(), sizeof(m_szCurrentGroup)-1);
 
         DisplayCurrentGroup();
+        wiced_bt_free_buffer(p_networks);
     }
+    fclose(fJsonFile);
     delete[] json_string;
 }
 
@@ -964,10 +972,11 @@ void MainWindow::on_btnExport()
     char *json_string = mesh_client_network_export(STR_TO_CHAR(ui->cbNetwork->currentText()));
     if (json_string != NULL)
     {
-        FILE *fJsonFile;
-        if (fJsonFile = fopen(STR_TO_CHAR(fileName), "w"))
+        FILE *fJsonFile = fopen(STR_TO_CHAR(fileName), "w");
+        if (fJsonFile == NULL)
         {
             messageBox(0,"Failed to open the json file", "Error", 0);
+            free(json_string);
             return;
         }
         fwrite(json_string, 1, strlen(json_string), fJsonFile);
@@ -980,12 +989,12 @@ void MainWindow::on_btnExport()
 void MainWindow::on_btnCreateGrp()
 {
     int res;
-    char mesh_name[80];
-    strcpy(mesh_name,ui->cbNetwork->currentText().toStdString().c_str());
+    char mesh_name[80], group[64], parent[64];
+    strncpy(mesh_name,ui->cbNetwork->currentText().toStdString().c_str(), 80-1);
     ui->edGroup->setText("");
 
-    char * group = (char *)ui->edGroup->text().toStdString().c_str();
-    char * parent =(char*) ui->cbCurGrp->currentText().toStdString().c_str();
+    strncpy(group,(char *)ui->edGroup->text().toStdString().c_str(), 64-1);
+    strncpy(parent,(char *)ui->edGroup->text().toStdString().c_str(), 64-1);
     res = mesh_client_group_create(group , parent );
 
     if (res == MESH_CLIENT_SUCCESS)
@@ -995,7 +1004,7 @@ void MainWindow::on_btnCreateGrp()
     }
     else
     {
-        Log(L"Failed to create group:%d", res);
+        Log("Failed to create group:%d", res);
     }
 }
 
@@ -1054,7 +1063,7 @@ DWORD MainWindow::GetHexValue(char * szVal, LPBYTE buf, DWORD buf_size)
 
     memset(buf, 0, buf_size);
 
-    strncpy(szbuf, szVal, strlen(szVal));
+    strncpy(szbuf, szVal, 1300-1);
 
     if (strlen(szbuf) == 1)
     {
@@ -1176,7 +1185,7 @@ void MainWindow::on_btnConfigPub()
 
     char szPublishMethod[80], szPublishString[80];
     char *p;
-    strcpy(szPublishString,STR_TO_CHAR(ui->cbDevFrom->currentText()));
+    strncpy(szPublishString,STR_TO_CHAR(ui->cbDevFrom->currentText()), sizeof(szPublishMethod) - 1);
 
     uint8_t client_control;
     if (strncmp(szPublishString, "control \"", strlen("control \"")) == 0)
@@ -1199,7 +1208,7 @@ void MainWindow::on_btnConfigPub()
         return;
 
     char szPublishToName[80];
-    strcpy(szPublishToName, STR_TO_CHAR(ui->cbToGrp2->currentText()));
+    strncpy(szPublishToName, STR_TO_CHAR(ui->cbToGrp2->currentText()), 80-1);
 
     // Get publication parameters from the dialog and tell Client that new parameters should be used
     int publish_credential_flag = ui->cbPubModel->currentIndex();
@@ -1267,7 +1276,7 @@ void MainWindow::on_btnGetOnOff()
         p_control_test_results = (unsigned int *)realloc(p_control_test_results,control_test * sizeof(DWORD));
         if (p_control_test_results != 0)
         {
-            memset(p_control_test_results, 0, sizeof(control_test * sizeof(DWORD)));
+            memset(p_control_test_results, 0, control_test * sizeof(DWORD));
         }
         control_test_itterration = 0;
         g_on_off_tmr->start(5000);
@@ -1314,11 +1323,14 @@ void control_test_status(unsigned long duration)
         }
         if (--control_test == 0)
         {
-            char buf[1000];
-            for (int i = 0; i < control_test_itterration; i++)
-                sprintf(&buf[strlen(buf)], "%d ", p_control_test_results[i]);
+            if (p_control_test_results != NULL)
+            {
+                char buf[1000] = {0};
+                for (int i = 0; i < control_test_itterration; i++)
+                    sprintf(&buf[i], "%d ", p_control_test_results[i]);
 
-            Log("Control Test result %s", buf);
+                Log("Control Test result %s", buf);
+            }
         }
         else
         {
@@ -1396,20 +1408,18 @@ void MainWindow::on_btnConfigSensor()
 void MainWindow::on_btnSensorGet()
 {
     int sel;
-    char * name = (char *)ui->cbControl->currentText().toStdString().c_str();
     if ((sel = ui->cbSensor->currentIndex()) < 0)
         return;
 
     int property_id = (int)ui->cbSensor->currentData().toInt();
-    mesh_client_sensor_get(name, property_id);
+    mesh_client_sensor_get((char *)ui->cbControl->currentText().toStdString().c_str(), property_id);
 }
 
 void MainWindow::onCbControlIndexChanged(int ndx)
 {
     ui->cbSensor->clear();
-    char * name = (char *)ui->cbControl->currentText().toStdString().c_str();
 
-    int *property_ids = mesh_client_sensor_property_list_get(name);
+    int *property_ids = mesh_client_sensor_property_list_get((char *)ui->cbControl->currentText().toStdString().c_str());
     if (property_ids == NULL)
         return;
     int *p;
@@ -1453,7 +1463,7 @@ void MainWindow::onGrpIndexChanged(int)
     if (sel < 0)
         return;
 
-    strcpy(m_szCurrentGroup, ui->cbCurGrp->currentText().toStdString().c_str());
+    strncpy(m_szCurrentGroup, ui->cbCurGrp->currentText().toStdString().c_str(), sizeof(m_szCurrentGroup)-1);
 
     DisplayCurrentGroup();
 }
@@ -1468,6 +1478,7 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+#if 0
 const WCHAR* data2str(const UINT8* p_data, UINT32 len)
 {
     UINT32 i;
@@ -1486,6 +1497,7 @@ const WCHAR* data2str(const UINT8* p_data, UINT32 len)
     static QString strBuf(buf);
     return strBuf.toStdWString().c_str();
 }
+#endif
 
 const WCHAR* keyidx2str(const UINT8* p_data, UINT32 len)
 {
@@ -1559,7 +1571,7 @@ void unprovisioned_device(uint8_t *p_uuid, uint16_t oob, uint8_t *name, uint8_t 
 
 void network_opened(uint8_t status)
 {
-    Log(L"Network opened");
+    Log("Network opened");
 }
 
 /*
@@ -1652,35 +1664,41 @@ void provision_status(uint8_t status, uint8_t *p_uuid)
     }
 
     if (status != MESH_CLIENT_PROVISION_STATUS_SUCCESS)
+    {
+        wiced_bt_free_buffer(p_devices);
         return;
+    }
 
     for (char *p_component_name = p_devices; p_component_name != NULL && *p_component_name != 0; p_component_name += (strlen(p_component_name) + 1))
     {
-        WCHAR szDevName[80];
         char *target_methods = mesh_client_get_target_methods(p_component_name);
         char *control_methods = mesh_client_get_control_methods(p_component_name);
         sprintf(buf, "Name:%s", p_component_name);
         Log(buf);
         if ((target_methods != NULL) && (target_methods[0] != 0))
         {
-            strcpy(buf, "Can be controlled using: ");
+            strncpy(buf, "Can be controlled using: ", strlen("Can be controlled using: ")-1);
             for (char *p = target_methods; *p != 0; p = p + strlen(p) + 1)
             {
-                strcat(buf, p);
-                strcat(buf, ", ");
+                strncat(buf, p, sizeof(buf) - strlen(buf) -1);
+                strncat(buf, ", ",  sizeof(buf) - strlen(buf) -1);
             }
             Log(buf);
         }
         if ((control_methods != NULL) && (control_methods[0] != 0))
         {
-            strcpy(buf, "Can control: ");
+            strncpy(buf, "Can control: ", strlen("Can control: ")-1);
             for (char *p = control_methods; *p != 0; p = p + strlen(p) + 1)
             {
-                strcat(&buf[strlen(buf)], p);
-                strcat(buf, ", ");
+                strncat(buf, p, sizeof(buf) - strlen(buf) -1);
+                strncat(buf, ", ", sizeof(buf) - strlen(buf) -1);
             }
             Log(buf);
         }
+        if(control_methods)
+            wiced_bt_free_buffer(control_methods);
+        if(target_methods)
+            wiced_bt_free_buffer(target_methods);
     }
 
     gMainWindow->ProvisionCompleted();
@@ -1699,12 +1717,12 @@ void provision_status(uint8_t status, uint8_t *p_uuid)
     }
     mesh_client_enqueue_and_check_event(MESH_CLIENT_SCRIPT_EVT_PROVISION_STATUS, &provision_status, sizeof(provision_status));
 #endif
-   // free(p_devices);
+   wiced_bt_free_buffer(p_devices);
 }
 
 void database_changed(char *mesh_name)
 {
-    Log(L"database changed\n");
+    Log("database changed\n");
 }
 
 void level_status(const char *device_name, int16_t present, int16_t target, uint32_t remaining_time)
@@ -1837,8 +1855,8 @@ void MainWindow::DisplayCurrentGroup()
     // get groups and components for the current group
     QString group_name = QString(m_szCurrentGroup);
 
-    Log(L"Current Group: %s\n", m_szCurrentGroup);
-    Log(L"Groups:\n");
+    Log("Current Group: %s\n", m_szCurrentGroup);
+    Log("Groups:\n");
     p_groups = mesh_client_get_all_groups(STR_TO_CHAR(group_name));
     for (p = p_groups; p != NULL && *p != 0; p += (strlen(p) + 1))
     {
@@ -1846,7 +1864,7 @@ void MainWindow::DisplayCurrentGroup()
     }
     free(p_groups);
 
-    Log(L"Components:\n");
+    Log("Components:\n");
     char *p_components = mesh_client_get_group_components(STR_TO_CHAR(group_name));
     for (p = p_components; p != NULL && *p != 0; p += (strlen(p) + 1))
     {

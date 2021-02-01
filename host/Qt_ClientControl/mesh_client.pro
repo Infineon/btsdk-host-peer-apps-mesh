@@ -77,10 +77,10 @@ mtb_release {
     INCLUDEPATH += .
     INCLUDEPATH += $$_PRO_FILE_PWD_/.
     INCLUDEPATH += $$_PRO_FILE_PWD_/include
-    INCLUDEPATH += $$_PRO_FILE_PWD_/../../../../dev-kit/baselib/20819A1/include
-    INCLUDEPATH += $$_PRO_FILE_PWD_/../../../../dev-kit/baselib/20819A1/include/internal
-    INCLUDEPATH += $$_PRO_FILE_PWD_/../../../../dev-kit/baselib/20819A1/include/hal
-    INCLUDEPATH += $$_PRO_FILE_PWD_/../../../../dev-kit/baselib/20819A1/include/stack
+    INCLUDEPATH += $$_PRO_FILE_PWD_/../../../../dev-kit/baselib/20819A1/COMPONENT_20819A1/include
+    INCLUDEPATH += $$_PRO_FILE_PWD_/../../../../dev-kit/baselib/20819A1/COMPONENT_20819A1/include/internal
+    INCLUDEPATH += $$_PRO_FILE_PWD_/../../../../dev-kit/baselib/20819A1/COMPONENT_20819A1/include/hal
+    INCLUDEPATH += $$_PRO_FILE_PWD_/../../../../dev-kit/baselib/20819A1/COMPONENT_20819A1/include/stack
     INCLUDEPATH += $$_PRO_FILE_PWD_/../../../../dev-kit/btsdk-include
     INCLUDEPATH += $$_PRO_FILE_PWD_/../../include
     INCLUDEPATH += $$_PRO_FILE_PWD_/../../mesh_client_lib
