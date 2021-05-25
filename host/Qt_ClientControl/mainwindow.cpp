@@ -429,7 +429,7 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->cbPushMethod->addItem("App DFU to all");
     ui->cbPushMethod->addItem("App DFU to device");
 
-    ui->cbPubModel->addItem("Master Security");
+    ui->cbPubModel->addItem("Flooding Security");
     ui->cbPubModel->addItem("Friendship Security");
     ui->cbPubModel->setCurrentIndex(0);
 
@@ -991,10 +991,10 @@ void MainWindow::on_btnCreateGrp()
     int res;
     char mesh_name[80], group[64], parent[64];
     strncpy(mesh_name,ui->cbNetwork->currentText().toStdString().c_str(), 80-1);
+    strncpy(group,(char *)ui->edGroup->text().toStdString().c_str(), 64-1);
+    strncpy(parent,(char *)ui->cbCurGrp->currentText().toStdString().c_str(), 64-1);
     ui->edGroup->setText("");
 
-    strncpy(group,(char *)ui->edGroup->text().toStdString().c_str(), 64-1);
-    strncpy(parent,(char *)ui->edGroup->text().toStdString().c_str(), 64-1);
     res = mesh_client_group_create(group , parent );
 
     if (res == MESH_CLIENT_SUCCESS)

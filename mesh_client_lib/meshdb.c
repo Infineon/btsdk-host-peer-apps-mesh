@@ -98,7 +98,7 @@
 #define MESH_JSON_NODE_TAG_RELAY_REXMIT             0x0000
 #define MESH_JSON_NODE_TAG_APP_KEYS                 0x0000
 #define MESH_JSON_NODE_TAG_ELEMENTS                 0x0000
-#define MESH_JSON_NODE_TAG_BLACKLISTED              0x0000
+#define MESH_JSON_NODE_TAG_REJECTLISTED             0x0000
 #define MESH_JSON_NODE_TAG_KEY_COMPOSITION          0x0000
 
 #define MESH_JSON_TAG_NODE_MANDATORY (MESH_JSON_NODE_TAG_UUID | MESH_JSON_NODE_TAG_UNICAST_ADDR | MESH_JSON_NODE_TAG_DEVICE_KEY | MESH_JSON_NODE_TAG_SECURITY | MESH_JSON_NODE_TAG_NET_KEYS | MESH_JSON_NODE_TAG_CONFIG_COMPLETE)
@@ -1506,11 +1506,11 @@ int mesh_json_read_nodes(FILE *fp, char prefix, wiced_bt_mesh_db_mesh_t *p_mesh)
                     return 0;
                 tags |= MESH_JSON_NODE_TAG_ELEMENTS;
             }
-            else if (strcmp(tagname, "blacklisted") == 0)
+            else if (strcmp(tagname, "rejectlisted") == 0)
             {
                 if (!mesh_json_read_boolean(fp, c1, &node.blocked))
                     return 0;
-                tags |= MESH_JSON_NODE_TAG_BLACKLISTED;
+                tags |= MESH_JSON_NODE_TAG_REJECTLISTED;
             }
             else
             {
@@ -3437,7 +3437,7 @@ void mesh_json_write_node(FILE *fp, wiced_bt_mesh_db_node_t *node, int is_last)
         mesh_json_write_element(fp, &node->element[i], i == node->num_elements - 1);
     fputs("      ],\n", fp);
 
-    mesh_json_write_boolean(fp, 6, "blacklisted", node->blocked, 1);
+    mesh_json_write_boolean(fp, 6, "rejectlisted", node->blocked, 1);
     if (is_last)
         fputs("    }\n", fp);
     else

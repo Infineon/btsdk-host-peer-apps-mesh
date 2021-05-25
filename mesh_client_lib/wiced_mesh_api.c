@@ -1475,6 +1475,22 @@ wiced_bool_t wiced_bt_mesh_config_node_identity_set(wiced_bt_mesh_event_t *p_eve
     return WICED_TRUE;
 }
 
+wiced_bool_t wiced_bt_mesh_lpn_poll_timeout_get(wiced_bt_mesh_event_t* p_event, wiced_bt_mesh_lpn_poll_timeout_get_data_t* p_get)
+{
+    uint8_t buffer[128];
+    uint8_t* p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    if (p == NULL)
+        return WICED_FALSE;
+
+    *p++ = p_get->lpn_addr & 0xff;
+    *p++ = (p_get->lpn_addr >> 8) & 0xff;
+
+    wiced_hci_send(HCI_CONTROL_MESH_COMMAND_CONFIG_LPN_POLL_TIMEOUT_GET, buffer, (uint16_t)(p - buffer));
+    return WICED_TRUE;
+}
+
+
 wiced_bool_t wiced_bt_mesh_proxy_filter_change_addr(wiced_bt_mesh_event_t *p_event, wiced_bool_t is_add, wiced_bt_mesh_proxy_filter_change_addr_data_t *p_addr)
 {
     uint8_t buffer[128];

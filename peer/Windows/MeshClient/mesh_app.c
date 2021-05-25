@@ -64,6 +64,76 @@ wiced_bt_cfg_settings_t wiced_bt_cfg_settings;
 #define MESH_VENDOR_OPCODE1             1       // Vendor message opcode 1
 #define MESH_VENDOR_OPCODE2             2       // Vendor message with opcode 2
 
+#ifdef MESH_DFU_ENABLED
+const mesh_dfu_opcodes_t dfu_opcodes = {
+    .blob_transfer_get = WICED_BT_MESH_OPCODE_BLOB_TRANSFER_GET,
+    .blob_transfer_start = WICED_BT_MESH_OPCODE_BLOB_TRANSFER_START,
+    .blob_transfer_cancel = WICED_BT_MESH_OPCODE_BLOB_TRANSFER_CANCEL,
+    .blob_transfer_status = WICED_BT_MESH_OPCODE_BLOB_TRANSFER_STATUS,
+    .blob_block_get = WICED_BT_MESH_OPCODE_BLOB_BLOCK_GET,
+    .blob_block_start = WICED_BT_MESH_OPCODE_BLOB_BLOCK_START,
+    .blob_partial_block_report = WICED_BT_MESH_OPCODE_BLOB_PARTIAL_BLOCK_REPORT,
+    .blob_block_status = WICED_BT_MESH_OPCODE_BLOB_BLOCK_STATUS,
+    .blob_chunk_transfer = WICED_BT_MESH_OPCODE_BLOB_CHUNK_TRANSFER,
+    .blob_info_get = WICED_BT_MESH_OPCODE_BLOB_INFO_GET,
+    .blob_info_status = WICED_BT_MESH_OPCODE_BLOB_INFO_STATUS,
+
+    .fw_update_info_get = WICED_BT_MESH_OPCODE_FW_UPDATE_INFO_GET,
+    .fw_update_info_status = WICED_BT_MESH_OPCODE_FW_UPDATE_INFO_STATUS,
+    .fw_update_metadata_check = WICED_BT_MESH_OPCODE_FW_UPDATE_FW_METADATA_CHECK,
+    .fw_update_metadata_status = WICED_BT_MESH_OPCODE_FW_UPDATE_FW_METADATA_STATUS,
+    .fw_update_get = WICED_BT_MESH_OPCODE_FW_UPDATE_GET,
+    .fw_update_start = WICED_BT_MESH_OPCODE_FW_UPDATE_START,
+    .fw_update_cancel = WICED_BT_MESH_OPCODE_FW_UPDATE_CANCEL,
+    .fw_update_apply = WICED_BT_MESH_OPCODE_FW_UPDATE_APPLY,
+    .fw_update_status = WICED_BT_MESH_OPCODE_FW_UPDATE_STATUS,
+
+    .fw_distr_get = WICED_BT_MESH_OPCODE_FW_DISTR_GET,
+    .fw_distr_start = WICED_BT_MESH_OPCODE_FW_DISTR_START,
+    .fw_distr_cancel = WICED_BT_MESH_OPCODE_FW_DISTR_CANCEL,
+    .fw_distr_apply = WICED_BT_MESH_OPCODE_FW_DISTR_APPLY,
+    .fw_distr_status = WICED_BT_MESH_OPCODE_FW_DISTR_STATUS,
+    .fw_distr_nodes_get = WICED_BT_MESH_OPCODE_FW_DISTR_NODES_GET,
+    .fw_distr_nodes_list = WICED_BT_MESH_OPCODE_FW_DISTR_NODES_LIST,
+    .fw_distr_nodes_add = WICED_BT_MESH_OPCODE_FW_DISTR_NODES_ADD,
+    .fw_distr_nodes_delete_all = WICED_BT_MESH_OPCODE_FW_DISTR_NODES_DELETE_ALL,
+    .fw_distr_nodes_status = WICED_BT_MESH_OPCODE_FW_DISTR_NODES_STATUS,
+    .fw_distr_capabilities_get = WICED_BT_MESH_OPCODE_FW_DISTR_CAPABILITIES_GET,
+    .fw_distr_capabilities_status = WICED_BT_MESH_OPCODE_FW_DISTR_CAPABILITIES_STATUS,
+    .fw_distr_upload_get = WICED_BT_MESH_OPCODE_FW_DISTR_UPLOAD_GET,
+    .fw_distr_upload_start = WICED_BT_MESH_OPCODE_FW_DISTR_UPLOAD_START,
+    .fw_distr_upload_oob_start = WICED_BT_MESH_OPCODE_FW_DISTR_UPLOAD_OOB_START,
+    .fw_distr_upload_cancel = WICED_BT_MESH_OPCODE_FW_DISTR_UPLOAD_CANCEL,
+    .fw_distr_upload_status = WICED_BT_MESH_OPCODE_FW_DISTR_UPLOAD_STATUS,
+    .fw_distr_fw_get = WICED_BT_MESH_OPCODE_FW_DISTR_FW_GET,
+    .fw_distr_fw_status = WICED_BT_MESH_OPCODE_FW_DISTR_FW_STATUS,
+    .fw_distr_fw_get_by_index = WICED_BT_MESH_OPCODE_FW_DISTR_FW_GET_BY_INDEX,
+    .fw_distr_fw_delete = WICED_BT_MESH_OPCODE_FW_DISTR_FW_DELETE,
+    .fw_distr_fw_delete_all = WICED_BT_MESH_OPCODE_FW_DISTR_FW_DELETE_ALL,
+};
+
+mesh_dfu_blob_client_config_t blob_client_cfg = {
+    .max_block_size_log                 = 12,                       // maximum block size 4096 bytes
+    .chunk_size_unicast                 = 256,                      // chunk size when sending with unicast
+    .chunk_size_multicast               = 32,                       // chunk size when sending with multicast
+    .max_chunks_number                  = 512,                      // maximum number of chunks in a block
+    .max_mtu_size                       = 1024,                     // MTU
+};
+
+mesh_dfu_distributor_config_t dfu_distributor_cfg = {
+    .max_buffer_size                    = 1024,                     // largest buffer size defined in wiced_bt_cfg.c
+    .max_fw_storage_space               = 262144,                   // maximum firmware storage space is 256KB
+    .oob_supported                      = 0,                        // out-of-band upload not supported
+};
+
+mesh_dfu_config_t dfu_cfg = {
+    .p_blob_client_cfg                  = &blob_client_cfg,         // BLOB transfer client configuration
+    .p_blob_server_cfg                  = NULL,
+    .p_distributor_cfg                  = &dfu_distributor_cfg,     // DFU distributor configuration
+    .p_update_server_cfg                = NULL
+};
+#endif
+
 static void mesh_app_init(wiced_bool_t is_provisioned);
 static void mesh_provision_message_handler(uint16_t event, wiced_bt_mesh_event_t *p_event, void *p_data);
 static void mesh_config_message_handler(uint16_t event, wiced_bt_mesh_event_t *p_event, void *p_data);
@@ -183,7 +253,7 @@ wiced_bt_mesh_core_config_t  mesh_config =
     .product_id         = MESH_PID,                                 // Vendor-assigned product identifier
     .vendor_id          = MESH_VID,                                 // Vendor-assigned product version identifier
     .replay_cache_size  = MESH_CACHE_REPLAY_SIZE,                   // Number of replay protection entries, i.e. maximum number of mesh devices that can send application messages to this device.
-    .features                  = 0,                                 //
+    .features           = WICED_BT_MESH_CORE_FEATURE_BIT_NO_ADV_BEARER,     // GATT client mode: advert scanning but no advert sending and receiving
     .friend_cfg         =                                           // Empty Configuration of the Friend Feature
     {
         .receive_window        = 0,                                 // Receive Window value in milliseconds supported by the Friend node.
@@ -343,6 +413,8 @@ void mesh_app_init(wiced_bool_t is_provisioned)
     wiced_bt_mesh_health_client_init(mesh_config_message_handler, is_provisioned);
     wiced_bt_mesh_proxy_client_init(mesh_config_message_handler, is_provisioned);
 #ifdef MESH_DFU_ENABLED
+    wiced_bt_mesh_model_fw_update_set_opcodes(&dfu_opcodes);
+    wiced_bt_mesh_model_fw_update_init(&dfu_cfg, NULL);
     wiced_bt_mesh_model_fw_provider_init();
     wiced_bt_mesh_model_fw_distribution_server_init();
 #endif

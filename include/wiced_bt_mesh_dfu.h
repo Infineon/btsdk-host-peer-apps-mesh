@@ -333,7 +333,6 @@ extern "C"
 #define WICED_BT_MESH_MAX_BLOB_POLL_INTERVAL                        30      /**< T_MBPI = 30 seconds */
 
 #define WICED_BT_MESH_BLOB_TRANSFER_BLOB_ID_LEN                     8
-#define WICED_BT_MESH_BLOB_TRANSFER_MAX_BLOB_SIZE                   262144  /**< Max BLOB size is 256KB */
 
 /*---------------------------------------------------------------------------*/
 /*                        wiced_bt_mesh_models.h                             */
@@ -430,11 +429,9 @@ typedef PACKED struct
 #define MESH_CYPRESS_FW_ID_LEN              11
     uint8_t  fw_id_len;                                 /**< length of firmware id stored in fw_id */
 #define WICED_BT_MESH_MIN_FIRMWARE_ID_LEN   2           /**< At minimum FW ID shall contain 2 bytes of company ID */
-#define WICED_BT_MESH_MAX_FIRMWARE_ID_LEN   110         /**< MAX len of firmware id */
+#define WICED_BT_MESH_MAX_FIRMWARE_ID_LEN   108         /**< MAX len of firmware id */
     uint8_t  fw_id[WICED_BT_MESH_MAX_FIRMWARE_ID_LEN];  /**< firmware id. maximum length is defined by WICED_BT_MESH_MAX_FIRMWARE_ID_LEN */
 } mesh_dfu_fw_id_t;
-
-#define WICED_BT_MESH_MAX_UPDATE_URI_LEN    255         /**< MAX len of Update URI */
 
 /* Firmware distribution metadata structure */
 typedef PACKED struct
@@ -448,9 +445,123 @@ typedef PACKED struct
 typedef PACKED struct
 {
     uint8_t  len;                                       /**< length of URI */
+#define WICED_BT_MESH_MAX_UPDATE_URI_LEN    255         /**< MAX len of Update URI */
     uint8_t  uri[WICED_BT_MESH_MAX_UPDATE_URI_LEN];     /**< URI */
 } mesh_dfu_uri_t;
 
+/* BLOB client configuration */
+typedef PACKED struct
+{
+    uint8_t  max_block_size_log;
+    uint16_t chunk_size_unicast;
+    uint16_t chunk_size_multicast;
+    uint16_t max_chunks_number;
+    uint16_t max_mtu_size;
+} mesh_dfu_blob_client_config_t;
+
+/* BLOB server configuration */
+typedef PACKED struct
+{
+    uint8_t  min_block_size_log;
+    uint8_t  max_block_size_log;
+    uint16_t max_chunks_number;
+    uint16_t max_chunk_size;
+    uint16_t chunk_size_pull_mode;
+    uint16_t max_mtu_size;
+    uint32_t max_blob_size;
+    uint16_t max_buffer_size;
+} mesh_dfu_blob_server_config_t;
+
+#define MESH_MAX_URI_SCHEME_NAMES           6
+
+/* Distributor configuration */
+typedef PACKED struct
+{
+    uint16_t max_buffer_size;
+    uint32_t max_fw_storage_space;
+    uint8_t  oob_supported;
+    uint8_t  uri_scheme_num;
+    uint8_t  uri_scheme_names[MESH_MAX_URI_SCHEME_NAMES];
+} mesh_dfu_distributor_config_t;
+
+typedef PACKED struct
+{
+    mesh_dfu_fw_id_t fw_id;
+    char *uri;
+} mesh_dfu_fw_info_t;
+
+/* Firmware update server configuration */
+typedef PACKED struct
+{
+    uint8_t  fw_info_list_size;
+    mesh_dfu_fw_info_t *fw_info_list;
+} mesh_dfu_update_server_config_t;
+
+/* DFU configuration */
+typedef struct
+{
+    mesh_dfu_blob_client_config_t   *p_blob_client_cfg;
+    mesh_dfu_blob_server_config_t   *p_blob_server_cfg;
+    mesh_dfu_distributor_config_t   *p_distributor_cfg;
+    mesh_dfu_update_server_config_t *p_update_server_cfg;
+} mesh_dfu_config_t;
+
+/**
+ * \brief This callback is called by the Mesh Models library to retrieve current app's firmware ID
+ *
+ * @param       p_fw_id Space to return the current firmware ID
+ *
+ * @return      wiced_bool_t
+ */
+typedef wiced_bool_t(*mesh_dfu_get_active_fw_id_t)(mesh_dfu_fw_id_t *p_fw_id);
+/**
+ * \brief This callback is called by the Mesh Models library to check if received metadata matches
+ *
+ * @param       index       Index of the firmware image the metadata is to be checked with
+ * @param       p_metadata  The metadata
+ *
+ * @return      wiced_bool_t
+ */
+typedef wiced_bool_t(*mesh_dfu_metadata_check_t)(uint8_t index, mesh_dfu_metadata_t *p_metadata);
+/**
+ * \brief This callback is called by the Mesh Models library to verify the received firmware image
+ *
+ * @param       index       Index of the firmware image received
+ * @param       fw_size     Size of the firmware image received
+ * @param       p_metadata  The metadata
+ *
+ * @return      wiced_bool_t
+ */
+typedef wiced_bool_t(*mesh_dfu_fw_verify_t)(uint8_t index, uint32_t fw_size, mesh_dfu_metadata_t *p_metadata);
+/**
+ * \brief This callback is called by the Mesh Models library to apply the received firmware image
+ *
+ * @param       index       Index of the firmware image to be applied
+ *
+ * @return      wiced_bool_t
+ */
+typedef wiced_bool_t(*mesh_dfu_fw_apply_t)(uint8_t index);
+/**
+ * \brief This callback is called by the Mesh Models library to start OOB firmware upload
+ * \details Out-Of-Band firmware upload uses HTTP to retrieve firmware image from a server. It construct the
+ * Request URI with Update URI and FW ID input, send an HTTP GET request with the Request URI. The HTTP server
+ * returns a firmware archive which contains FW image, FW ID, and metadata.
+ *
+ * @param       p_uri   Update URI
+ * @param       p_fw_id Current firmware ID of the device that needs to be updated
+ *
+ * @return      MESH_FW_DISTRIBUTION_STATUS_CODE
+ */
+typedef uint8_t (*mesh_dfu_fw_upload_oob_t)(mesh_dfu_uri_t *p_uri, mesh_dfu_fw_id_t *p_fw_id);
+
+typedef struct
+{
+    mesh_dfu_get_active_fw_id_t p_active_fw_id_cb;
+    mesh_dfu_metadata_check_t   p_metadata_check_cb;
+    mesh_dfu_fw_verify_t        p_fw_verify_cb;
+    mesh_dfu_fw_apply_t         p_fw_apply_cb;
+    mesh_dfu_fw_upload_oob_t    p_fw_upload_oob_cb;
+} mesh_dfu_callbacks_t;
 
 /**
 * \brief Firmware update set opcodes
@@ -462,7 +573,16 @@ typedef PACKED struct
 */
 void wiced_bt_mesh_model_fw_update_set_opcodes(const mesh_dfu_opcodes_t *p_opcodes);
 
-extern const mesh_dfu_opcodes_t *mesh_model_dfu_opcodes;
+/**
+* \brief Firmware update init
+* \details Application call this function to initialize DFU models in the library
+*
+* @param       p_dfu_config     DFU configuration.
+* @param       p_dfu_callbacks  DFU callbacks.
+*
+* @return      None.
+*/
+void wiced_bt_mesh_model_fw_update_init(const mesh_dfu_config_t *p_dfu_config, const mesh_dfu_callbacks_t *p_dfu_callbacks);
 
 /**
  * NOTE: This is preliminary implementation subject to change
@@ -511,17 +631,6 @@ void wiced_bt_mesh_model_fw_distribution_server_init(void);
  */
 typedef uint8_t (wiced_bt_mesh_fw_upload_oob_callback_t)(mesh_dfu_uri_t *p_uri, mesh_dfu_fw_id_t *p_fw_id);
 
-/**
- * \brief FW Upload OOB initialization
- * \details A mesh app calls this function if it supports OOB FW upload.
- *
- * @param       num_scheme      Number of supported URI scheme.
- * @param       p_schemes       List of supported URI schemes.
- * @param       p_oob_callback  OOB FW Upload callback.
- *
- * @return      None
- */
-void wiced_bt_mesh_model_fw_upload_oob_init(uint8_t num_scheme, uint8_t *p_schemes, wiced_bt_mesh_fw_upload_oob_callback_t *p_oob_callback);
 /* @} wiced_bt_mesh_fw_distribution_server */
 
 /**
@@ -535,7 +644,7 @@ typedef struct
     uint32_t max_upload_space;                              /**< Size of the Distributor’s storage in octets */
     uint32_t remaining_upload_space;                        /**< Available size in the storage on the Distributor in octets */
     uint8_t  oob_supported;                                 /**< Value of the Out-of-Band Retrieval Supported state */
-#define MESH_MAX_URI_SCHEME_NAMES 10                        /**< ToDo */
+    uint8_t  uri_scheme_num;                                /**< Number of Supported URI Scheme Names */
     uint8_t  uri_scheme_names[MESH_MAX_URI_SCHEME_NAMES];   /**< Value of the Supported URI Scheme Names state */
 } wiced_bt_mesh_fw_distr_caps_t;
 
@@ -875,11 +984,9 @@ typedef wiced_bool_t(wiced_bt_mesh_fw_update_server_callback_t)(uint16_t event, 
 /**
  * \brief Firmware Update Server Module initialization
  *
- * @param       p_update_uri   Update URI
- *
  * @return      None
  */
-void wiced_bt_mesh_model_fw_update_server_init(char *p_update_uri);
+void wiced_bt_mesh_model_fw_update_server_init();
 
 /**
  * \brief Firmware Update Server Message Handler
@@ -1122,15 +1229,6 @@ wiced_bool_t mesh_dfu_compare_fw_id(mesh_dfu_fw_id_t *firmware_id_src, mesh_dfu_
 uint8_t *mesh_dfu_length_data_to_stream(uint8_t *p_data, uint8_t length, uint8_t *p_stream);
 
 /*
- * DFU FW ID / FW verification callbacks
- */
-typedef wiced_bool_t(*mesh_dfu_get_active_fw_id_t)(mesh_dfu_fw_id_t *p_fw_id);
-typedef wiced_bool_t(*mesh_dfu_metadata_check_t)(mesh_dfu_metadata_t *p_metadata);
-typedef wiced_bool_t(*mesh_dfu_fw_verify_t)(uint32_t fw_size, mesh_dfu_metadata_t *p_metadata);
-
-void wiced_bt_mesh_set_dfu_callbacks(mesh_dfu_get_active_fw_id_t p_active_fw_id_cb, mesh_dfu_metadata_check_t p_metadata_check_cb, mesh_dfu_fw_verify_t p_fw_verify_cb);
-
-/*
  * Get FW ID from active firmware
  */
 wiced_bool_t mesh_dfu_get_active_fw_id(mesh_dfu_fw_id_t *p_fw_id);
@@ -1138,12 +1236,22 @@ wiced_bool_t mesh_dfu_get_active_fw_id(mesh_dfu_fw_id_t *p_fw_id);
 /*
  * Check if FW ID is acceptable
  */
-wiced_bool_t mesh_dfu_metadata_check(mesh_dfu_metadata_t *p_metadata);
+wiced_bool_t mesh_dfu_metadata_check(uint8_t index, mesh_dfu_metadata_t *p_metadata);
 
 /*
  * Verify received FW with meta data
  */
-wiced_bool_t mesh_dfu_fw_verify(uint32_t fw_size, mesh_dfu_metadata_t *p_metadata);
+wiced_bool_t mesh_dfu_fw_verify(uint8_t index, uint32_t fw_size, mesh_dfu_metadata_t *p_metadata);
+
+/*
+ * Apply received FW
+ */
+wiced_bool_t mesh_dfu_fw_apply(uint8_t index);
+
+/*
+ * Start OOB firmware upload
+ */
+uint8_t mesh_dfu_fw_upload_oob(mesh_dfu_uri_t *p_uri, mesh_dfu_fw_id_t *p_fw_id);
 
 /*
  * DFU active states

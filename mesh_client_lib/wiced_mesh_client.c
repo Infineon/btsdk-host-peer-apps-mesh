@@ -112,6 +112,7 @@ extern void ods(char * fmt_str, ...);
 #define CONFIG_OPERATION_SENSOR_SETTINGS_GET 18
 #define CONFIG_OPERATION_SENSOR_CADENCE_GET 19
 #define CONFIG_OPERATION_FILTER_DEL         20
+#define CONFIG_OPERATION_LPN_POLL_TIMEOUT_GET 21
 
 #define DEVICE_TYPE_LIGHT_HSL_HUE           13
 #define DEVICE_TYPE_LIGHT_HSL_SATURATION    14
@@ -149,6 +150,7 @@ typedef struct t_pending_operation
         wiced_bt_mesh_config_beacon_set_data_t beacon_set;
         wiced_bt_mesh_config_gatt_proxy_set_data_t proxy_set;
         wiced_bt_mesh_config_friend_set_data_t friend_set;
+        wiced_bt_mesh_lpn_poll_timeout_get_data_t lpn_poll_timeout_get;
         wiced_bt_mesh_proxy_filter_change_addr_data_t filter_add;
         wiced_bt_mesh_default_transition_time_data_t default_trans_time;
         wiced_bt_mesh_config_key_refresh_phase_set_data_t kr_phase_set;
@@ -270,6 +272,19 @@ typedef struct unprovisioned_report__t
     wiced_timer_t scan_timer;
 } unprovisioned_report_t;
 
+typedef struct t_mesh_lpn_key_refresh_block
+{
+    struct t_mesh_lpn_key_refresh_block* p_next;
+
+#define LPN_KEY_REFRESH_STATE_IDLE                  0
+#define LPN_KEY_REFRESH_STATE_GETTING_POLL_TIMEOUT  1
+    uint8_t  state;
+    uint16_t lpn_poll_timeout;
+    uint16_t lpn_addr;
+    uint16_t friend_addr;
+    wiced_timer_t timer;
+} mesh_lpn_key_refresh_block_t;
+
 typedef struct
 {
 #define PROVISION_STATE_IDLE                                0
@@ -322,6 +337,7 @@ typedef struct
     uint16_t    proxy_addr;         // Address of GATT Proxy
     uint16_t    device_key_addr;    // address of the device key configured in the local device
     uint8_t     db_changed;         // set to true if database changes during any operation
+    mesh_lpn_key_refresh_block_t* p_lpn_kr_first;
     uint8_t     identify_duration;
     uint8_t     use_gatt;
     uint8_t     is_gatt_proxy;
@@ -372,6 +388,7 @@ static void configure_pending_operation_queue(mesh_provision_cb_t *p_cb, pending
 static void app_key_add(mesh_provision_cb_t* p_cb, uint16_t addr, wiced_bt_mesh_db_net_key_t* net_key, wiced_bt_mesh_db_app_key_t* app_key);
 static void model_app_bind(mesh_provision_cb_t* p_cb, wiced_bool_t is_local, uint16_t addr, uint16_t company_id, uint16_t model_id, uint16_t app_key_idx);
 static pending_operation_t *configure_pending_operation_dequeue(mesh_provision_cb_t *p_cb);
+static pending_operation_t* configure_pending_operation_remove_from_queue(mesh_provision_cb_t* p_cb, pending_operation_t* p_op);
 static wiced_bool_t configure_event_in_pending_op(mesh_provision_cb_t *p_cb, wiced_bt_mesh_event_t *p_event);
 static void configure_execute_pending_operation(mesh_provision_cb_t *p_cb);
 static void provision_status_notify(mesh_provision_cb_t* p_cb, uint8_t status);
@@ -426,6 +443,7 @@ static void mesh_configure_friend_status(mesh_provision_cb_t *p_cb, wiced_bt_mes
 static void mesh_configure_gatt_proxy_status(mesh_provision_cb_t *p_cb, wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_config_gatt_proxy_status_data_t *p_data);
 static void mesh_configure_beacon_status(mesh_provision_cb_t *p_cb, wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_config_beacon_status_data_t *p_data);
 static void mesh_configure_filter_status(mesh_provision_cb_t *p_cb, wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_proxy_filter_status_data_t *p_data);
+static void mesh_configure_lpn_poll_timeout_status(mesh_provision_cb_t* p_cb, wiced_bt_mesh_event_t* p_event, wiced_bt_mesh_lpn_poll_timeout_status_data_t* p_data);
 
 static uint8_t mesh_reset_node(mesh_provision_cb_t *p_cb, wiced_bt_mesh_db_node_t *node);
 static void mesh_key_refresh_update_keys(mesh_provision_cb_t *p_cb, wiced_bt_mesh_db_net_key_t *net_key);
@@ -436,6 +454,7 @@ static void mesh_key_refresh_app_key_status(mesh_provision_cb_t *p_cb, wiced_bt_
 static void mesh_key_refresh_phase2_status(mesh_provision_cb_t *p_cb, wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_config_key_refresh_phase_status_data_t *p_data);
 static void mesh_key_refresh_phase3_status(mesh_provision_cb_t *p_cb, wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_config_key_refresh_phase_status_data_t *p_data);
 static int mesh_client_key_refresh_phase1_continue(mesh_provision_cb_t *p_cb, wiced_bt_mesh_db_net_key_t *net_key);
+static void mesh_key_refresh_lpn_poll_timeout_status(mesh_provision_cb_t* p_cb, wiced_bt_mesh_event_t* p_event, wiced_bt_mesh_lpn_poll_timeout_status_data_t* p_data);
 
 static void mesh_key_refresh_phase1_completed(mesh_provision_cb_t *p_cb, wiced_bt_mesh_db_net_key_t *net_key);
 static void mesh_key_refresh_phase2_completed(mesh_provision_cb_t *p_cb, wiced_bt_mesh_db_net_key_t *net_key);
@@ -489,6 +508,8 @@ void download_iv(uint32_t *p_iv_idx, uint8_t *p_iv_update);
 static uint16_t get_device_addr(const char *p_dev_name);
 static uint16_t *mesh_get_group_list(uint16_t group_addr, uint16_t company_id, uint16_t model_id, uint16_t *num);
 static uint16_t get_group_addr(const char *p_dev_name);
+static wiced_bt_mesh_event_t* mesh_client_configure_create_event(uint16_t dst);
+static mesh_lpn_key_refresh_block_t* lpn_kr_poll_timeout_get(mesh_provision_cb_t* p_cb, uint16_t lpn_addr, uint16_t friend_addr);
 extern wiced_bt_mesh_event_t *mesh_configure_create_event(uint16_t dst, wiced_bool_t retransmit);
 void wiced_bt_mesh_gatt_client_connection_state_changed(uint16_t conn_id, uint16_t mtu);
 
@@ -710,6 +731,7 @@ int mesh_client_network_open(const char *provisioner_name, const char *provision
 
     provision_cb.p_opened_callback = p_opened_callback;
     provision_cb.network_opened    = WICED_FALSE;
+    provision_cb.proxy_conn_id     = 0;
 
     mesh_application_init();
 
@@ -901,6 +923,14 @@ void mesh_client_network_close(void)
         p_mesh_db = NULL;
     }
     clean_pending_op_queue(0);
+    mesh_lpn_key_refresh_block_t* p_lpn_kr;
+    while (p_cb->p_lpn_kr_first != NULL)
+    {
+        p_lpn_kr = p_cb->p_lpn_kr_first;
+        wiced_stop_timer(&p_lpn_kr->timer);
+        p_cb->p_lpn_kr_first = p_cb->p_lpn_kr_first->p_next;
+        wiced_bt_free_buffer(p_lpn_kr);
+    }
 }
 
 int mesh_client_group_create(char *group_name, char *parent_group_name)
@@ -1055,7 +1085,7 @@ int mesh_client_group_delete(char *p_group_name)
                     {
                         memset(p_op, 0, sizeof(pending_operation_t));
                         p_op->operation = CONFIG_OPERATION_MODEL_SUBSCRIBE;
-                        p_op->p_event = mesh_configure_create_event(dst, (dst != p_cb->unicast_addr));
+                        p_op->p_event = mesh_client_configure_create_event(dst);
                         p_op->uu.model_sub.operation = OPERATION_DELETE;
                         p_op->uu.model_sub.element_addr = *p_element;
                         p_op->uu.model_sub.company_id = p_models_array[j].company_id;
@@ -1072,7 +1102,7 @@ int mesh_client_group_delete(char *p_group_name)
                         // Publish address 0 means delete publication
                         memset(p_op, 0, sizeof(pending_operation_t));
                         p_op->operation = CONFIG_OPERATION_MODEL_PUBLISH;
-                        p_op->p_event = mesh_configure_create_event(dst, (dst != p_cb->unicast_addr));
+                        p_op->p_event = mesh_client_configure_create_event(dst);
                         p_op->uu.model_pub.element_addr = *p_element;
                         p_op->uu.model_pub.company_id = p_models_array[j].company_id;
                         p_op->uu.model_pub.model_id = p_models_array[j].id;
@@ -1328,6 +1358,33 @@ void mesh_del_seq(uint16_t addr)
     fwrite(p_buffer, 1, file_size, fp);
     fclose(fp);
     wiced_bt_free_buffer(p_buffer);
+}
+
+void mesh_process_lpn_timeout(TIMER_PARAM_TYPE arg)
+{
+    mesh_provision_cb_t* p_cb = &provision_cb;
+    mesh_lpn_key_refresh_block_t* p_lpn_kr = (mesh_lpn_key_refresh_block_t*)arg;
+
+    const char* p_name = get_component_name(p_lpn_kr->lpn_addr);
+
+    if ((p_name != NULL) && (p_cb->p_node_connect_status != NULL))
+        p_cb->p_node_connect_status(MESH_CLIENT_NODE_ERROR_UNREACHABLE, (char*)p_name);
+
+    ods("LPN Timeout addr:%04x friend:%04x state:%d\n", p_lpn_kr->lpn_addr, p_lpn_kr->friend_addr, p_lpn_kr->state);
+}
+
+void mesh_lpn_poll_timeout_stop(mesh_provision_cb_t* p_cb, uint16_t lpn_addr)
+{
+    mesh_lpn_key_refresh_block_t* p_lpn_kr;
+    for (p_lpn_kr = p_cb->p_lpn_kr_first; p_lpn_kr != NULL; p_lpn_kr = p_lpn_kr->p_next)
+    {
+        if (p_lpn_kr->lpn_addr == lpn_addr)
+        {
+            ods("LPN poll timer stopped:%04x\n", lpn_addr);
+            wiced_stop_timer(&p_lpn_kr->timer);
+            break;
+        }
+    }
 }
 
 uint8_t configure_local_device(uint16_t unicast_addr, uint8_t phase, uint16_t net_key_idx, uint8_t *p_net_key)
@@ -1937,7 +1994,7 @@ int mesh_client_set_device_config(const char *device_name, int is_gatt_proxy, in
         {
             // wiced_bt_mesh_config_network_transmit_set_data_t
             p_op->operation = CONFIG_OPERATION_NET_TRANSMIT_SET;
-            p_op->p_event = mesh_configure_create_event(dst, (dst != p_cb->unicast_addr));
+            p_op->p_event = mesh_client_configure_create_event(dst);
             p_op->uu.net_transmit_set.count = net_xmit_count;
             p_op->uu.net_transmit_set.interval = net_xmit_interval;
             configure_pending_operation_queue(p_cb, p_op);
@@ -1950,7 +2007,7 @@ int mesh_client_set_device_config(const char *device_name, int is_gatt_proxy, in
         {
             //wiced_bt_mesh_config_default_ttl_set_data_t
             p_op->operation = CONFIG_OPERATION_DEFAULT_TTL_SET;
-            p_op->p_event = mesh_configure_create_event(dst, (dst != p_cb->unicast_addr));
+            p_op->p_event = mesh_client_configure_create_event(dst);
             p_op->uu.default_ttl_set.ttl = default_ttl;
             configure_pending_operation_queue(p_cb, p_op);
         }
@@ -1962,7 +2019,7 @@ int mesh_client_set_device_config(const char *device_name, int is_gatt_proxy, in
             ((p_op = (pending_operation_t *)wiced_bt_get_buffer(sizeof(pending_operation_t))) != NULL))
         {
             p_op->operation = CONFIG_OPERATION_RELAY_SET;
-            p_op->p_event = mesh_configure_create_event(dst, (dst != p_cb->unicast_addr));
+            p_op->p_event = mesh_client_configure_create_event(dst);
             p_op->uu.relay_set.state = is_relay;
             p_op->uu.relay_set.retransmit_count = relay_xmit_count;
             p_op->uu.relay_set.retransmit_interval = relay_xmit_interval;
@@ -1975,7 +2032,7 @@ int mesh_client_set_device_config(const char *device_name, int is_gatt_proxy, in
         if ((p_op = (pending_operation_t *)wiced_bt_get_buffer(sizeof(pending_operation_t))) != NULL)
         {
             p_op->operation = CONFIG_OPERATION_NET_BEACON_SET;
-            p_op->p_event = mesh_configure_create_event(dst, (dst != p_cb->unicast_addr));
+            p_op->p_event = mesh_client_configure_create_event(dst);
             p_op->uu.beacon_set.state = beacon;
             configure_pending_operation_queue(p_cb, p_op);
         }
@@ -1988,7 +2045,7 @@ int mesh_client_set_device_config(const char *device_name, int is_gatt_proxy, in
         {
             //wiced_bt_mesh_config_gatt_proxy_set_data_t
             p_op->operation = CONFIG_OPERATION_PROXY_SET;
-            p_op->p_event = mesh_configure_create_event(dst, (dst != p_cb->unicast_addr));
+            p_op->p_event = mesh_client_configure_create_event(dst);
             p_op->uu.proxy_set.state = is_gatt_proxy;
             configure_pending_operation_queue(p_cb, p_op);
         }
@@ -2001,7 +2058,7 @@ int mesh_client_set_device_config(const char *device_name, int is_gatt_proxy, in
         {
             //wiced_bt_mesh_config_friend_set_data_t
             p_op->operation = CONFIG_OPERATION_FRIEND_SET;
-            p_op->p_event = mesh_configure_create_event(dst, (dst != p_cb->unicast_addr));
+            p_op->p_event = mesh_client_configure_create_event(dst);
             p_op->uu.friend_set.state = is_friend;
             configure_pending_operation_queue(p_cb, p_op);
         }
@@ -2812,7 +2869,7 @@ int mesh_client_scan_unprovisioned(int start, uint8_t *p_uuid)
 
             mesh_configure_set_local_device_key(p_mesh_db->node[i].unicast_address);
 
-            if ((p_event = mesh_configure_create_event(p_mesh_db->node[i].unicast_address, (p_mesh_db->node[i].unicast_address != p_cb->unicast_addr))) != NULL)
+            if ((p_event = mesh_client_configure_create_event(p_mesh_db->node[i].unicast_address)) != NULL)
                 wiced_bt_mesh_provision_scan_capabilities_get(p_event);
         }
         else if (!start &&
@@ -2823,7 +2880,7 @@ int mesh_client_scan_unprovisioned(int start, uint8_t *p_uuid)
 
             Log("ScanStop addr:%04x", p_mesh_db->node[i].unicast_address);
 
-            if ((p_event = mesh_configure_create_event(p_mesh_db->node[i].unicast_address, (p_mesh_db->node[i].unicast_address != p_cb->unicast_addr))) != NULL)
+            if ((p_event = mesh_client_configure_create_event(p_mesh_db->node[i].unicast_address)) != NULL)
                 wiced_bt_mesh_provision_scan_stop(p_event);
         }
     }
@@ -2836,7 +2893,7 @@ void mesh_client_start_extended_scan(mesh_provision_cb_t *p_cb, unprovisioned_re
     wiced_bt_mesh_event_t *p_event;
 
     Log("Extended Scan Start addr:%04x", p_report->provisioner_addr);
-    if ((p_event = mesh_configure_create_event(p_report->provisioner_addr, WICED_FALSE)) == NULL)
+    if ((p_event = mesh_client_configure_create_event(p_report->provisioner_addr)) == NULL)
         return;
 
     mesh_configure_set_local_device_key(p_event->dst);
@@ -3097,7 +3154,7 @@ uint8_t mesh_client_connect_component(char *component_name, uint8_t use_proxy, u
 
     // connected to a Proxy, but wrong one.  Send a command to correct node
     // to start advert with node identity.
-    wiced_bt_mesh_event_t *p_event = mesh_configure_create_event(p_cb->addr, (p_cb->addr != p_cb->unicast_addr));
+    wiced_bt_mesh_event_t *p_event = mesh_client_configure_create_event(p_cb->addr);
     if (p_event == NULL)
         return MESH_CLIENT_ERR_NO_MEMORY;
 
@@ -3113,7 +3170,7 @@ void mesh_client_provision_connect(mesh_provision_cb_t *p_cb)
 {
     wiced_bt_mesh_provision_connect_data_t data;
     wiced_bt_mesh_event_t *p_event;
-    if ((p_event = mesh_configure_create_event(p_cb->provisioner_addr, (p_cb->provisioner_addr != p_cb->unicast_addr))) == NULL)
+    if ((p_event = mesh_client_configure_create_event(p_cb->provisioner_addr)) == NULL)
         return;
 
     mesh_configure_set_local_device_key(p_cb->provisioner_addr);
@@ -3224,6 +3281,16 @@ void mesh_provision_process_event(uint16_t event, wiced_bt_mesh_event_t *p_event
              (p_cb->state != PROVISION_STATE_KEY_REFRESH_3)))
         {
             mesh_process_tx_complete(p_cb, p_event);
+            return;
+        }
+        break;
+
+    case WICED_BT_MESH_CONFIG_LPN_POLL_TIMEOUT_STATUS:
+        if ((p_cb->state != PROVISION_STATE_KEY_REFRESH_1) &&
+            (p_cb->state != PROVISION_STATE_KEY_REFRESH_2) &&
+            (p_cb->state != PROVISION_STATE_KEY_REFRESH_3))
+        {
+            mesh_configure_lpn_poll_timeout_status(p_cb, p_event, (wiced_bt_mesh_lpn_poll_timeout_status_data_t*)p_data);
             return;
         }
         break;
@@ -3466,12 +3533,12 @@ void mesh_provision_state_idle(mesh_provision_cb_t *p_cb, uint16_t event, wiced_
         mesh_configure_net_key_status(p_cb, p_event, (wiced_bt_mesh_config_netkey_status_data_t *)p_data);
         break;
 
-    case WICED_BT_MESH_CONFIG_KEY_REFRESH_PHASE_STATUS:
-        mesh_configure_phase_status(p_cb, p_event, (wiced_bt_mesh_config_key_refresh_phase_status_data_t *)p_data);
-        break;
-
     case WICED_BT_MESH_CONFIG_APPKEY_STATUS:
         mesh_configure_app_key_status(p_cb, p_event, (wiced_bt_mesh_config_appkey_status_data_t *)p_data);
+        break;
+
+    case WICED_BT_MESH_CONFIG_KEY_REFRESH_PHASE_STATUS:
+        mesh_configure_phase_status(p_cb, p_event, (wiced_bt_mesh_config_key_refresh_phase_status_data_t*)p_data);
         break;
 
     case WICED_BT_MESH_CONFIG_MODEL_APP_BIND_STATUS:
@@ -3829,7 +3896,7 @@ void mesh_configure_state_network_connect(mesh_provision_cb_t *p_cb, uint16_t ev
                 return;
 
             p_op->operation = CONFIG_OPERATION_NODE_RESET;
-            p_op->p_event = mesh_configure_create_event(node->unicast_address, (node->unicast_address != p_cb->unicast_addr));
+            p_op->p_event = mesh_client_configure_create_event(node->unicast_address);
             configure_pending_operation_queue(p_cb, p_op);
         }
         else
@@ -3992,7 +4059,25 @@ void mesh_configure_state_key_refresh1(mesh_provision_cb_t *p_cb, uint16_t event
         if ((p_cb->p_first == NULL) || (p_cb->p_first->p_event != p_event))
             break;
 
+        // Special case when we do not receive response from a LPN
+        if (p_event->friend_addr != 0)
+        {
+            wiced_bt_mesh_db_node_t* p_node = mesh_find_node(p_mesh_db, p_event->dst);
+            if ((p_node != NULL) && !p_node->blocked)
+            {
+                // There maybe also a case where friend is removed. Cannot do much. We will need to wait until LPN gets a new friend. Last operation
+                // will retry when network is reopened
+                p_node = mesh_find_node(p_mesh_db, p_event->friend_addr);
+                if ((p_node != NULL) && !p_node->blocked)
+                {
+                    // Failed to receive ack from the LPN which has a friend. If we already know LPN timeout, start a timer
+                    // Otherwise schedule LPN Timeout Get procedure
+                    lpn_kr_poll_timeout_get(p_cb, p_event->dst, p_event->friend_addr);
+                }
+            }
+        }
         clean_pending_op_queue(p_event->dst);
+
         if (p_cb->p_first != NULL)
         {
             configure_execute_pending_operation(p_cb);
@@ -4007,7 +4092,7 @@ void mesh_configure_state_key_refresh1(mesh_provision_cb_t *p_cb, uint16_t event
         break;
 
     case WICED_BT_MESH_CONFIG_NODE_RESET_STATUS:
-        if ((p_cb->p_first->operation != CONFIG_OPERATION_NODE_RESET) || (p_cb->p_first->p_event->dst != p_event->src))
+        if ((p_cb->p_first == NULL) || (p_cb->p_first->operation != CONFIG_OPERATION_NODE_RESET) || (p_cb->p_first->p_event->dst != p_event->src))
         {
             Log("Ignored KR1 Node Reset Status from:%04x", p_event->src);
             break;
@@ -4039,6 +4124,10 @@ void mesh_configure_state_key_refresh1(mesh_provision_cb_t *p_cb, uint16_t event
         mesh_key_refresh_net_key_status(p_cb, p_event, (wiced_bt_mesh_config_netkey_status_data_t *)p_data);
         break;
 
+    case WICED_BT_MESH_CONFIG_LPN_POLL_TIMEOUT_STATUS:
+        mesh_key_refresh_lpn_poll_timeout_status(p_cb, p_event, (wiced_bt_mesh_lpn_poll_timeout_status_data_t*)p_data);
+        break;
+
     default:
         Log("Event:%d ignored\n", event);
         break;
@@ -4059,6 +4148,23 @@ void mesh_configure_state_key_refresh2(mesh_provision_cb_t *p_cb, uint16_t event
         if ((p_cb->p_first == NULL) || (p_cb->p_first->p_event != p_event))
             break;
 
+        // Special case when we do not receive response from a LPN
+        if (p_event->friend_addr != 0)
+        {
+            wiced_bt_mesh_db_node_t* p_node = mesh_find_node(p_mesh_db, p_event->dst);
+            if ((p_node != NULL) && !p_node->blocked)
+            {
+                // There maybe also a case where friend is removed. Cannot do much. We will need to wait until LPN gets a new friend. Last operation
+                // will retry when network is reopened
+                p_node = mesh_find_node(p_mesh_db, p_event->friend_addr);
+                if ((p_node != NULL) && !p_node->blocked)
+                {
+                    // Failed to receive ack from the LPN which has a friend. If we already know LPN timeout, start a timer
+                    // Otherwise schedule LPN Timeout Get procedure
+                    lpn_kr_poll_timeout_get(p_cb, p_event->dst, p_event->friend_addr);
+                }
+            }
+        }
         start_next_op(p_cb);
 
         if (p_cb->p_first == NULL)
@@ -4097,6 +4203,10 @@ void mesh_configure_state_key_refresh2(mesh_provision_cb_t *p_cb, uint16_t event
         mesh_key_refresh_phase2_status(p_cb, p_event, (wiced_bt_mesh_config_key_refresh_phase_status_data_t *)p_data);
         break;
 
+    case WICED_BT_MESH_CONFIG_LPN_POLL_TIMEOUT_STATUS:
+        mesh_key_refresh_lpn_poll_timeout_status(p_cb, p_event, (wiced_bt_mesh_lpn_poll_timeout_status_data_t*)p_data);
+        break;
+
     default:
         Log("Event:%d ignored\n", event);
         break;
@@ -4117,6 +4227,23 @@ void mesh_configure_state_key_refresh3(mesh_provision_cb_t *p_cb, uint16_t event
         if ((p_cb->p_first == NULL) || (p_cb->p_first->p_event != p_event))
             break;
 
+        // Special case when we do not receive response from a LPN
+        if (p_event->friend_addr != 0)
+        {
+            wiced_bt_mesh_db_node_t* p_node = mesh_find_node(p_mesh_db, p_event->dst);
+            if ((p_node != NULL) && !p_node->blocked)
+            {
+                // There maybe also a case where friend is removed. Cannot do much. We will need to wait until LPN gets a new friend. Last operation
+                // will retry when network is reopened
+                p_node = mesh_find_node(p_mesh_db, p_event->friend_addr);
+                if ((p_node != NULL) && !p_node->blocked)
+                {
+                    // Failed to receive ack from the LPN which has a friend. If we already know LPN timeout, start a timer
+                    // Otherwise schedule LPN Timeout Get procedure
+                    lpn_kr_poll_timeout_get(p_cb, p_event->dst, p_event->friend_addr);
+                }
+            }
+        }
         start_next_op(p_cb);
 
         if (p_cb->p_first == NULL)
@@ -4153,6 +4280,10 @@ void mesh_configure_state_key_refresh3(mesh_provision_cb_t *p_cb, uint16_t event
 
     case WICED_BT_MESH_CONFIG_KEY_REFRESH_PHASE_STATUS:
         mesh_key_refresh_phase3_status(p_cb, p_event, (wiced_bt_mesh_config_key_refresh_phase_status_data_t *)p_data);
+        break;
+
+    case WICED_BT_MESH_CONFIG_LPN_POLL_TIMEOUT_STATUS:
+        mesh_key_refresh_lpn_poll_timeout_status(p_cb, p_event, (wiced_bt_mesh_lpn_poll_timeout_status_data_t*)p_data);
         break;
 
     default:
@@ -4222,7 +4353,7 @@ void mesh_provision_process_device_caps(mesh_provision_cb_t *p_cb, wiced_bt_mesh
     provision_status_notify(p_cb, MESH_CLIENT_PROVISION_STATUS_PROVISIONING);
 
     wiced_bt_mesh_event_t *p_event1;
-    if ((p_event1 = mesh_configure_create_event(p_cb->provisioner_addr, (p_cb->provisioner_addr != p_cb->unicast_addr))) == NULL)
+    if ((p_event1 = mesh_client_configure_create_event(p_cb->provisioner_addr)) == NULL)
         return;
 
     wiced_bt_mesh_provision_start_data_t start;
@@ -4346,7 +4477,7 @@ void mesh_provision_process_get_oob_data(mesh_provision_cb_t* p_cb, wiced_bt_mes
         Log("OOB type not supported:%d\n", p_data->type);
         return;
     }
-    p_event = mesh_configure_create_event(p_data->provisioner_addr, (p_data->provisioner_addr != p_cb->unicast_addr));
+    p_event = mesh_client_configure_create_event(p_data->provisioner_addr);
     if (p_event != NULL)
     {
         wiced_bt_mesh_provision_client_set_oob(p_event, p_cb->oob_data, p_cb->oob_data_len);
@@ -4437,7 +4568,7 @@ void mesh_configure_set_local_device_key(uint16_t addr)
 void mesh_configure_composition_data_get(mesh_provision_cb_t *p_cb, uint8_t is_local)
 {
     uint16_t dst = is_local ? p_cb->unicast_addr : p_cb->addr;
-    wiced_bt_mesh_event_t *p_event = mesh_configure_create_event(dst, (dst != p_cb->unicast_addr));
+    wiced_bt_mesh_event_t *p_event = mesh_client_configure_create_event(dst);
     if (p_event != NULL)
     {
         wiced_bt_mesh_config_composition_data_get_data_t data;
@@ -4465,13 +4596,19 @@ void mesh_process_tx_complete(mesh_provision_cb_t *p_cb, wiced_bt_mesh_event_t *
         // p_event contains all information about the message that has not been acknowledged.
         // for example if it was onoff set, the p_event->model == 0x1001 and p_event->opcode = 0x8202 and
         // p_event->dst is the address of the device which failed to send the ack.
-        const char *p_name = get_component_name(p_event->dst);
+        uint16_t dst = p_event->dst;
+        const char* p_name = get_component_name(dst);
 
         if ((p_op == NULL) || (p_op->p_event != p_event))
             wiced_bt_mesh_release_event(p_event);
 
-        if ((p_name != NULL) && (p_cb->p_node_connect_status != NULL))
-            p_cb->p_node_connect_status(MESH_CLIENT_NODE_ERROR_UNREACHABLE, (char *)p_name);
+        // if unreachable node is LPN we will notify client only when LPN Poll Timer expires
+        wiced_bt_mesh_db_node_t* p_node = mesh_find_node(p_mesh_db, dst);
+        if ((p_node != NULL) && (p_node->feature.low_power != MESH_FEATURE_ENABLED))
+        {
+            if ((p_name != NULL) && (p_cb->p_node_connect_status != NULL))
+                p_cb->p_node_connect_status(MESH_CLIENT_NODE_ERROR_UNREACHABLE, (char*)p_name);
+        }
         return;
     }
 }
@@ -4637,6 +4774,54 @@ void clean_pending_op_queue(uint16_t addr)
     }
 }
 
+#if 0
+void move_pending_op_to_lpn_queue(uint16_t dst)
+{
+    mesh_provision_cb_t* p_cb = &provision_cb;
+    pending_operation_t* p_cur = p_cb->p_first;
+    pending_operation_t* p_op;
+
+    while (p_cur != NULL)
+    {
+        // start from the beginning every time, because we can be changing p_first
+        for (p_cur = p_cb->p_first; p_cur != NULL; p_cur = p_cur->p_next)
+        {
+            if ((p_cur->p_event != NULL) && (p_cur->p_event->dst == dst))
+            {
+                if ((p_op = configure_pending_operation_remove_from_queue(p_cb, p_cur)) != NULL)
+                {
+                    configure_pending_operation_lpn_queue(p_cb, p_op);
+                    break;
+                }
+            }
+        }
+    }
+}
+
+void move_pending_op_from_lpn_queue(uint16_t dst)
+{
+    mesh_provision_cb_t* p_cb = &provision_cb;
+    pending_operation_t* p_cur = p_cb->p_lpn_first;
+    pending_operation_t* p_op;
+
+    while (p_cur != NULL)
+    {
+        // start from the beginning every time, because we can be changing p_first
+        for (p_cur = p_cb->p_first; p_cur != NULL; p_cur = p_cur->p_next)
+        {
+            if ((p_cur->p_event != NULL) && (p_cur->p_event->dst == dst))
+            {
+                if ((p_op = configure_pending_operation_remove_from_queue(p_cb, p_cur)) != NULL)
+                {
+                    configure_pending_operation_lpn_queue(p_cb, p_op);
+                    break;
+                }
+            }
+        }
+    }
+}
+#endif
+
 void start_next_op(mesh_provision_cb_t *p_cb)
 {
     pending_operation_t *p_op = configure_pending_operation_dequeue(p_cb);
@@ -4687,13 +4872,43 @@ void start_next_op(mesh_provision_cb_t *p_cb)
 
 void mesh_configure_net_key_status(mesh_provision_cb_t *p_cb, wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_config_netkey_status_data_t *p_data)
 {
+    // update database
+    if ((p_data->status == 0) && p_cb->store_config)
+    {
+        wiced_bt_mesh_db_node_net_key_add(p_mesh_db, p_event->src, p_data->net_key_idx);
+        wiced_bt_mesh_db_store(p_mesh_db);
+        p_cb->db_changed = WICED_TRUE;
+    }
+
+    // Stop LPN Poll Timeout if needed
+    mesh_lpn_poll_timeout_stop(p_cb, p_event->src);
+
     // Check that this is not reply to a retransmission
     pending_operation_t *p_op = p_cb->p_first;
     if ((p_op == NULL) || (p_op->p_event == NULL) || (p_op->p_event->dst != p_event->src) ||
         (p_op->operation != CONFIG_OPERATION_NET_KEY_UPDATE) ||
         (p_op->uu.net_key_change.net_key_idx != p_data->net_key_idx))
     {
-        Log("Ignored NetKey Status from:0x%04x status:%d NetKey Index:%x", p_event->src, p_data->status, p_data->net_key_idx);
+        int idx;
+        for (idx = 0; idx < p_mesh_db->num_net_keys; idx++)
+        {
+            if (p_mesh_db->net_key[idx].index != p_data->net_key_idx)
+                continue;
+
+            // We received AppKey status non in the key refresh. This may be from the LPN. Check if we need to continue key refresh
+            if (p_mesh_db->net_key[idx].phase != WICED_BT_MESH_KEY_REFRESH_PHASE_NORMAL)
+            {
+                Log("NetKey Status from:0x%04x status:%d NetKey Index:%x state:%d", p_event->src, p_data->status, p_data->net_key_idx, p_cb->state);
+                start_next_op(p_cb);
+                if (p_cb->p_first == NULL)
+                    mesh_key_refresh_continue(p_cb, &p_mesh_db->net_key[idx]);
+                if (p_cb->p_first != NULL)
+                    configure_execute_pending_operation(p_cb);
+                return;
+            }
+            break;
+        }
+        Log("Ignored NetKey Status state:%d from:0x%04x status:%d NetKey Index:%x", p_cb->state, p_event->src, p_data->status, p_data->net_key_idx);
         return;
     }
     Log("NetKey Status from:0x%04x status:%d NetKey Index:%x", p_event->src, p_data->status, p_data->net_key_idx);
@@ -4702,19 +4917,24 @@ void mesh_configure_net_key_status(mesh_provision_cb_t *p_cb, wiced_bt_mesh_even
     {
         // ToDo ??
     }
-    if ((p_data->status == 0) && p_cb->store_config)
-    {
-        wiced_bt_mesh_db_node_net_key_add(p_mesh_db, p_event->src, p_data->net_key_idx);
-        wiced_bt_mesh_db_store(p_mesh_db);
-        p_cb->db_changed = WICED_TRUE;
-    }
     start_next_op(p_cb);
 }
 
 void mesh_configure_app_key_status(mesh_provision_cb_t *p_cb, wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_config_appkey_status_data_t *p_data)
 {
-    wiced_bt_mesh_db_node_t* p_node;
     int i;
+    wiced_bt_mesh_db_node_t* p_node;
+
+    // update database
+    if ((p_data->status == 0) && p_cb->store_config)
+    {
+        wiced_bt_mesh_db_node_app_key_add(p_mesh_db, p_event->src, p_data->net_key_idx, p_data->app_key_idx);
+        wiced_bt_mesh_db_store(p_mesh_db);
+        p_cb->db_changed = WICED_TRUE;
+    }
+
+    // Stop LPN Poll Timeout if needed
+    mesh_lpn_poll_timeout_stop(p_cb, p_event->src);
 
     // Check that this is not reply to a retransmission
     pending_operation_t *p_op = p_cb->p_first;
@@ -4723,7 +4943,28 @@ void mesh_configure_app_key_status(mesh_provision_cb_t *p_cb, wiced_bt_mesh_even
         (p_op->uu.app_key_change.net_key_idx != p_data->net_key_idx) ||
         (p_op->uu.app_key_change.app_key_idx != p_data->app_key_idx))
     {
-        Log("Ignored AppKey Status from:0x%04x status:%d NetKey Index:%x ApptKey Index:%x", p_event->src,
+        int idx;
+        for (idx = 0; idx < p_mesh_db->num_net_keys; idx++)
+        {
+            if (p_mesh_db->net_key[idx].index != p_data->net_key_idx)
+                continue;
+
+            // We received AppKey status non in the key refresh. This may be from the LPN. Check if we need to continue key refresh
+            if (p_mesh_db->net_key[idx].phase != WICED_BT_MESH_KEY_REFRESH_PHASE_NORMAL)
+            {
+                Log("AppKey Status from:0x%04x status:%d NetKey Index:%x ApptKey Index:%x State:%d", p_event->src,
+                    p_data->status, p_data->net_key_idx, p_data->app_key_idx, p_cb->state);
+
+                start_next_op(p_cb);
+                if (p_cb->p_first == NULL)
+                    mesh_key_refresh_continue(p_cb, &p_mesh_db->net_key[idx]);
+                if (p_cb->p_first != NULL)
+                    configure_execute_pending_operation(p_cb);
+                return;
+            }
+            break;
+        }
+        Log("Ignored AppKey Status state:%d from:0x%04x status:%d NetKey Index:%x ApptKey Index:%x", p_cb->state, p_event->src,
             p_data->status, p_data->net_key_idx, p_data->app_key_idx);
         return;
     }
@@ -4742,35 +4983,59 @@ void mesh_configure_app_key_status(mesh_provision_cb_t *p_cb, wiced_bt_mesh_even
         provision_status_notify(p_cb, MESH_CLIENT_PROVISION_STATUS_FAILED);
         return;
     }
-    if ((p_data->status == 0) && p_cb->store_config)
-    {
-        wiced_bt_mesh_db_node_app_key_add(p_mesh_db, p_event->src, p_data->net_key_idx, p_data->app_key_idx);
-        wiced_bt_mesh_db_store(p_mesh_db);
-        p_cb->db_changed = WICED_TRUE;
-    }
     start_next_op(p_cb);
 }
 
 void mesh_configure_phase_status(mesh_provision_cb_t *p_cb, wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_config_key_refresh_phase_status_data_t *p_data)
 {
+    if ((p_data->status == 0) && p_cb->store_config)
+    {
+        wiced_bt_mesh_db_node_net_key_update(p_mesh_db, p_event->src, p_data->net_key_idx, p_data->phase);
+        wiced_bt_mesh_db_store(p_mesh_db);
+        p_cb->db_changed = WICED_TRUE;
+    }
+
+    // Stop LPN Poll Timeout if needed
+    mesh_lpn_poll_timeout_stop(p_cb, p_event->src);
+
     // Check that this is not reply to a retransmission
     pending_operation_t *p_op = p_cb->p_first;
     if ((p_op == NULL) || (p_op->p_event == NULL) || (p_op->p_event->dst != p_event->src) ||
         (p_op->uu.kr_phase_set.net_key_idx != p_data->net_key_idx))
     {
-        Log("Ognored Set Phase Status from:0x%04x status:%d NetKey Index:%x Phase:%d", p_event->src, p_data->status, p_data->net_key_idx, p_data->phase);
+        int idx;
+        for (idx = 0; idx < p_mesh_db->num_net_keys; idx++)
+        {
+            if (p_mesh_db->net_key[idx].index != p_data->net_key_idx)
+                continue;
+
+            // We received Phase status not in the key refresh. This may be from the LPN. Check if we need to continue/complete key refresh
+            if (p_mesh_db->net_key[idx].phase != WICED_BT_MESH_KEY_REFRESH_PHASE_NORMAL)
+            {
+                Log("Phase Status from:0x%04x status:%d NetKey Index:%x Phase:%x app state:%d", p_event->src,
+                    p_data->status, p_data->net_key_idx, p_data->phase, p_cb->state);
+
+                start_next_op(p_cb);
+                if (p_cb->p_first == NULL)
+                    mesh_key_refresh_continue(p_cb, &p_mesh_db->net_key[idx]);
+
+                if (p_cb->p_first != NULL)
+                    configure_execute_pending_operation(p_cb);
+
+                // If nothing is scheduled, and this was phase3 update, we are done.
+                else if ((p_data->phase == WICED_BT_MESH_KEY_REFRESH_PHASE_THIRD) || (p_data->phase == WICED_BT_MESH_KEY_REFRESH_PHASE_NORMAL))
+                    mesh_key_refresh_phase3_completed(p_cb, &p_mesh_db->net_key[idx]);
+                return;
+            }
+            break;
+        }
+        Log("Ignored Set Phase Status from:0x%04x status:%d NetKey Index:%x Phase:%d", p_event->src, p_data->status, p_data->net_key_idx, p_data->phase);
         return;
     }
     Log("Set Phase Status from:0x%04x status:%d NetKey Index:%x Phase:%d", p_event->src, p_data->status, p_data->net_key_idx, p_data->phase);
     if (p_data->status != 0)
     {
         // ToDo ??
-    }
-    if ((p_data->status == 0) && p_cb->store_config)
-    {
-        wiced_bt_mesh_db_node_net_key_update(p_mesh_db, p_event->src, p_data->net_key_idx, p_data->phase);
-        wiced_bt_mesh_db_store(p_mesh_db);
-        p_cb->db_changed = WICED_TRUE;
     }
     start_next_op(p_cb);
 }
@@ -4876,10 +5141,15 @@ void mesh_key_refresh_phase1_completed(mesh_provision_cb_t *p_cb, wiced_bt_mesh_
     // issue node connect status for each node that we failed to deliver the keys
     for (node_idx = 0; node_idx < num_nodes_to_update; node_idx++)
     {
-        const char *p_name = get_component_name(node_list[node_idx]);
+        // if unreachable node is LPN we will notify client only when LPN Poll Timer expires
+        wiced_bt_mesh_db_node_t* p_node = mesh_find_node(p_mesh_db, node_list[node_idx]);
+        if ((p_node != NULL) && (p_node->feature.low_power != MESH_FEATURE_ENABLED))
+        {
+            const char* p_name = get_component_name(node_list[node_idx]);
 
-        if ((p_name != NULL) && (p_cb->p_node_connect_status != NULL))
-            p_cb->p_node_connect_status(MESH_CLIENT_NODE_ERROR_UNREACHABLE, (char *)p_name);
+            if ((p_name != NULL) && (p_cb->p_node_connect_status != NULL))
+                p_cb->p_node_connect_status(MESH_CLIENT_NODE_ERROR_UNREACHABLE, (char*)p_name);
+        }
     }
     wiced_bt_free_buffer(node_list);
     p_cb->state = PROVISION_STATE_IDLE;
@@ -4944,10 +5214,15 @@ void mesh_key_refresh_phase2_completed(mesh_provision_cb_t *p_cb, wiced_bt_mesh_
         // issue node connect status for each node that we failed to deliver the keys
         for (node_idx = 0; node_idx < num_nodes_to_update; node_idx++)
         {
-            const char *p_name = get_component_name(node_list[node_idx]);
+            // if unreachable node is LPN we will notify client only when LPN Poll Timer expires
+            wiced_bt_mesh_db_node_t* p_node = mesh_find_node(p_mesh_db, node_list[node_idx]);
+            if ((p_node != NULL) && (p_node->feature.low_power != MESH_FEATURE_ENABLED))
+            {
+                const char* p_name = get_component_name(node_list[node_idx]);
 
-            if ((p_name != NULL) && (p_cb->p_node_connect_status != NULL))
-                p_cb->p_node_connect_status(MESH_CLIENT_NODE_ERROR_UNREACHABLE, (char *)p_name);
+                if ((p_name != NULL) && (p_cb->p_node_connect_status != NULL))
+                    p_cb->p_node_connect_status(MESH_CLIENT_NODE_ERROR_UNREACHABLE, (char*)p_name);
+            }
         }
         p_cb->state = PROVISION_STATE_IDLE;
     }
@@ -4992,7 +5267,7 @@ void mesh_key_refresh_phase3_completed(mesh_provision_cb_t *p_cb, wiced_bt_mesh_
         {
             if (net_key->index == p_mesh_db->node[node_idx].net_key[node_net_key_idx].index)
             {
-                if (p_mesh_db->node[node_idx].net_key[node_net_key_idx].phase == WICED_BT_MESH_KEY_REFRESH_PHASE_THIRD)
+                if ((p_mesh_db->node[node_idx].net_key[node_net_key_idx].phase == WICED_BT_MESH_KEY_REFRESH_PHASE_THIRD) || (p_mesh_db->node[node_idx].net_key[node_net_key_idx].phase == WICED_BT_MESH_KEY_REFRESH_PHASE_NORMAL))
                     continue;
 
                 // this key on that node has not been updated, add it to the list of nodes to be updated.
@@ -5013,10 +5288,15 @@ void mesh_key_refresh_phase3_completed(mesh_provision_cb_t *p_cb, wiced_bt_mesh_
     {
         for (node_idx = 0; node_idx < num_nodes_to_update; node_idx++)
         {
-            const char *p_name = get_component_name(node_list[node_idx]);
+            // if unreachable node is LPN we will notify client only when LPN Poll Timer expires
+            wiced_bt_mesh_db_node_t* p_node = mesh_find_node(p_mesh_db, node_list[node_idx]);
+            if ((p_node != NULL) && (p_node->feature.low_power != MESH_FEATURE_ENABLED))
+            {
+                const char* p_name = get_component_name(node_list[node_idx]);
 
-            if ((p_name != NULL) && (p_cb->p_node_connect_status != NULL))
-                p_cb->p_node_connect_status(MESH_CLIENT_NODE_ERROR_UNREACHABLE, (char *)p_name);
+                if ((p_name != NULL) && (p_cb->p_node_connect_status != NULL))
+                    p_cb->p_node_connect_status(MESH_CLIENT_NODE_ERROR_UNREACHABLE, (char*)p_name);
+            }
         }
         wiced_bt_free_buffer(node_list);
         return;
@@ -5124,6 +5404,17 @@ void mesh_key_refresh_phase3_completed(mesh_provision_cb_t *p_cb, wiced_bt_mesh_
 
 void mesh_key_refresh_app_key_status(mesh_provision_cb_t *p_cb, wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_config_appkey_status_data_t *p_data)
 {
+    // Update database
+    if ((p_data->status == 0) && p_cb->store_config)
+    {
+        wiced_bt_mesh_db_node_app_key_update(p_mesh_db, p_event->src, p_data->net_key_idx, p_data->app_key_idx);
+        wiced_bt_mesh_db_store(p_mesh_db);
+        p_cb->db_changed = WICED_TRUE;
+    }
+
+    // Stop LPN Poll Timeout if needed
+    mesh_lpn_poll_timeout_stop(p_cb, p_event->src);
+
     // Check that this is not reply to a retransmission
     pending_operation_t *p_op = p_cb->p_first;
     if ((p_op == NULL) || (p_op->p_event == NULL) || (p_op->p_event->dst != p_event->src) ||
@@ -5131,7 +5422,7 @@ void mesh_key_refresh_app_key_status(mesh_provision_cb_t *p_cb, wiced_bt_mesh_ev
         (p_op->uu.app_key_change.net_key_idx != p_data->net_key_idx) ||
         (p_op->uu.app_key_change.app_key_idx != p_data->app_key_idx))
     {
-        Log("Ignored AppKey Status from:0x%04x status:%d NetKey Index:%x ApptKey Index:%x", p_event->src,
+        Log("Ignored AppKey Status state:KR1 from:0x%04x status:%d NetKey Index:%x ApptKey Index:%x", p_event->src,
             p_data->status, p_data->net_key_idx, p_data->app_key_idx);
         return;
     }
@@ -5143,12 +5434,6 @@ void mesh_key_refresh_app_key_status(mesh_provision_cb_t *p_cb, wiced_bt_mesh_ev
     {
         // ToDo ??
     }
-    if ((p_data->status == 0) && p_cb->store_config)
-    {
-        wiced_bt_mesh_db_node_app_key_update(p_mesh_db, p_event->src, p_data->net_key_idx, p_data->app_key_idx);
-        wiced_bt_mesh_db_store(p_mesh_db);
-        p_cb->db_changed = WICED_TRUE;
-    }
     start_next_op(p_cb);
     if (p_cb->p_first == NULL)
         mesh_key_refresh_phase1_completed(p_cb, find_net_key(p_mesh_db, p_data->net_key_idx));
@@ -5158,11 +5443,37 @@ void mesh_key_refresh_net_key_status(mesh_provision_cb_t *p_cb, wiced_bt_mesh_ev
 {
     // Check that this is not reply to a retransmission
     pending_operation_t *p_op = p_cb->p_first;
+
+    if ((p_data->status == 0) && p_cb->store_config)
+    {
+        wiced_bt_mesh_db_node_net_key_update(p_mesh_db, p_event->src, p_data->net_key_idx, WICED_BT_MESH_KEY_REFRESH_PHASE_FIRST);
+        wiced_bt_mesh_db_store(p_mesh_db);
+        p_cb->db_changed = WICED_TRUE;
+    }
+    // Stop LPN Poll Timeout if needed
+    mesh_lpn_poll_timeout_stop(p_cb, p_event->src);
+
+#if 0
+    pending_operation_t* p_op1;
+    for (p_op1 = p_cb->p_lpn_first; p_op1 != NULL; p_op1 = p_op1->p_next)
+    {
+        if ((p_op1->p_event != NULL) && (p_op1->p_event->dst == p_event->src) &&
+            (p_op1->operation == CONFIG_OPERATION_NET_KEY_UPDATE) &&
+            (p_op1->uu.net_key_change.net_key_idx == p_data->net_key_idx))
+        {
+            Log("NetKey Status from LPN:0x%04x status:%d NetKey Index:%x", p_event->src, p_data->status, p_data->net_key_idx);
+            p_op1 = configure_pending_operation_remove_from_lpn_queue
+
+            wiced_bt_mesh_release_event(p_op1->p_event);
+            wiced_bt_free_buffer(p_op1);
+        }
+    }
+#endif
     if ((p_op == NULL) || (p_op->p_event == NULL) || (p_op->p_event->dst != p_event->src) ||
         (p_op->operation != CONFIG_OPERATION_NET_KEY_UPDATE) ||
         (p_op->uu.net_key_change.net_key_idx != p_data->net_key_idx))
     {
-        Log("Ignored NetKey Status from:0x%04x status:%d NetKey Index:%x", p_event->src, p_data->status, p_data->net_key_idx);
+        Log("Ignored NetKey Status in KR1 from:0x%04x status:%d NetKey Index:%x", p_event->src, p_data->status, p_data->net_key_idx);
         return;
     }
 
@@ -5171,15 +5482,90 @@ void mesh_key_refresh_net_key_status(mesh_provision_cb_t *p_cb, wiced_bt_mesh_ev
     {
         // ToDo ??
     }
-    if ((p_data->status == 0) && p_cb->store_config)
-    {
-        wiced_bt_mesh_db_node_net_key_update(p_mesh_db, p_event->src, p_data->net_key_idx, WICED_BT_MESH_KEY_REFRESH_PHASE_FIRST);
-        wiced_bt_mesh_db_store(p_mesh_db);
-        p_cb->db_changed = WICED_TRUE;
-    }
     start_next_op(p_cb);
     if (p_cb->p_first == NULL)
         mesh_key_refresh_phase1_completed(p_cb, find_net_key(p_mesh_db, p_data->net_key_idx));
+}
+
+void mesh_configure_lpn_poll_timeout_status(mesh_provision_cb_t* p_cb, wiced_bt_mesh_event_t* p_event, wiced_bt_mesh_lpn_poll_timeout_status_data_t* p_data)
+{
+    mesh_lpn_key_refresh_block_t* p_lpn_kr;
+
+    Log("LPN Poll Timeout Status from:0x%04x Timeout:%d state:%d\n", p_event->src, p_data->poll_timeout, p_cb->state);
+
+    for (p_lpn_kr = p_cb->p_lpn_kr_first; p_lpn_kr != NULL; p_lpn_kr = p_lpn_kr->p_next)
+    {
+        if (p_lpn_kr->lpn_addr == p_data->lpn_addr)
+        {
+            p_lpn_kr->state = LPN_KEY_REFRESH_STATE_IDLE;
+            p_lpn_kr->lpn_poll_timeout = p_data->poll_timeout;
+            break;
+        }
+    }
+}
+
+void mesh_key_refresh_lpn_poll_timeout_status(mesh_provision_cb_t* p_cb, wiced_bt_mesh_event_t* p_event, wiced_bt_mesh_lpn_poll_timeout_status_data_t* p_data)
+{
+    mesh_lpn_key_refresh_block_t* p_lpn_kr;
+    int net_key_idx;
+
+    for (p_lpn_kr = p_cb->p_lpn_kr_first; p_lpn_kr != NULL; p_lpn_kr = p_lpn_kr->p_next)
+    {
+        if (p_lpn_kr->lpn_addr == p_data->lpn_addr)
+        {
+            p_lpn_kr->state = LPN_KEY_REFRESH_STATE_IDLE;
+            p_lpn_kr->lpn_poll_timeout = p_data->poll_timeout;
+            break;
+        }
+    }
+
+    // Check that this is not reply to a retransmission
+    pending_operation_t* p_op = p_cb->p_first;
+    if ((p_op == NULL) || (p_op->p_event == NULL) || (p_op->p_event->dst != p_event->src) ||
+        (p_op->operation != CONFIG_OPERATION_LPN_POLL_TIMEOUT_GET) ||
+        (p_op->uu.lpn_poll_timeout_get.lpn_addr != p_data->lpn_addr))
+    {
+        Log("Ignored LPN Poll Timeout Status from:0x%04x Timeout:%d", p_event->src, p_data->poll_timeout);
+        return;
+    }
+    Log("LPN Poll Timeout Status from:0x%04x Timeout:%d", p_event->src, p_data->poll_timeout);
+
+    // LPN KR block could have been removed
+    if (p_lpn_kr != NULL)
+    {
+        // If returned value is 0, the friend is not a friend anymore.
+        if (p_data->poll_timeout == 0)
+        {
+            ods("LPN changed friends addr:%04x friend:%04x state:%d\n", p_lpn_kr->lpn_addr, p_lpn_kr->friend_addr, p_lpn_kr->state);
+
+            // check if we need to continue key refresh
+            for (net_key_idx = 0; net_key_idx < p_mesh_db->num_net_keys; net_key_idx++)
+            {
+                if (p_mesh_db->net_key[net_key_idx].phase != WICED_BT_MESH_KEY_REFRESH_PHASE_NORMAL)
+                    mesh_key_refresh_continue(p_cb, &p_mesh_db->net_key[net_key_idx]);
+            }
+            if (p_cb->p_first != NULL)
+                configure_execute_pending_operation(p_cb);
+        }
+        else
+        {
+            wiced_init_timer(&p_lpn_kr->timer, mesh_process_lpn_timeout, (TIMER_PARAM_TYPE)p_lpn_kr, WICED_SECONDS_TIMER);
+            wiced_start_timer(&p_lpn_kr->timer, p_lpn_kr->lpn_poll_timeout / 10); // LPN poll timeout is in 100ms ticks
+        }
+    }
+    start_next_op(p_cb);
+    if (p_cb->p_first == NULL)
+    {
+        for (net_key_idx = 0; net_key_idx < p_mesh_db->num_net_keys; net_key_idx++)
+        {
+            if (p_mesh_db->net_key[net_key_idx].phase == WICED_BT_MESH_KEY_REFRESH_PHASE_FIRST)
+                mesh_key_refresh_phase1_completed(p_cb, find_net_key(p_mesh_db, net_key_idx));
+            else if (p_mesh_db->net_key[net_key_idx].phase == WICED_BT_MESH_KEY_REFRESH_PHASE_SECOND)
+                mesh_key_refresh_phase2_completed(p_cb, find_net_key(p_mesh_db, net_key_idx));
+            else if (p_mesh_db->net_key[net_key_idx].phase == WICED_BT_MESH_KEY_REFRESH_PHASE_THIRD)
+                mesh_key_refresh_phase3_completed(p_cb, find_net_key(p_mesh_db, net_key_idx));
+        }
+    }
 }
 
 void mesh_configure_model_app_bind_status(mesh_provision_cb_t *p_cb, wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_config_model_app_bind_status_data_t *p_data)
@@ -5565,6 +5951,16 @@ void mesh_configure_disconnecting_link_status(mesh_provision_cb_t *p_cb, wiced_b
 
 void mesh_key_refresh_phase2_status(mesh_provision_cb_t *p_cb, wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_config_key_refresh_phase_status_data_t *p_data)
 {
+    if ((p_data->status == 0) && p_cb->store_config)
+    {
+        wiced_bt_mesh_db_node_net_key_update(p_mesh_db, p_event->src, p_data->net_key_idx, WICED_BT_MESH_KEY_REFRESH_PHASE_SECOND);
+        wiced_bt_mesh_db_store(p_mesh_db);
+        p_cb->db_changed = WICED_TRUE;
+    }
+
+    // Stop LPN Poll Timeout if needed
+    mesh_lpn_poll_timeout_stop(p_cb, p_event->src);
+
     // Check that this is not reply to a retransmission
     pending_operation_t *p_op = p_cb->p_first;
     if ((p_op == NULL) || (p_op->p_event == NULL) || (p_op->p_event->dst != p_event->src) ||
@@ -5580,12 +5976,6 @@ void mesh_key_refresh_phase2_status(mesh_provision_cb_t *p_cb, wiced_bt_mesh_eve
     {
         // ToDo ??
     }
-    if ((p_data->status == 0) && p_cb->store_config)
-    {
-        wiced_bt_mesh_db_node_net_key_update(p_mesh_db, p_event->src, p_data->net_key_idx, WICED_BT_MESH_KEY_REFRESH_PHASE_SECOND);
-        wiced_bt_mesh_db_store(p_mesh_db);
-        p_cb->db_changed = WICED_TRUE;
-    }
     start_next_op(p_cb);
 
     if (p_cb->p_first == NULL)
@@ -5594,6 +5984,16 @@ void mesh_key_refresh_phase2_status(mesh_provision_cb_t *p_cb, wiced_bt_mesh_eve
 
 void mesh_key_refresh_phase3_status(mesh_provision_cb_t *p_cb, wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_config_key_refresh_phase_status_data_t *p_data)
 {
+    if ((p_data->status == 0) && p_cb->store_config)
+    {
+        wiced_bt_mesh_db_node_net_key_update(p_mesh_db, p_event->src, p_data->net_key_idx, WICED_BT_MESH_KEY_REFRESH_PHASE_THIRD);
+        wiced_bt_mesh_db_store(p_mesh_db);
+        p_cb->db_changed = WICED_TRUE;
+    }
+
+    // Stop LPN Poll Timeout if needed
+    mesh_lpn_poll_timeout_stop(p_cb, p_event->src);
+
     // Check that this is not reply to a retransmission
     pending_operation_t *p_op = p_cb->p_first;
     if ((p_op == NULL) || (p_op->p_event == NULL) || (p_op->p_event->dst != p_event->src) ||
@@ -5603,24 +6003,17 @@ void mesh_key_refresh_phase3_status(mesh_provision_cb_t *p_cb, wiced_bt_mesh_eve
         Log("Ignored Key Refresh Phase3 Status from:0x%04x status:%d NetKey Index:%x", p_event->src, p_data->status, p_data->net_key_idx);
         return;
     }
+
     Log("Key Refresh Phase3 Status from:0x%04x status:%d NetKey Index:%x", p_event->src, p_data->status, p_data->net_key_idx);
 
     if (p_data->status != 0)
     {
         // ToDo ??
     }
-    if ((p_data->status == 0) && p_cb->store_config)
-    {
-        wiced_bt_mesh_db_node_net_key_update(p_mesh_db, p_event->src, p_data->net_key_idx, WICED_BT_MESH_KEY_REFRESH_PHASE_THIRD);
-        wiced_bt_mesh_db_store(p_mesh_db);
-        p_cb->db_changed = WICED_TRUE;
-    }
     start_next_op(p_cb);
 
     if (p_cb->p_first == NULL)
-    {
         mesh_key_refresh_phase3_completed(p_cb, find_net_key(p_mesh_db, p_data->net_key_idx));
-    }
 }
 
 /*
@@ -5681,7 +6074,7 @@ uint8_t mesh_reset_node(mesh_provision_cb_t *p_cb, wiced_bt_mesh_db_node_t *node
         return MESH_CLIENT_ERR_NO_MEMORY;
 
     p_op->operation = CONFIG_OPERATION_NODE_RESET;
-    p_op->p_event = mesh_configure_create_event(node->unicast_address, (node->unicast_address != p_cb->unicast_addr));
+    p_op->p_event = mesh_client_configure_create_event(node->unicast_address);
     configure_pending_operation_queue(p_cb, p_op);
 
     // now we need to execute a key refresh if there are any other nodes which were using any keys
@@ -5752,6 +6145,8 @@ void mesh_key_refresh_continue(mesh_provision_cb_t *p_cb, wiced_bt_mesh_db_net_k
         // new keys have been already generated and some operations may have been already completed
         if ((num_operations_scheduled = mesh_client_key_refresh_phase1_continue(p_cb, net_key)) == 0)
         {
+            ods("mesh_key_refresh_continue phase 1 completed\n");
+
             // phase1 is completed. Transition to phase2
             net_key->phase = WICED_BT_MESH_KEY_REFRESH_PHASE_SECOND;
         }
@@ -5760,6 +6155,8 @@ void mesh_key_refresh_continue(mesh_provision_cb_t *p_cb, wiced_bt_mesh_db_net_k
     {
         if ((num_operations_scheduled = mesh_client_transition_next_key_refresh_phase(p_cb, net_key, WICED_BT_MESH_KEY_REFRESH_PHASE_SECOND)) == 0)
         {
+            ods("mesh_key_refresh_continue phase 2 completed\n");
+
             // phase2 is completed. Transition to phase3
             net_key->phase = WICED_BT_MESH_KEY_REFRESH_PHASE_THIRD;
         }
@@ -5768,6 +6165,8 @@ void mesh_key_refresh_continue(mesh_provision_cb_t *p_cb, wiced_bt_mesh_db_net_k
     {
         if ((num_operations_scheduled = mesh_client_transition_next_key_refresh_phase(p_cb, net_key, WICED_BT_MESH_KEY_REFRESH_PHASE_THIRD)) == 0)
         {
+            ods("mesh_key_refresh_continue phase 3 completed\n");
+
             // phase3 is completed. Done.
             mesh_key_refresh_phase3_completed(p_cb, net_key);
         }
@@ -5808,7 +6207,7 @@ int mesh_client_key_refresh_phase1_continue(mesh_provision_cb_t *p_cb, wiced_bt_
                         return -1;
                     dst = p_mesh_db->node[node_idx].unicast_address;
                     p_op->operation = CONFIG_OPERATION_NET_KEY_UPDATE;
-                    p_op->p_event = mesh_configure_create_event(dst, (dst != p_cb->unicast_addr));
+                    p_op->p_event = mesh_client_configure_create_event(dst);
                     p_op->uu.net_key_change.operation = OPERATION_UPDATE;
                     p_op->uu.net_key_change.net_key_idx = net_key->index;
                     memcpy(p_op->uu.net_key_change.net_key, net_key->key, sizeof(p_op->uu.net_key_change.net_key));
@@ -5843,7 +6242,7 @@ int mesh_client_key_refresh_phase1_continue(mesh_provision_cb_t *p_cb, wiced_bt_
 
                         dst = p_mesh_db->node[node_idx].unicast_address;
                         p_op->operation = CONFIG_OPERATION_APP_KEY_UPDATE;
-                        p_op->p_event = mesh_configure_create_event(dst, (dst != p_cb->unicast_addr));
+                        p_op->p_event = mesh_client_configure_create_event(dst);
                         p_op->uu.app_key_change.operation = OPERATION_UPDATE;
                         p_op->uu.app_key_change.net_key_idx = net_key->index;
                         p_op->uu.app_key_change.app_key_idx = p_mesh_db->app_key[app_key_idx].index;
@@ -5898,16 +6297,22 @@ int mesh_client_transition_next_key_refresh_phase(mesh_provision_cb_t *p_cb, wic
             if (p_mesh_db->node[node_idx].net_key[node_net_key_idx].phase == transition)
                 continue;
 
+            // Special case when node transitioned to 0 before we were able to send it to 3. Don't need to do anything.
+            if ((p_mesh_db->node[node_idx].net_key[node_net_key_idx].phase == 0) && (transition == 3))
+                continue;
+
             if ((p_op = (pending_operation_t *)wiced_bt_get_buffer(sizeof(pending_operation_t))) == NULL)
                 return -1;
 
             dst = p_mesh_db->node[node_idx].unicast_address;
             p_op->operation = CONFIG_OPERATION_KR_PHASE_SET;
-            p_op->p_event = mesh_configure_create_event(dst, (dst != p_cb->unicast_addr));
+            p_op->p_event = mesh_client_configure_create_event(dst);
             p_op->uu.kr_phase_set.net_key_idx = net_key->index;
             p_op->uu.kr_phase_set.transition = transition;
             configure_pending_operation_queue(p_cb, p_op);
             num_operations_scheduled++;
+
+            ods("schedule sending phase %d set to:%04d\n", transition, dst);
         }
     }
     return num_operations_scheduled;
@@ -5985,6 +6390,63 @@ pending_operation_t *configure_pending_operation_dequeue(mesh_provision_cb_t *p_
     p_cb->p_first = p_cb->p_first->p_next;
     return p_op;
 }
+
+pending_operation_t* configure_pending_operation_remove_from_queue(mesh_provision_cb_t* p_cb, pending_operation_t* p_op)
+{
+    pending_operation_t* p_cur;
+
+    if (p_cb->p_first == p_op)
+        return configure_pending_operation_dequeue(p_cb);
+
+    for (p_cur = p_cb->p_first; p_cur->p_next != NULL; p_cur = p_cur->p_next)
+    {
+        if (p_cur->p_next == p_op)
+        {
+            p_cur->p_next = p_cur->p_next->p_next;
+            return p_op;
+        }
+    }
+    return NULL;
+}
+
+#if 0
+pending_operation_t* configure_pending_operation_remove_from_lpn_queue(mesh_provision_cb_t* p_cb, pending_operation_t* p_op)
+{
+    pending_operation_t* p_cur;
+
+    if (p_cb->p_lpn_first == p_op)
+        return configure_pending_operation_lpn_dequeue(p_cb, p_op);
+
+    for (p_cur = p_cb->p_lpn_first; p_cur->p_next != NULL; p_cur = p_cur->p_next)
+    {
+        if (p_cur->p_next == p_op)
+        {
+            p_cur->p_next = p_cur->p_next->p_next;
+            return p_op;
+        }
+    }
+    return NULL;
+}
+#endif
+
+#if 0
+void configure_pending_operation_lpn_queue(mesh_provision_cb_t* p_cb, pending_operation_t* p_op)
+{
+    pending_operation_t* p_cur;
+
+    p_op->p_next = NULL;
+    if (p_cb->p_lpn_first == NULL)
+    {
+        p_cb->p_lpn_first = p_op;
+    }
+    else
+    {
+        for (p_cur = p_cb->p_lpn_first; p_cur->p_next != NULL; p_cur = p_cur->p_next)
+            ;
+        p_cur->p_next = p_op;
+    }
+}
+#endif
 
 /*
  * this function schedules all operations required to configure local device
@@ -6201,7 +6663,7 @@ void app_key_add(mesh_provision_cb_t *p_cb, uint16_t addr, wiced_bt_mesh_db_net_
         return;
 
     p_op->operation = CONFIG_OPERATION_APP_KEY_UPDATE;
-    p_op->p_event = mesh_configure_create_event(addr, (addr != p_cb->unicast_addr));
+    p_op->p_event = mesh_client_configure_create_event(addr);
     p_op->uu.app_key_change.operation = OPERATION_ADD;
     p_op->uu.app_key_change.app_key_idx = app_key->index;
     p_op->uu.app_key_change.net_key_idx = app_key->bound_net_key_index;
@@ -6213,7 +6675,7 @@ void app_key_add(mesh_provision_cb_t *p_cb, uint16_t addr, wiced_bt_mesh_db_net_
         if ((p_op = (pending_operation_t *)wiced_bt_get_buffer(sizeof(pending_operation_t))) != NULL)
         {
             p_op->operation = CONFIG_OPERATION_APP_KEY_UPDATE;
-            p_op->p_event = mesh_configure_create_event(addr, (addr != p_cb->unicast_addr));
+            p_op->p_event = mesh_client_configure_create_event(addr);
             p_op->uu.app_key_change.operation = OPERATION_UPDATE;
             p_op->uu.app_key_change.app_key_idx = app_key->index;
             p_op->uu.app_key_change.net_key_idx = app_key->bound_net_key_index;
@@ -6235,7 +6697,7 @@ void model_app_bind(mesh_provision_cb_t* p_cb, wiced_bool_t is_local,  uint16_t 
     if (is_local)
         p_op->p_event = wiced_bt_mesh_create_event(0, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_CONFIG_CLNT, p_cb->unicast_addr, 0xFFFF);
     else
-        p_op->p_event = mesh_configure_create_event(p_cb->addr, (p_cb->addr != p_cb->unicast_addr));
+        p_op->p_event = mesh_client_configure_create_event(p_cb->addr);
     p_op->uu.app_key_bind.element_addr = addr;
     p_op->uu.app_key_bind.company_id = company_id;
     p_op->uu.app_key_bind.model_id = model_id;
@@ -6274,7 +6736,7 @@ void configure_queue_remote_device_operations(mesh_provision_cb_t *p_cb)
     {
         // wiced_bt_mesh_config_network_transmit_set_data_t
         p_op->operation = CONFIG_OPERATION_NET_TRANSMIT_SET;
-        p_op->p_event = mesh_configure_create_event(p_cb->addr, (p_cb->addr != p_cb->unicast_addr));
+        p_op->p_event = mesh_client_configure_create_event(p_cb->addr);
         p_op->uu.net_transmit_set.count = p_cb->net_xmit_count;
         p_op->uu.net_transmit_set.interval = p_cb->net_xmit_interval;
         configure_pending_operation_queue(p_cb, p_op);
@@ -6286,7 +6748,7 @@ void configure_queue_remote_device_operations(mesh_provision_cb_t *p_cb)
         if ((p_op = (pending_operation_t *)wiced_bt_get_buffer(sizeof(pending_operation_t))) != NULL)
         {
             p_op->operation = CONFIG_OPERATION_NET_KEY_UPDATE;
-            p_op->p_event = mesh_configure_create_event(p_cb->addr, (p_cb->addr != p_cb->unicast_addr));
+            p_op->p_event = mesh_client_configure_create_event(p_cb->addr);
             p_op->uu.net_key_change.operation = OPERATION_UPDATE;
             p_op->uu.net_key_change.net_key_idx = net_key->index;
             memcpy(p_op->uu.net_key_change.net_key, net_key->key, sizeof(net_key->key));
@@ -6399,7 +6861,7 @@ void configure_queue_remote_device_operations(mesh_provision_cb_t *p_cb)
                         {
                             memset(p_op, 0, sizeof(pending_operation_t));
                             p_op->operation = CONFIG_OPERATION_MODEL_SUBSCRIBE;
-                            p_op->p_event = mesh_configure_create_event(p_cb->addr, (p_cb->addr != p_cb->unicast_addr));
+                            p_op->p_event = mesh_client_configure_create_event(p_cb->addr);
                             p_op->uu.model_sub.operation = OPERATION_ADD;
                             p_op->uu.model_sub.element_addr = p_cb->addr + element_idx;
                             p_op->uu.model_sub.company_id = MESH_COMPANY_ID_BT_SIG;
@@ -6442,7 +6904,7 @@ void configure_queue_remote_device_operations(mesh_provision_cb_t *p_cb)
 
                         memset(p_op, 0, sizeof(pending_operation_t));
                         p_op->operation = CONFIG_OPERATION_MODEL_PUBLISH;
-                        p_op->p_event = mesh_configure_create_event(p_cb->addr, (p_cb->addr != p_cb->unicast_addr));
+                        p_op->p_event = mesh_client_configure_create_event(p_cb->addr);
                         p_op->uu.model_pub.element_addr = p_cb->addr + element_idx;
                         p_op->uu.model_pub.company_id = MESH_COMPANY_ID_BT_SIG;
                         p_op->uu.model_pub.model_id = model_id;
@@ -6517,7 +6979,7 @@ void configure_queue_remote_device_operations(mesh_provision_cb_t *p_cb)
                         {
                             memset(p_op, 0, sizeof(pending_operation_t));
                             p_op->operation = CONFIG_OPERATION_MODEL_SUBSCRIBE;
-                            p_op->p_event = mesh_configure_create_event(p_cb->addr, (p_cb->addr != p_cb->unicast_addr));
+                            p_op->p_event = mesh_client_configure_create_event(p_cb->addr);
                             p_op->uu.model_sub.operation = OPERATION_ADD;
                             p_op->uu.model_sub.element_addr = p_cb->addr + element_idx;
                             p_op->uu.model_sub.company_id = company_id;
@@ -6532,7 +6994,7 @@ void configure_queue_remote_device_operations(mesh_provision_cb_t *p_cb)
                 {
                     memset(p_op, 0, sizeof(pending_operation_t));
                     p_op->operation = CONFIG_OPERATION_MODEL_PUBLISH;
-                    p_op->p_event = mesh_configure_create_event(p_cb->addr, (p_cb->addr != p_cb->unicast_addr));
+                    p_op->p_event = mesh_client_configure_create_event(p_cb->addr);
                     p_op->uu.model_pub.element_addr = p_cb->addr + element_idx;
                     p_op->uu.model_pub.company_id = company_id;
                     p_op->uu.model_pub.model_id = model_id;
@@ -6573,7 +7035,7 @@ void configure_queue_remote_device_operations(mesh_provision_cb_t *p_cb)
     if ((p_op = (pending_operation_t *)wiced_bt_get_buffer(sizeof(pending_operation_t))) != NULL)
     {
         p_op->operation = CONFIG_OPERATION_DEFAULT_TTL_SET;
-        p_op->p_event = mesh_configure_create_event(p_cb->addr, (p_cb->addr != p_cb->unicast_addr));
+        p_op->p_event = mesh_client_configure_create_event(p_cb->addr);
         p_op->uu.default_ttl_set.ttl = 63;
         configure_pending_operation_queue(p_cb, p_op);
     }
@@ -6582,7 +7044,7 @@ void configure_queue_remote_device_operations(mesh_provision_cb_t *p_cb)
         ((p_op = (pending_operation_t *)wiced_bt_get_buffer(sizeof(pending_operation_t))) != NULL))
     {
         p_op->operation = CONFIG_OPERATION_RELAY_SET;
-        p_op->p_event = mesh_configure_create_event(p_cb->addr, (p_cb->addr != p_cb->unicast_addr));
+        p_op->p_event = mesh_client_configure_create_event(p_cb->addr);
         p_op->uu.relay_set.state = ((features & FOUNDATION_FEATURE_BIT_LOW_POWER) == FOUNDATION_FEATURE_BIT_LOW_POWER) ? 0 : p_cb->is_relay;
         p_op->uu.relay_set.retransmit_count = p_cb->relay_xmit_count;
         p_op->uu.relay_set.retransmit_interval = p_cb->relay_xmit_interval;
@@ -6592,7 +7054,7 @@ void configure_queue_remote_device_operations(mesh_provision_cb_t *p_cb)
         ((p_op = (pending_operation_t *)wiced_bt_get_buffer(sizeof(pending_operation_t))) != NULL))
     {
         p_op->operation = CONFIG_OPERATION_PROXY_SET;
-        p_op->p_event = mesh_configure_create_event(p_cb->addr, (p_cb->addr != p_cb->unicast_addr));
+        p_op->p_event = mesh_client_configure_create_event(p_cb->addr);
         p_op->uu.proxy_set.state = ((features & FOUNDATION_FEATURE_BIT_LOW_POWER) == FOUNDATION_FEATURE_BIT_LOW_POWER) ? 0 : p_cb->is_gatt_proxy;
         configure_pending_operation_queue(p_cb, p_op);
     }
@@ -6600,21 +7062,21 @@ void configure_queue_remote_device_operations(mesh_provision_cb_t *p_cb)
         ((p_op = (pending_operation_t *)wiced_bt_get_buffer(sizeof(pending_operation_t))) != NULL))
     {
         p_op->operation = CONFIG_OPERATION_FRIEND_SET;
-        p_op->p_event = mesh_configure_create_event(p_cb->addr, (p_cb->addr != p_cb->unicast_addr));
+        p_op->p_event = mesh_client_configure_create_event(p_cb->addr);
         p_op->uu.friend_set.state = ((features & FOUNDATION_FEATURE_BIT_LOW_POWER) == FOUNDATION_FEATURE_BIT_LOW_POWER) ? 0 : p_cb->is_friend;
         configure_pending_operation_queue(p_cb, p_op);
     }
     if ((p_op = (pending_operation_t *)wiced_bt_get_buffer(sizeof(pending_operation_t))) != NULL)
     {
         p_op->operation = CONFIG_OPERATION_NET_BEACON_SET;
-        p_op->p_event = mesh_configure_create_event(p_cb->addr, (p_cb->addr != p_cb->unicast_addr));
+        p_op->p_event = mesh_client_configure_create_event(p_cb->addr);
         p_op->uu.beacon_set.state = ((features & FOUNDATION_FEATURE_BIT_LOW_POWER) == FOUNDATION_FEATURE_BIT_LOW_POWER) ? 0 : p_cb->beacon;
         configure_pending_operation_queue(p_cb, p_op);
     }
     if ((p_cb->proxy_addr != p_cb->addr) && p_cb->over_gatt && (p_op = (pending_operation_t *)wiced_bt_get_buffer(sizeof(pending_operation_t))) != NULL)
     {
         p_op->operation = CONFIG_OPERATION_FILTER_ADD;
-        p_op->p_event = mesh_configure_create_event(0xFFFF, WICED_FALSE);
+        p_op->p_event = mesh_client_configure_create_event(0xFFFF);
         p_op->uu.filter_add.addr_num = (p_mesh_db->num_groups == 0) ? 1 : p_mesh_db->num_groups;
         if (p_mesh_db->num_groups == 0)
         {
@@ -6817,6 +7279,10 @@ void provision_timer_cb(TIMER_PARAM_TYPE arg)
         Log("Key Refresh Phase Set:%04x net_key_idx:%04x transition:%d", p_op->p_event->dst, p_op->uu.kr_phase_set.net_key_idx, p_op->uu.kr_phase_set.transition);
         wiced_bt_mesh_config_key_refresh_phase_set(p_op->p_event, &p_op->uu.kr_phase_set);
         break;
+    case CONFIG_OPERATION_LPN_POLL_TIMEOUT_GET:
+        Log("LPN Poll Timeout Get:%04x LPN addr:%04x", p_op->p_event->dst, p_op->uu.lpn_poll_timeout_get.lpn_addr);
+        wiced_bt_mesh_lpn_poll_timeout_get(p_op->p_event, &p_op->uu.lpn_poll_timeout_get);
+        break;
     case CONFIG_OPERATION_SENSOR_DESC_GET:
         Log("Sensor Descriptor Get:%04x ", p_op->p_event->dst);
         wiced_bt_mesh_model_sensor_client_descriptor_send_get(p_op->p_event, &p_op->uu.sensor_get);
@@ -6943,7 +7409,7 @@ int mesh_client_add_component_to_group(const char *component_name, const char *g
                             {
                                 memset(p_op, 0, sizeof(pending_operation_t));
                                 p_op->operation = CONFIG_OPERATION_MODEL_SUBSCRIBE;
-                                p_op->p_event = mesh_configure_create_event(dst, (dst != p_cb->unicast_addr));
+                                p_op->p_event = mesh_client_configure_create_event(dst);
                                 p_op->uu.model_sub.operation = OPERATION_ADD;
                                 p_op->uu.model_sub.element_addr = p_node->unicast_address + i;
                                 p_op->uu.model_sub.company_id = p_models_array[j].company_id;
@@ -6979,7 +7445,7 @@ int mesh_client_add_component_to_group(const char *component_name, const char *g
                     {
                         memset(p_op, 0, sizeof(pending_operation_t));
                         p_op->operation = CONFIG_OPERATION_MODEL_PUBLISH;
-                        p_op->p_event = mesh_configure_create_event(dst, (dst != p_cb->unicast_addr));
+                        p_op->p_event = mesh_client_configure_create_event(dst);
                         p_op->uu.model_pub.element_addr = p_node->unicast_address + i;
                         p_op->uu.model_pub.company_id = p_models_array[j].company_id;
                         p_op->uu.model_pub.model_id = p_models_array[j].id;
@@ -7067,7 +7533,7 @@ int mesh_client_remove_component_from_group(const char *component_name, const ch
                     {
                         memset(p_op, 0, sizeof(pending_operation_t));
                         p_op->operation = CONFIG_OPERATION_MODEL_SUBSCRIBE;
-                        p_op->p_event = mesh_configure_create_event(dst, (dst != p_cb->unicast_addr));
+                        p_op->p_event = mesh_client_configure_create_event(dst);
                         p_op->uu.model_sub.operation = OPERATION_DELETE;
                         p_op->uu.model_sub.element_addr = p_node->unicast_address + element_idx;
                         p_op->uu.model_sub.company_id = p_node->element[element_idx].model[model_idx].model.company_id;
@@ -7098,7 +7564,7 @@ int mesh_client_remove_component_from_group(const char *component_name, const ch
                 {
                     memset(p_op, 0, sizeof(pending_operation_t));
                     p_op->operation = CONFIG_OPERATION_MODEL_PUBLISH;
-                    p_op->p_event = mesh_configure_create_event(dst, (dst != p_cb->unicast_addr));
+                    p_op->p_event = mesh_client_configure_create_event(dst);
                     p_op->uu.model_pub.element_addr = p_node->unicast_address + element_idx;
                     p_op->uu.model_pub.company_id = p_node->element[element_idx].model[model_idx].model.company_id;
                     p_op->uu.model_pub.model_id = p_node->element[element_idx].model[model_idx].model.id;
@@ -7221,7 +7687,7 @@ int mesh_client_move_component_to_group(const char *component_name, const char *
                         {
                             memset(p_op, 0, sizeof(pending_operation_t));
                             p_op->operation = CONFIG_OPERATION_MODEL_SUBSCRIBE;
-                            p_op->p_event = mesh_configure_create_event(dst, (dst != p_cb->unicast_addr));
+                            p_op->p_event = mesh_client_configure_create_event(dst);
                             p_op->uu.model_sub.operation = OPERATION_ADD;
                             p_op->uu.model_sub.element_addr = p_node->unicast_address + i;
                             p_op->uu.model_sub.company_id = p_models_array[j].company_id;
@@ -7256,7 +7722,7 @@ int mesh_client_move_component_to_group(const char *component_name, const char *
                     {
                         memset(p_op, 0, sizeof(pending_operation_t));
                         p_op->operation = CONFIG_OPERATION_MODEL_PUBLISH;
-                        p_op->p_event = mesh_configure_create_event(dst, (dst != p_cb->unicast_addr));
+                        p_op->p_event = mesh_client_configure_create_event(dst);
                         p_op->uu.model_pub.element_addr = p_node->unicast_address + i;
                         p_op->uu.model_pub.company_id = p_models_array[j].company_id;
                         p_op->uu.model_pub.model_id = p_models_array[j].id;
@@ -7315,7 +7781,7 @@ int mesh_client_move_component_to_group(const char *component_name, const char *
                 {
                     memset(p_op, 0, sizeof(pending_operation_t));
                     p_op->operation = CONFIG_OPERATION_MODEL_SUBSCRIBE;
-                    p_op->p_event = mesh_configure_create_event(dst, (dst != p_cb->unicast_addr));
+                    p_op->p_event = mesh_client_configure_create_event(dst);
                     p_op->uu.model_sub.operation = OPERATION_DELETE;
                     p_op->uu.model_sub.element_addr = p_node->unicast_address + i;
                     p_op->uu.model_sub.company_id = p_models_array[j].company_id;
@@ -7510,7 +7976,7 @@ int mesh_client_configure_publication(const char *component_name, uint8_t is_cli
         {
             memset(p_op, 0, sizeof(pending_operation_t));
             p_op->operation = CONFIG_OPERATION_MODEL_PUBLISH;
-            p_op->p_event = mesh_configure_create_event(dst, (dst != p_cb->unicast_addr));
+            p_op->p_event = mesh_client_configure_create_event(dst);
             p_op->uu.model_pub.element_addr = (i == 0) ? component_addr : *p_secondary_element;
             p_op->uu.model_pub.company_id = company_id;
             p_op->uu.model_pub.model_id = model_id;
@@ -7536,6 +8002,57 @@ int mesh_client_configure_publication(const char *component_name, uint8_t is_cli
     }
     wiced_bt_free_buffer(p_elements_array);
     return MESH_CLIENT_SUCCESS;
+}
+
+mesh_lpn_key_refresh_block_t* lpn_kr_poll_timeout_get(mesh_provision_cb_t* p_cb, uint16_t lpn_addr, uint16_t friend_addr)
+{
+    pending_operation_t* p_op;
+    mesh_lpn_key_refresh_block_t* p_lpn_kr;
+    mesh_lpn_key_refresh_block_t* p_temp;
+
+    for (p_lpn_kr = p_cb->p_lpn_kr_first; p_lpn_kr != NULL; p_lpn_kr = p_lpn_kr->p_next)
+    {
+        if (p_lpn_kr->lpn_addr == lpn_addr)
+            break;
+    }
+    if (p_lpn_kr == NULL)
+    {
+        p_lpn_kr = wiced_bt_get_buffer(sizeof(mesh_lpn_key_refresh_block_t));
+        if (p_lpn_kr == NULL)
+            return NULL;
+        memset(p_lpn_kr, 0, sizeof(mesh_lpn_key_refresh_block_t));
+        if (p_cb->p_lpn_kr_first == NULL)
+            p_cb->p_lpn_kr_first = p_lpn_kr;
+        else
+        {
+            for (p_temp = p_cb->p_lpn_kr_first; p_temp->p_next != NULL; p_temp = p_temp->p_next)
+                ;
+            p_temp->p_next = p_lpn_kr;
+        }
+    }
+    if (p_lpn_kr->state != LPN_KEY_REFRESH_STATE_IDLE)
+        return p_lpn_kr;
+
+    if (p_lpn_kr->lpn_poll_timeout != 0)
+    {
+        wiced_init_timer(&p_lpn_kr->timer, mesh_process_lpn_timeout, (TIMER_PARAM_TYPE)p_lpn_kr, WICED_SECONDS_TIMER);
+        wiced_start_timer(&p_lpn_kr->timer, p_lpn_kr->lpn_poll_timeout / 10); // LPN poll timeout is in 100ms ticks
+        return p_lpn_kr;
+    }
+    p_lpn_kr->state = LPN_KEY_REFRESH_STATE_GETTING_POLL_TIMEOUT;
+    p_lpn_kr->lpn_addr = lpn_addr;
+    p_lpn_kr->friend_addr = friend_addr;
+
+    if ((p_op = (pending_operation_t*)wiced_bt_get_buffer(sizeof(pending_operation_t))) == NULL)
+    {
+        wiced_bt_free_buffer(p_lpn_kr);
+        return NULL;
+    }
+    p_op->operation = CONFIG_OPERATION_LPN_POLL_TIMEOUT_GET;
+    p_op->p_event = mesh_client_configure_create_event(friend_addr);
+    p_op->uu.lpn_poll_timeout_get.lpn_addr = p_lpn_kr->lpn_addr;
+    configure_pending_operation_queue(p_cb, p_op);
+    return p_lpn_kr;
 }
 
 const char *mesh_client_get_publication_target(const char *component_name, uint8_t is_client, const char *method)
@@ -8766,7 +9283,7 @@ int mesh_client_vendor_data_set(const char *device_name, uint16_t company_id, ui
     p_event->opcode = opcode;
 
     // Flag 0x80 means that the there will be no network retransmissions.
-    if(disable_ntwk_retransmit)
+    if (disable_ntwk_retransmit)
         p_event->retrans_cnt = 0x80;
 
     Log("Send VS Data addr:%04x app_key_idx:%04x company_id:%04x model_id:%04x opcode:%02x data_len:%d",
@@ -8944,7 +9461,7 @@ void mesh_process_scan_capabilities_status(mesh_provision_cb_t *p_cb, wiced_bt_m
 
     node->active_scan_supported = p_data->active_scan_supported;
 
-    if ((p_event = mesh_configure_create_event(provisioner_addr, (provisioner_addr != p_cb->unicast_addr))) == NULL)
+    if ((p_event = mesh_client_configure_create_event(provisioner_addr)) == NULL)
         return;
 
     node->scanning_state = SCANNING_STATE_STARTING;
@@ -9342,6 +9859,7 @@ wiced_bt_mesh_event_t* mesh_create_control_event(wiced_bt_mesh_db_mesh_t* p_mesh
     {
         p_event->retrans_cnt = 0;
         p_event->send_segmented = WICED_TRUE;
+        p_event->reply_timeout = 60;       // wait for the reply 3 seconds, this will be a reply from the friend
     }
     else
     {
@@ -9446,7 +9964,7 @@ wiced_bool_t add_filter(mesh_provision_cb_t *p_cb, uint16_t addr)
         return WICED_FALSE;
 
     p_op->operation = CONFIG_OPERATION_FILTER_ADD;
-    p_op->p_event = mesh_configure_create_event(0xFFFF, WICED_FALSE);
+    p_op->p_event = mesh_client_configure_create_event(0xFFFF);
     p_op->uu.filter_add.addr_num = (p_mesh_db->num_groups == 0) ? 1 : p_mesh_db->num_groups;
     if (p_mesh_db->num_groups == 0)
     {
@@ -9554,7 +10072,7 @@ int mesh_client_listen_for_app_group_broadcasts(char *control_method, char *grou
             {
                 memset(p_op, 0, sizeof(pending_operation_t));
                 p_op->operation = CONFIG_OPERATION_MODEL_SUBSCRIBE;
-                p_op->p_event = mesh_configure_create_event(p_mesh_db->unicast_addr, WICED_FALSE);
+                p_op->p_event = mesh_client_configure_create_event(p_mesh_db->unicast_addr);
                 p_op->uu.model_sub.operation = (uint8_t) (start_listen ? OPERATION_ADD : OPERATION_DELETE);
                 p_op->uu.model_sub.element_addr = p_mesh_db->unicast_addr;
                 p_op->uu.model_sub.company_id = MESH_COMPANY_ID_BT_SIG;
@@ -9894,6 +10412,23 @@ wiced_bool_t get_control_method(const char *method_name, uint16_t *company_id, u
             return WICED_FALSE;
     }
     return WICED_TRUE;
+}
+
+/*
+ * Create an event to be used to send configuration message. The message should be retransmitted
+ * if addressed to an external device. The message should not be retransmitted even sent to local
+ * device. Event should be always sent segmented and not retransmitted if sent to LPN
+ */
+wiced_bt_mesh_event_t* mesh_client_configure_create_event(uint16_t dst)
+{
+    wiced_bt_mesh_db_node_t* p_node = mesh_find_node(p_mesh_db, dst);
+    wiced_bt_mesh_event_t* p_event = mesh_configure_create_event(dst, (dst != provision_cb.unicast_addr));
+    if ((p_event != NULL) && (p_node != NULL) && (p_node->feature.low_power == MESH_FEATURE_ENABLED))
+    {
+        p_event->retrans_cnt = 0;
+        p_event->send_segmented = WICED_TRUE;
+    }
+    return p_event;
 }
 
 uint32_t wiced_hal_rand_gen_num(void)
