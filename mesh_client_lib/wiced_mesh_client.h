@@ -332,6 +332,9 @@ typedef void(*mesh_client_get_oob_data_t)(uint8_t *uuid, uint16_t oob, uint8_t *
  */
 uint8_t mesh_client_provision(const char *device_name, const char *group_name, uint8_t *uuid, uint8_t identify_duration);
 
+// Sets unprovisioned device as if it has been scanned.
+uint8_t mesh_client_set_unprovisioned(uint8_t *p_uuid);
+
 /*
  * Start provisioning of the device with specified UUID using Static OOB Data.
  */

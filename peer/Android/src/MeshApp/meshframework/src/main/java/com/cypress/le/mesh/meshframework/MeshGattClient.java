@@ -483,9 +483,7 @@ public class MeshGattClient {
 
     public void startOta(String firmwareFile, boolean isDfu) {
         Log.i(TAG, "startOta: isDfu:" + isDfu + ", name = " + firmwareFile);
-        if (mOtaUpgrade == null) {
-            mOtaUpgrade = new OtaUpgrade(mMeshNativeHelper, mCallback, mGatt, mRequestQueue, mOtaSupported, mSecureServiceSupported, (mMtuSize - 17));
-        }
+        mOtaUpgrade = new OtaUpgrade(mMeshNativeHelper, mCallback, mGatt, mRequestQueue, mOtaSupported, mSecureServiceSupported, (mMtuSize - 17));
 
         // MTU size is to accomodate extra bytes added from encryption
         mOtaUpgrade.start(firmwareFile, isDfu);

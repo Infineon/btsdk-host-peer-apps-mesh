@@ -53,6 +53,12 @@
 #ifdef MESH_DFU_ENABLED
 #include "wiced_bt_mesh_dfu.h"
 #endif
+#ifdef DIRECTED_FORWARDING_SERVER_SUPPORTED
+#include "wiced_bt_mesh_mdf.h"
+#endif
+#ifdef PRIVATE_PROXY_SUPPORTED
+#include "wiced_bt_mesh_private_proxy.h"
+#endif
 #include "wiced_bt_cfg.h"
 wiced_bt_cfg_settings_t wiced_bt_cfg_settings;
 
@@ -207,6 +213,9 @@ wiced_bt_mesh_core_config_model_t   mesh_element1_models[] =
     WICED_BT_MESH_MODEL_PROPERTY_CLIENT,
     WICED_BT_MESH_MODEL_REMOTE_PROVISION_SERVER,
     WICED_BT_MESH_MODEL_REMOTE_PROVISION_CLIENT,
+#ifdef PRIVATE_PROXY_SUPPORTED
+    WICED_BT_MESH_MODEL_PRIVATE_PROXY_CLIENT,
+#endif
     WICED_BT_MESH_MODEL_DEFAULT_TRANSITION_TIME_CLIENT,
     WICED_BT_MESH_MODEL_ONOFF_CLIENT,
     WICED_BT_MESH_MODEL_LEVEL_CLIENT,
@@ -216,6 +225,9 @@ wiced_bt_mesh_core_config_model_t   mesh_element1_models[] =
     WICED_BT_MESH_MODEL_LIGHT_HSL_CLIENT,
     WICED_BT_MESH_MODEL_SENSOR_CLIENT,
     WICED_BT_MESH_MODEL_LIGHT_LC_CLIENT,
+#ifdef DIRECTED_FORWARDING_SERVER_SUPPORTED
+    WICED_BT_MESH_DIRECTED_FORWARDING_CLIENT,
+#endif
 #ifdef MESH_DFU_ENABLED
     WICED_BT_MESH_MODEL_FW_DISTRIBUTION_CLIENT,
     WICED_BT_MESH_MODEL_FW_DISTRIBUTOR,
@@ -294,7 +306,6 @@ void mesh_application_init(void)
 #ifdef MESH_SUPPORT_PB_GATT
         mesh_config.features |= WICED_BT_MESH_CORE_FEATURE_BIT_PB_GATT;
 #endif
-        mesh_config.directed_forward.wanted_rssi = -127;
         wiced_bt_mesh_core_net_key_max_num = 4;
         wiced_bt_mesh_core_app_key_max_num = 8;
 

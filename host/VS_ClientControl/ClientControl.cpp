@@ -45,6 +45,16 @@
 #define new DEBUG_NEW
 #endif
 
+int idxPageLight = 0;
+int idxPageMain = 0;
+int idxPageConfig = 0;
+int idxPageDirectedForwarding = 0;
+int idxPageConnectedMesh = 0;
+int idxPageMeshPerf = 0;
+
+// Uncomment bellow line to enable the log to the file trace.txt
+#define MESH_CLIENTCONTROL_LOG_TO_FILE 0
+
 // This flag controls the availability of Mesh Performance Testing Feature
 #define MESH_PERFORMANCE_TESTING_ENABLED     TRUE
 
@@ -86,6 +96,7 @@ public:
     // Implementation
     BOOL        m_bIsUDPClient;
     BOOL        m_bIsUDPServer;
+    BOOL        m_bConnectedMesh;
     BOOL        m_bPerfTestMode;
     BOOL        m_bLogToFile;
     BOOL        m_bInstance;
@@ -97,6 +108,7 @@ CMeshCommandLineInfo::CMeshCommandLineInfo() : CCommandLineInfo()
 {
     m_bIsUDPClient = FALSE;
     m_bIsUDPServer = FALSE;
+    m_bConnectedMesh = FALSE;
     m_bPerfTestMode = MESH_PERFORMANCE_TESTING_ENABLED;
     m_bLogToFile = FALSE;
     m_bInstance = 0;
@@ -113,6 +125,10 @@ void CMeshCommandLineInfo::ParseParam(LPCTSTR lpszParam, BOOL bSwitch, BOOL bLas
     CString csParam(lpszParam);
     csParam.MakeUpper();
 
+    if (csParam == L"CONNECTED_MESH")
+    {
+        m_bConnectedMesh = TRUE;
+    }
     if (bSwitch)
     {
         switch (*csParam.Left(1).GetBuffer())
@@ -123,6 +139,10 @@ void CMeshCommandLineInfo::ParseParam(LPCTSTR lpszParam, BOOL bSwitch, BOOL bLas
 
         case 'C': //UDP Client
             m_bIsUDPClient = TRUE;
+            break;
+
+        case 'O':
+            m_bConnectedMesh = TRUE;
             break;
 
         case 'P': //Mesh Performance Testing
@@ -150,7 +170,7 @@ void CMeshCommandLineInfo::ParseParam(LPCTSTR lpszParam, BOOL bSwitch, BOOL bLas
         else if (m_bInstance)
         {
             host_mode_instance = _wtoi((const WCHAR*) &lpszParam[0]);
-            if (host_mode_instance > 2 || host_mode_instance < 0)
+            if (host_mode_instance > 9 || host_mode_instance < 0)
                 host_mode_instance = 0;
         }
     }
@@ -184,7 +204,7 @@ CClientControlApp::CClientControlApp( )
 {
     // TODO: add construction code here,
     // Place all significant initialization in InitInstance
-
+    bConnectedMesh = FALSE;
     bMeshPerfMode = FALSE;
 }
 
@@ -238,6 +258,12 @@ BOOL CClientControlApp::InitInstance( )
         char    ipaddr[30] = { 0 };
         sprintf_s(ipaddr, sizeof(ipaddr), "%S", cmdInfo.sIPAddr.GetBuffer());
         SetupUDPClientSocket(ipaddr);
+    }
+
+    if (cmdInfo.m_bConnectedMesh)
+    {
+        ods("Starting application with Connected Mesh page\n");
+        bConnectedMesh = TRUE;
     }
 
     if (cmdInfo.m_bPerfTestMode)
@@ -306,17 +332,42 @@ CSocketWindow *pSocketWin = NULL;
 CClientDialog::CClientDialog(UINT nIDCaption, CWnd* pParentWnd, UINT iSelectPage)
     :CPropertySheet(nIDCaption, pParentWnd, iSelectPage)
 {
-    m_psh.dwFlags &= ~PSH_HASHELP;
-#ifndef NO_LIGHT_CONTROL
-    AddPage(&pageLight);
-#endif
-    AddPage(&pageMain);
-    AddPage(&pageConfig);
-    // Add Tab for Mesh Performance Testing only if enabled via commandline
-    if (theApp.bMeshPerfMode)
-        AddPage(&pageMeshPerf);
+    int idxPage = 1;
 
-#if defined( MESH_AUTOMATION_ENABLED ) && (MESH_AUTOMATION_ENABLED == TRUE)
+    m_psh.dwFlags &= ~PSH_HASHELP;
+
+    // Add Tab for Connected Mesh only if enabled via commandline
+    if (theApp.bConnectedMesh)
+    {
+        AddPage(&pageConnectedMesh);
+        idxPageConnectedMesh = idxPage++;
+    }
+    else
+    {
+#ifndef NO_LIGHT_CONTROL
+        AddPage(&pageLight);
+        idxPageLight = idxPage++;
+#endif
+        AddPage(&pageMain);
+        idxPageMain = idxPage++;
+
+        AddPage(&pageConfig);
+        idxPageConfig = idxPage++;
+
+        // This will be enabled when Mesh 1.1 spec is published
+#ifdef DIRECTED_FORWARDING_SUPPORTED
+        AddPage(&pageDirectedForwarding);
+        idxPageDirectedForwarding = idxPage++;
+#endif
+
+        // Add Tab for Mesh Performance Testing only if enabled via commandline
+        if (theApp.bMeshPerfMode)
+        {
+            AddPage(&pageMeshPerf);
+            idxPageMeshPerf = idxPage++;
+        }
+    }
+#if defined(MESH_AUTOMATION_ENABLED) && (MESH_AUTOMATION_ENABLED == TRUE)
     if (pSocketWin == NULL)
         pSocketWin = new CSocketWindow();
 #endif
@@ -325,17 +376,41 @@ CClientDialog::CClientDialog(UINT nIDCaption, CWnd* pParentWnd, UINT iSelectPage
 CClientDialog::CClientDialog(LPCTSTR pszCaption, CWnd* pParentWnd, UINT iSelectPage)
     :CPropertySheet(pszCaption, pParentWnd, iSelectPage)
 {
+    int idxPage = 1;
+
     m_psh.dwFlags &= ~PSH_HASHELP;
+
+    // Add Tab for Connected Mesh only if enabled via commandline
+    if (theApp.bConnectedMesh)
+    {
+        AddPage(&pageConnectedMesh);
+        idxPageConnectedMesh = idxPage++;
+    }
+    else
+    {
 #ifndef NO_LIGHT_CONTROL
-    AddPage(&pageLight);
+        AddPage(&pageLight);
+        idxPageLight = idxPage++;
 #endif
-    AddPage(&pageMain);
-    AddPage(&pageConfig);
+        AddPage(&pageMain);
+        idxPageMain = idxPage++;
 
-    // Add Tab for Mesh Performance Testing only if enabled via commandline
-    if (theApp.bMeshPerfMode)
-        AddPage(&pageMeshPerf);
+        AddPage(&pageConfig);
+        idxPageConfig = idxPage++;
 
+        // This will be enabled when Mesh 1.1 spec is published
+#ifdef DIRECTED_FORWARDING_SUPPORTED
+        AddPage(&pageDirectedForwarding);
+        idxPageDirectedForwarding = idxPage++;
+#endif
+
+        // Add Tab for Mesh Performance Testing only if enabled via commandline
+        if (theApp.bMeshPerfMode)
+        {
+            AddPage(&pageMeshPerf);
+            idxPageMeshPerf = idxPage++;
+        }
+    }
 #if defined( MESH_AUTOMATION_ENABLED ) && (MESH_AUTOMATION_ENABLED == TRUE)
     if (pSocketWin == NULL)
         pSocketWin = new CSocketWindow();

@@ -49,8 +49,8 @@
 extern "C"
 {
 #endif
-    wiced_bool_t mesh_adv_publish_start(void);
-    void mesh_adv_publish_stop(void);
+    wiced_bool_t mesh_advertising_start(uint16_t company_id, uint16_t service_id, uint8_t* data, uint8_t data_len);
+    void mesh_advertising_stop(void);
 #ifdef __cplusplus
 }
 #endif
@@ -99,11 +99,11 @@ HRESULT CMeshAdvPublisher::OnAdvertisementPublisherStatusChanged(IBluetoothLEAdv
     return S_OK;
 }
 
-int CMeshAdvPublisher::InitializePublisher()
+int CMeshAdvPublisher::InitializePublisher(uint16_t company_id, uint16_t service_id, uint8_t *data, uint8_t data_len)
 {
     HRESULT hr = 0;
 
-    ods("InitializePublisher");
+    ods("InitializePublisher service:%x data length:%d", service_id, data_len);
 
     // Initialize the Windows Runtime.
     RoInitializeWrapper initialize(RO_INIT_MULTITHREADED);
@@ -114,7 +114,7 @@ int CMeshAdvPublisher::InitializePublisher()
     }
 
     // Get the activation factory for the IBluetoothLEAdvertisementPublisherFactory interface.
-     hr = GetActivationFactory(HStringReference(RuntimeClass_Windows_Devices_Bluetooth_Advertisement_BluetoothLEAdvertisementPublisher).Get(), &bleAdvPublisherFactory);
+    hr = GetActivationFactory(HStringReference(RuntimeClass_Windows_Devices_Bluetooth_Advertisement_BluetoothLEAdvertisementPublisher).Get(), &bleAdvPublisherFactory);
     if (FAILED(hr))
     {
         ods("GetActivationFactory failed: hr:%x", hr);
@@ -165,7 +165,7 @@ int CMeshAdvPublisher::InitializePublisher()
     ComPtr<ABI::Windows::Storage::Streams::IBufferFactory> bufferFactory;
     hr = GetActivationFactory(HStringReference(RuntimeClass_Windows_Storage_Streams_Buffer).Get(), &bufferFactory);
     ComPtr<ABI::Windows::Storage::Streams::IBuffer> buffer;
-    const int length = 12; // Company ID (2 bytes) + Product ID/ProxReq(2 bytes) + NetworkID (8 bytes)
+    const int length = 2 + 2 + data_len; // Company ID (2 bytes) + Service ID(2 bytes) + Service Data(data_len)
     hr = bufferFactory->Create(length, &buffer);
     hr = buffer->put_Length(length);
     ComPtr<Windows::Storage::Streams::IBufferByteAccess> byteAccess;
@@ -173,16 +173,13 @@ int CMeshAdvPublisher::InitializePublisher()
     byte *bytes;
     hr = byteAccess->Buffer(&bytes);
 
-    manufacturer_data[0] = MESH_COMPANY_ID_CYPRESS & 0xff;
-    manufacturer_data[1] = (MESH_COMPANY_ID_CYPRESS >> 8) & 0xff;
-    manufacturer_data[2] = WICED_MESH_PROXY_REQ & 0xff;
-    manufacturer_data[3] = (WICED_MESH_PROXY_REQ >> 8) & 0xff;
+    manufacturer_data[0] = company_id & 0xff;
+    manufacturer_data[1] = (company_id >> 8) & 0xff;
+    manufacturer_data[2] = service_id & 0xff;
+    manufacturer_data[3] = (service_id >> 8) & 0xff;
     memcpy(bytes, manufacturer_data, 4);
 
-    byte network_id[MESH_NETWORK_ID_LEN] = { 0 };
-    uint16_t net_key_idx = 0;
-    wiced_bt_mesh_core_get_network_id(net_key_idx, network_id);
-    memcpy(bytes + 4, network_id, MESH_NETWORK_ID_LEN);
+    memcpy(bytes + 4, data, data_len);
     //--> End composing manufacturer specific data
     // Put the data in the data section
     hr = ds->put_Data(buffer.Get());
@@ -262,63 +259,32 @@ CMeshAdvPublisher::~CMeshAdvPublisher()
 {
 }
 
-wiced_bool_t mesh_adv_publisher_open()
+wiced_bool_t mesh_advertising_start(uint16_t company_id, uint16_t service_id, uint8_t *data, uint8_t data_len)
 {
     EnterCriticalSection(&cs);
-    ods("mesh_adv_publisher_open: g_pCMeshAdvPublisher:%d", g_pCMeshAdvPublisher);
+    ods("mesh_advertising_start: g_pCMeshAdvPublisher:%d", g_pCMeshAdvPublisher);
     if (g_pCMeshAdvPublisher)
     {
-        LeaveCriticalSection(&cs);
-        return WICED_FALSE;
+        g_pCMeshAdvPublisher->StopLEAdvertisementPublisher();
+        delete g_pCMeshAdvPublisher;
     }
+
     g_pCMeshAdvPublisher = new CMeshAdvPublisher();
-    g_pCMeshAdvPublisher->InitializePublisher();
-    LeaveCriticalSection(&cs);
-    return WICED_TRUE;
-}
-
-void mesh_adv_publisher_close(void)
-{
-    EnterCriticalSection(&cs);
-    ods("mesh_adv_publisher_close: g_pCMeshAdvPublisher:%d", g_pCMeshAdvPublisher);
-    if (g_pCMeshAdvPublisher)
-    {
-        CMeshAdvPublisher* pCMeshAdvPublisher = g_pCMeshAdvPublisher;
-        g_pCMeshAdvPublisher = NULL;
-        pCMeshAdvPublisher->StopLEAdvertisementPublisher();
-        delete pCMeshAdvPublisher;
-    }
-    LeaveCriticalSection(&cs);
-}
-
-wiced_bool_t mesh_adv_publish_start(void)
-{
-    mesh_adv_publisher_open();
-
-    EnterCriticalSection(&cs);
-    ods("mesh_adv_publish_start: g_pCMeshAdvPublisher:%d", g_pCMeshAdvPublisher);
-    if (!g_pCMeshAdvPublisher)
-    {
-        LeaveCriticalSection(&cs);
-        return WICED_FALSE;
-    }
-
-    CMeshClientDlg *pDlg = (CMeshClientDlg *)theApp.m_pMainWnd;
-    pDlg->UpdateScanState(TRUE);
+    g_pCMeshAdvPublisher->InitializePublisher(company_id, service_id, data, data_len);
     g_pCMeshAdvPublisher->StartLEAdvertisementPublisher();
     LeaveCriticalSection(&cs);
     return WICED_TRUE;
 }
 
-void mesh_adv_publish_stop(void)
+void mesh_advertising_stop(void)
 {
     EnterCriticalSection(&cs);
-    ods("mesh_adv_publish_stop: g_pCMeshAdvPublisher:%d", g_pCMeshAdvPublisher);
+    ods("mesh_advertising_stop: g_pCMeshAdvPublisher:%d", g_pCMeshAdvPublisher);
     if (g_pCMeshAdvPublisher)
     {
-        CMeshClientDlg *pDlg = (CMeshClientDlg *)theApp.m_pMainWnd;
-        pDlg->UpdateScanState(FALSE);
         g_pCMeshAdvPublisher->StopLEAdvertisementPublisher();
+        delete g_pCMeshAdvPublisher;
+        g_pCMeshAdvPublisher = NULL;
     }
     LeaveCriticalSection(&cs);
 }

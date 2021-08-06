@@ -239,7 +239,6 @@ void mesh_application_init(void)
 #ifdef MESH_SUPPORT_PB_GATT
         mesh_config.features |= WICED_BT_MESH_CORE_FEATURE_BIT_PB_GATT;
 #endif
-        mesh_config.directed_forward.wanted_rssi = -127;
         wiced_bt_mesh_core_net_key_max_num = 4;
         wiced_bt_mesh_core_app_key_max_num = 8;
 

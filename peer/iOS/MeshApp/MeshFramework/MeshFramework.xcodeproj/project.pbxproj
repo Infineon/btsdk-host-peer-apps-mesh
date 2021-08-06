@@ -92,6 +92,8 @@
 		18A24B472519A7EC000A6883 /* clock_timer.h in Headers */ = {isa = PBXBuildFile; fileRef = 18A24B432519A7EC000A6883 /* clock_timer.h */; };
 		18A692D821B906BC00E4B3DC /* PlatformManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18A692D721B906BC00E4B3DC /* PlatformManager.swift */; };
 		18C0813A21B6866400A166F8 /* TrackingHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18C0813921B6866400A166F8 /* TrackingHelper.swift */; };
+		2A3A30F126B7B8C000EDCB2D /* sha2.c in Sources */ = {isa = PBXBuildFile; fileRef = 2A3A30EF26B7B8C000EDCB2D /* sha2.c */; };
+		2A3A30F226B7B8C000EDCB2D /* sha2.h in Headers */ = {isa = PBXBuildFile; fileRef = 2A3A30F026B7B8C000EDCB2D /* sha2.h */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -182,6 +184,8 @@
 		18A24B432519A7EC000A6883 /* clock_timer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = clock_timer.h; sourceTree = "<group>"; };
 		18A692D721B906BC00E4B3DC /* PlatformManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlatformManager.swift; sourceTree = "<group>"; };
 		18C0813921B6866400A166F8 /* TrackingHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TrackingHelper.swift; sourceTree = "<group>"; };
+		2A3A30EF26B7B8C000EDCB2D /* sha2.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = sha2.c; sourceTree = "<group>"; };
+		2A3A30F026B7B8C000EDCB2D /* sha2.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = sha2.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -288,6 +292,8 @@
 		18CB442522F05C69007B2DFD /* mesh_libs */ = {
 			isa = PBXGroup;
 			children = (
+				2A3A30EF26B7B8C000EDCB2D /* sha2.c */,
+				2A3A30F026B7B8C000EDCB2D /* sha2.h */,
 				1828D3952384FC070006479C /* aes_cmac.cpp */,
 				1828D38F2384FC070006479C /* aes_cmac.h */,
 				1828D3922384FC070006479C /* aes.cpp */,
@@ -438,6 +444,7 @@
 				186FD7DB251C3E3A00C17DF2 /* wiced_bt_dev.h in Headers */,
 				186FD808251C3EC800C17DF2 /* wiced_hal_rand.h in Headers */,
 				18A24B3A2519A263000A6883 /* wiced_memory.h in Headers */,
+				2A3A30F226B7B8C000EDCB2D /* sha2.h in Headers */,
 				1868DBA12194354B00CC27FB /* trace.h in Headers */,
 				1828D3A12384FC080006479C /* aes_cmac.h in Headers */,
 				186FD7DF251C3E3A00C17DF2 /* wiced.h in Headers */,
@@ -573,6 +580,7 @@
 				1865F5AE221E3D2700263C8B /* OtaDevice.swift in Sources */,
 				1828D32A2384EB6E0006479C /* meshdb.c in Sources */,
 				1828D39D2384FC080006479C /* p_256_ecc_pp.c in Sources */,
+				2A3A30F126B7B8C000EDCB2D /* sha2.c in Sources */,
 				1865F5A6221D442900263C8B /* OtaUpgrader.swift in Sources */,
 				18C0813A21B6866400A166F8 /* TrackingHelper.swift in Sources */,
 				1828D32D2384EB6E0006479C /* wiced_bt_mesh_db.c in Sources */,

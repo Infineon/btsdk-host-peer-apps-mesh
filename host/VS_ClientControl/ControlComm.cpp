@@ -35,27 +35,28 @@
 #include "hci_control_api.h"
 
 extern void Log(WCHAR* _Format, ...);
-extern void HandleWicedEvent(DWORD identifier, DWORD len, BYTE* p_data);
+extern void HandleWicedEvent(int com_port, DWORD identifier, DWORD len, BYTE* p_data);
 extern void HandleHciEvent(BYTE* p_data, DWORD len);
 
 static char _parityChar[] = "NOEMS";
 static char* _stopBits[] = { "1", "1.5", "2" };
 
-SOCKET m_ClientSocket = INVALID_SOCKET;
 
 static int SOCK_PORT_NUM[] = { 12012, 12012, 12013 };
 extern int host_mode_instance;
-
 
 //
 //Class ComHelper Implementation
 //
 ComHelper::ComHelper(HWND hWnd) :
     m_handle(INVALID_HANDLE_VALUE),
+    m_comPort(0),
     m_hWnd(hWnd)
 {
     memset(&m_OverlapRead, 0, sizeof(m_OverlapRead));
+    memset(&m_OverlapStateChange, 0, sizeof(m_OverlapStateChange));
     memset(&m_OverlapWrite, 0, sizeof(m_OverlapWrite));
+    m_ClientSocket = INVALID_SOCKET;
 }
 
 ComHelper::~ComHelper()
@@ -82,6 +83,7 @@ BOOL ComHelper::OpenPort(int port, int baudRate)
     {
         CloseHandle(m_handle);
     }
+    m_comPort = port;
     m_handle = CreateFileA(lpStr,
         GENERIC_READ | GENERIC_WRITE,
         FILE_SHARE_READ | FILE_SHARE_WRITE,
@@ -106,6 +108,8 @@ BOOL ComHelper::OpenPort(int port, int baudRate)
         m_OverlapRead.hEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 
         m_OverlapWrite.hEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
+
+        m_OverlapStateChange.hEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 
         // set comm timeout
         memset(&commTimeout, 0, sizeof(COMMTIMEOUTS));
@@ -184,6 +188,9 @@ BOOL ComHelper::OpenPort(int port, int baudRate)
         memset(&comStat, 0, sizeof(comStat));
         ClearCommError(m_handle, &dwError, &comStat);
     }
+
+    SetCommMask(m_handle, EV_CTS | EV_DSR);
+
     Log(L"Opened COM%d at speed: %u\n", port, baudRate);
     m_bClosing = FALSE;
     m_hShutdown = CreateEvent(NULL, FALSE, FALSE, NULL);
@@ -196,13 +203,20 @@ BOOL ComHelper::OpenPort(int port, int baudRate)
         Log(L"Could not create read thread \n");
         ClosePort();
     }
+
     return m_handle != NULL && m_handle != INVALID_HANDLE_VALUE;
 }
 
 void ComHelper::ClosePort()
 {
+    m_bClosing = TRUE;
+
     SetEvent(m_hShutdown);
-    WaitForSingleObject(m_hThreadRead, INFINITE);
+    SetEvent (m_OverlapStateChange.hEvent);
+    SetEvent (m_OverlapRead.hEvent);
+
+    if (m_hThreadRead != NULL)
+        WaitForSingleObject(m_hThreadRead, INFINITE);
 
     if (m_OverlapRead.hEvent != NULL)
     {
@@ -215,6 +229,13 @@ void ComHelper::ClosePort()
         CloseHandle(m_OverlapWrite.hEvent);
         m_OverlapWrite.hEvent = NULL;
     }
+
+    if (m_OverlapStateChange.hEvent != NULL)
+    {
+        CloseHandle(m_OverlapStateChange.hEvent);
+        m_OverlapStateChange.hEvent = NULL;
+    }
+
     if (m_handle != NULL && m_handle != INVALID_HANDLE_VALUE)
     {
         // drop DTR
@@ -243,13 +264,21 @@ DWORD ComHelper::Read(LPBYTE lpBytes, DWORD dwLen)
     DWORD Length = dwLen;
     DWORD dwRead = 0;
     DWORD dwTotalRead = 0;
+    DWORD   modemStatusMask = 0;
+
+    if (m_bClosing)
+        return (0);
 
     // Loop here until request is fulfilled
     while (Length)
     {
+        HANDLE handles[3];
         DWORD dwRet = WAIT_TIMEOUT;
         dwRead = 0;
+
         ResetEvent(m_OverlapRead.hEvent);
+        ResetEvent(m_OverlapStateChange.hEvent);
+
         //        m_OverlapRead.Internal = ERROR_SUCCESS;
         //        m_OverlapRead.InternalHigh = 0;
         if (!ReadFile(m_handle, (LPVOID)p, Length, &dwRead, &m_OverlapRead))
@@ -260,23 +289,42 @@ DWORD ComHelper::Read(LPBYTE lpBytes, DWORD dwLen)
                 Log(L"ComHelper::ReadFile failed with %ld\n", GetLastError());
                 m_bClosing = TRUE;
                 dwTotalRead = 0;
-                PostMessage(m_hWnd, WM_CLOSE, 0, 0);
-                break;
+                return (0);
             }
 
             //          Clear the LastError and wait for the IO to Complete
             //          SetLastError(ERROR_SUCCESS);
             //          dwRet = WaitForSingleObject(m_OverlapRead.hEvent, 10000);
-            HANDLE handles[2];
             handles[0] = m_OverlapRead.hEvent;
             handles[1] = m_hShutdown;
+            handles[2] = m_OverlapStateChange.hEvent;
 
-            dwRet = WaitForMultipleObjects(2, handles, FALSE, INFINITE);
+            WaitCommEvent(m_handle, &modemStatusMask, &m_OverlapStateChange);
+
+            if (m_bClosing)
+                return (0);
+
+            dwRet = WaitForMultipleObjects(3, handles, FALSE, INFINITE);
+
             // dwRet = WaitForSingleObject(m_OverlapRead.hEvent, INFINITE);
             if (dwRet == WAIT_OBJECT_0 + 1)
             {
                 m_bClosing = TRUE;
-                break;
+                return (0);
+            }
+            else if (dwRet == WAIT_OBJECT_0 + 2)
+            {
+                GetCommModemStatus(m_handle, &modemStatusMask);
+                if (!(modemStatusMask & MS_CTS_ON))
+                {
+                    m_bResetting = TRUE;
+                    // Log(L"CTS is OFF, dropping RTS for 100ms \n");
+                    EscapeCommFunction(m_handle, CLRRTS);
+                    SetEvent (m_OverlapWrite.hEvent);
+                    Sleep(250);
+                    EscapeCommFunction(m_handle, SETRTS);
+                    m_bResetting = FALSE;
+                }
             }
             else if (dwRet != WAIT_OBJECT_0)
             {
@@ -343,6 +391,12 @@ DWORD ComHelper::Write(LPBYTE lpBytes, DWORD dwLen)
         return (0);
     }
 
+    if (m_bResetting)
+    {
+        Log (L"ComHelper::Write board is resetting, delaying 1000ms....\n");
+        Sleep (1000);
+    }
+
     while (Length)
     {
         dwWritten = 0;
@@ -356,6 +410,14 @@ DWORD ComHelper::Write(LPBYTE lpBytes, DWORD dwLen)
                 break;
             }
             DWORD dwRet = WaitForSingleObject(m_OverlapWrite.hEvent, INFINITE);
+
+            if (m_bResetting)
+            {
+                CancelIo (m_handle);
+                Log (L"ComHelper::Write board is resetting, aborting\n");
+                return (dwLen);
+            }
+
             if (dwRet != WAIT_OBJECT_0)
             {
                 Log(L"ComHelper::Write WaitForSingleObject failed with %ld\n", GetLastError());
@@ -363,6 +425,7 @@ DWORD ComHelper::Write(LPBYTE lpBytes, DWORD dwLen)
             }
             GetOverlappedResult(m_handle, &m_OverlapWrite, &dwWritten, FALSE);
         }
+
         if (dwWritten > Length)
             break;
         p += dwWritten;
@@ -378,7 +441,7 @@ DWORD ComHelper::ReadNewHciPacket(BYTE* pu8Buffer, int bufLen, int* pOffset)
 
     dwLen = Read(&pu8Buffer[offset], 1);
 
-    if (dwLen == 0)
+    if ( (dwLen == 0) || (m_bClosing) )
         return (0);
 
     offset++;
@@ -414,14 +477,16 @@ DWORD ComHelper::ReadNewHciPacket(BYTE* pu8Buffer, int bufLen, int* pOffset)
 
 DWORD ComHelper::ReadWorker()
 {
-    unsigned char au8Hdr[1024 + 6];
+    unsigned char au8Hdr[4096 + 6];
     int           offset = 0, pktLen;
     char          descr[30];
     int           packetType;
-    int bytesToWrite = 0;
+    int           bytesToWrite = 0;
+    static FILE*  fp_coredump = NULL;
 
     while (1)
     {
+        offset = 0;
         pktLen = ReadNewHciPacket(au8Hdr, sizeof(au8Hdr), &offset);
         if (m_bClosing)
             break;
@@ -433,10 +498,34 @@ DWORD ComHelper::ReadWorker()
         DumpData(descr, au8Hdr, pktLen + offset, 1);
 
         packetType = au8Hdr[0];
+        if ((fp_coredump != NULL) && ((au8Hdr[0] != HCI_EVENT_PKT) || (au8Hdr[1] != 0xff) || (au8Hdr[2] != 0xf4)))
+        {
+            fclose(fp_coredump);
+        }
+
         switch (packetType)
         {
         case HCI_EVENT_PKT:
-            HandleHciEvent(au8Hdr, pktLen + offset);
+            // Save coredump in a file
+            if ((au8Hdr[1] == 0xff) && (au8Hdr[2] == 0xf4))
+            {
+                char buf[3 * 260];
+                if (fp_coredump == NULL)
+                {
+                    sprintf_s(buf, "c:\\temp\\mesh\\coredump%d.hex", host_mode_instance);
+                    fopen_s(&fp_coredump, buf, "w");
+                }
+                if (fp_coredump)
+                {
+                    sprintf_s(buf, sizeof(buf), "%02x %02x %02x ", au8Hdr[0], au8Hdr[1], au8Hdr[2]);
+                    for (int i = 0; i < au8Hdr[2]; i++)
+                        sprintf_s(&buf[9 + (3 * i)], sizeof(buf) - 9 - (3 * i), "%02x ", au8Hdr[3 + i]);
+                    strcat_s(buf, sizeof(buf), "\r");
+                    fputs(buf, fp_coredump);
+                }
+            }
+            else
+                HandleHciEvent(au8Hdr, pktLen + offset);
             break;
 
         case HCI_ACL_DATA_PKT:
@@ -448,11 +537,13 @@ DWORD ComHelper::ReadWorker()
             DWORD len = au8Hdr[3] | (au8Hdr[4] << 8);
 
             // au8Hdr[5] is the Reserved byte, ignore it.
-            HandleWicedEvent(channel_id, len, &au8Hdr[5]);
+            HandleWicedEvent(m_comPort, channel_id, len, &au8Hdr[5]);
         }
         break;
         }
     }
+
+    m_hThreadRead = NULL;
     return 0;
 }
 
@@ -492,6 +583,13 @@ void DumpData(char* description, void* p, UINT32 length, UINT32 max_lines)
 ComHelperHostMode::ComHelperHostMode(HWND hWnd) : ComHelper(hWnd)
 {
     m_ClientSocket = INVALID_SOCKET;
+    m_instance = host_mode_instance;
+}
+
+ComHelperHostMode::ComHelperHostMode(HWND hWnd, int instance) : ComHelper(hWnd)
+{
+    m_ClientSocket = INVALID_SOCKET;
+    m_instance = instance;
 }
 
 ComHelperHostMode::~ComHelperHostMode()
@@ -519,17 +617,21 @@ BOOL ComHelperHostMode::OpenPort(int port, int baudRate)
 
     service.sin_family = AF_INET;
     service.sin_addr.s_addr = inet_addr("127.0.0.1");
-    service.sin_port = htons(SOCK_PORT_NUM[host_mode_instance]);
+    service.sin_port = htons(SOCK_PORT_NUM[m_instance]);
 
     // Connect to server.
     if (SOCKET_ERROR == connect(m_ClientSocket, (const sockaddr*)&service, sizeof(service)))
     {
+        Log(L"socket connection FAILED to instance: %d\n", m_instance);
         closesocket(m_ClientSocket);
         m_ClientSocket = INVALID_SOCKET;
         return FALSE;
     }
 
+    Log(L"socket: 0x%x  connected to instance: %d\n", m_ClientSocket, m_instance);
+
     m_bClosing = FALSE;
+    m_bResetting = FALSE;
     m_hShutdown = CreateEvent(NULL, FALSE, FALSE, NULL);
 
     // create thread to read the uart data.
@@ -547,8 +649,9 @@ BOOL ComHelperHostMode::OpenPort(int port, int baudRate)
 
 void ComHelperHostMode::ClosePort()
 {
-    SetEvent(m_hShutdown);
     m_bClosing = TRUE;
+
+    SetEvent(m_hShutdown);
 
     if (m_ClientSocket != INVALID_SOCKET)
     {
@@ -557,7 +660,8 @@ void ComHelperHostMode::ClosePort()
         m_ClientSocket = INVALID_SOCKET;
     }
 
-    WaitForSingleObject(m_hThreadRead, INFINITE);
+    if (m_hThreadRead != NULL)
+        WaitForSingleObject(m_hThreadRead, INFINITE);
 }
 
 BOOL ComHelperHostMode::IsOpened()
@@ -573,7 +677,13 @@ BOOL ComHelperHostMode::IsOpened()
 //
 DWORD ComHelperHostMode::Read(LPBYTE lpBytes, DWORD dwLen)
 {
-    return recv(m_ClientSocket, (char*)lpBytes, dwLen, 0);
+    DWORD       len = recv (m_ClientSocket, (char*)lpBytes, dwLen, 0);
+
+    /* When socket is being closed, seems we can get some garbage */
+    if (len > 2000)
+        len = 0;
+
+    return (len);
 }
 
 //  Write a number of bytes to Serial Bus Device
@@ -591,6 +701,8 @@ DWORD ComHelperHostMode::Write(LPBYTE lpBytes, DWORD dwLen)
             Log(L"send failed with error: %d\n", errno);
             return -1;
         }
+
+        // Log(L"write to socket: 0x%x  instance: %d  OK, len \n", m_ClientSocket, m_instance);
     }
     else
         return -1;

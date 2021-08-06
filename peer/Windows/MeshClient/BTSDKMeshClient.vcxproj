@@ -59,7 +59,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;REMOTE_PROVISION_SERVER_SUPPORTED;WICED_BT_MESH_TRACE_ENABLE;MESH_OVER_GATT_ONLY;WIN32;_WINDOWS;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.\;..\..\..\include;..\..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include;..\..\..\mesh_client_lib;..\..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\internal;..\..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\hal;..\..\..\..\..\dev-kit\btsdk-include;..\..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\stack;..\..\..\..\..\..\..\common\libraries\mesh_core_lib;..\mesh_libs;.\automation</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\;..\..\..\include;..\..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include;..\..\..\mesh_client_lib;..\..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\internal;..\..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\hal;..\..\..\..\..\dev-kit\btsdk-include;..\..\..\..\..\dev-kit\libraries\mesh_libs\include;..\..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\stack;..\..\..\..\..\..\..\common\libraries\mesh_core_lib;..\mesh_libs;.\automation</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>
       </DisableSpecificWarnings>
     </ClCompile>
@@ -97,7 +97,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;REMOTE_PROVISION_SERVER_SUPPORTED;WICED_BT_MESH_TRACE_ENABLE;MESH_OVER_GATT_ONLY;WIN32;_WINDOWS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.\;..\..\..\include;..\..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include;..\..\..\mesh_client_lib;..\..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\internal;..\..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\hal;..\..\..\..\..\dev-kit\btsdk-include;..\..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\stack;..\..\..\..\..\..\..\common\libraries\mesh_core_lib;..\mesh_libs;.\automation</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\;..\..\..\include;..\..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include;..\..\..\mesh_client_lib;..\..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\internal;..\..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\hal;..\..\..\..\..\dev-kit\btsdk-include;..\..\..\..\..\dev-kit\libraries\mesh_libs\include;..\..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\stack;..\..\..\..\..\..\..\common\libraries\mesh_core_lib;..\mesh_libs;.\automation</AdditionalIncludeDirectories>
       <DebugInformationFormat>OldStyle</DebugInformationFormat>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
       <WholeProgramOptimization>false</WholeProgramOptimization>

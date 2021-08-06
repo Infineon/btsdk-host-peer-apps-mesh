@@ -38,6 +38,10 @@
 #include "MeshConfig.h"
 #include "LightControl.h"
 #include "MeshPerf.h"
+#ifdef DIRECTED_FORWARDING_SUPPORTED
+#include "DirectedForwarding.h"
+#endif
+#include "ConnectedMesh.h"
 
 #pragma once
 
@@ -71,7 +75,7 @@ public:
     enum { IDD = IDD_CLIENTCONTROL_DIALOG };
 
     void DisableAll();
-    void ProcessData(DWORD opcode, LPBYTE p_data, DWORD len);
+    void ProcessData(INT port_num, DWORD opcode, LPBYTE p_data, DWORD len);
     void ProcessEvent(LPBYTE p_data, DWORD len);
 
     void EnableOnOff();
@@ -314,6 +318,10 @@ public:
     CLightControl pageLight;
 #endif
     CMeshPerformance pageMeshPerf;
+#ifdef DIRECTED_FORWARDING_SUPPORTED
+    CDirectedForwarding pageDirectedForwarding;
+#endif
+    ConnectedMesh   pageConnectedMesh;
     // Operations
 public:
 

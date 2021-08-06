@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2016-2021, Cypress Semiconductor Corporation (an Infineon company) or
  * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
  *
@@ -210,6 +210,7 @@ BEGIN_MESSAGE_MAP(CLightControl, CPropertyPage)
     ON_CBN_SELCHANGE(IDC_NETWORK, &CLightControl::OnSelchangeNetwork)
     ON_BN_CLICKED(IDC_CONFIGURE_NEW_NAME, &CLightControl::OnBnClickedConfigureNewName)
     ON_CBN_SELCHANGE(IDC_CURRENT_GROUP, &CLightControl::OnSelchangeCurrentGroup)
+    ON_CBN_SELCHANGE(IDC_CONFIGURE_MOVE_DEVICE, &CLightControl::OnCbnSelchangeConfigureMoveDevice)
     ON_BN_CLICKED(IDC_CONFIGURE_MOVE, &CLightControl::OnBnClickedMoveToGroup)
     ON_BN_CLICKED(IDC_CONFIGURE_PUB, &CLightControl::OnBnClickedConfigurePub)
     ON_BN_CLICKED(IDC_CONNECTDISCONNECT, &CLightControl::OnBnClickedConnectdisconnect)
@@ -535,7 +536,7 @@ void CLightControl::ProcessEvent(LPBYTE p_data, DWORD len)
     }
 }
 
-void CLightControl::ProcessData(DWORD opcode, LPBYTE p_data, DWORD len)
+void CLightControl::ProcessData(INT port_num, DWORD opcode, LPBYTE p_data, DWORD len)
 {
     CClientDialog* pSheet = (CClientDialog*)theApp.m_pMainWnd;
     CLightControl* pDlg = &pSheet->pageLight;
@@ -1193,6 +1194,14 @@ void provision_status(uint8_t status, uint8_t *p_uuid)
 void database_changed(char *mesh_name)
 {
     Log(L"database changed\n");
+    // Update drop-down control "Move Device from"
+    CClientDialog* pSheet = (CClientDialog*)theApp.m_pMainWnd;
+    if (pSheet)
+    {
+        CLightControl* pDlg = &pSheet->pageLight;
+        if(pDlg)
+            pDlg->OnCbnSelchangeConfigureMoveDevice();
+    }
 }
 
 void onoff_status(const char *device_name, uint8_t present, uint8_t target, uint32_t remaining_time)

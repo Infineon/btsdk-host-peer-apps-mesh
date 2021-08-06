@@ -200,11 +200,7 @@ BOOL CConfig::OnSetActive()
 
     m_trace = (CListBox *)GetDlgItem(IDC_TRACE);
     CClientDialog *pSheet = (CClientDialog *)theApp.m_pMainWnd;
-#ifndef NO_LIGHT_CONTROL
-    pSheet->m_active_page = 3;
-#else
-    pSheet->m_active_page = 2;
-#endif
+    ((CClientDialog*)theApp.m_pMainWnd)->m_active_page = idxPageConfig;
 
     CComboBox *m_cbCom = (CComboBox *)GetDlgItem(IDC_COM_PORT);
     if (m_cbCom->GetCount() == 0)

@@ -1,4 +1,4 @@
-/*
+﻿/*
 * Copyright 2016-2021, Cypress Semiconductor Corporation (an Infineon company) or
 * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
 *
@@ -63,6 +63,8 @@
 #include "mesh_client_script.h"
 #endif
 
+// Will be called at provision end in the socke mode
+void mesh_socket_if_on_provision_end(uint8_t status, uint8_t* devkey);
 
 //extern "C" void ods(char * fmt_str, ...);
 
@@ -144,9 +146,6 @@ extern wiced_bool_t mesh_adv_scanner_open();
 extern void mesh_adv_scanner_close(void);
 extern "C" void mesh_client_advert_report(uint8_t *bd_addr, uint8_t addr_type, int8_t rssi, uint8_t *adv_data);
 
-extern wiced_bool_t mesh_adv_publisher_open();
-extern void mesh_adv_publisher_close(void);
-
 char provisioner_uuid[50];
 
 DWORD GetHexValue(char* szbuf, LPBYTE buf, DWORD buf_size);
@@ -156,6 +155,27 @@ extern BOOL IsOSWin10();
 #if defined( MESH_AUTOMATION_ENABLED ) && (MESH_AUTOMATION_ENABLED == TRUE)
 extern DWORD __stdcall socketRecv(HWND handle);
 #endif
+
+// It should be called once at app start
+wiced_bool_t mesh_socket_if_init(void);
+// It should be called once at app exit
+void mesh_socket_if_reset(void);
+// Defines response data
+typedef struct
+{
+    uint8_t len;        // Response length; 0 means no response yet.
+    uint8_t data[256];  // non-empty response data
+}mesh_socket_if_response_t;
+// UI implements that function. It will be called at startap with non-NULL p_response and at exit with NULL p_response
+void mesh_socket_if_init_response(mesh_socket_if_response_t* p_response);
+
+#define MESH_SOCKET_IF_CMD_PROVISION                1
+#define MESH_SOCKET_IF_CMD_PROVISION_TIMEOUT_SEC    30
+// <cmd> := <MESH_SOCKET_IF_CMD_PROVISION(1byte)><uuid(16bytes)>
+
+// UI should implement it - Synchronously executes command. Returns: TRUE - received response. FALSE - invalid command or timeout
+wiced_bool_t mesh_socket_if_handler(const uint8_t* cmd, uint8_t cmd_len);
+
 
 mesh_client_init_t mesh_client_init_callbacks =
 {
@@ -383,6 +403,7 @@ BEGIN_MESSAGE_MAP(CMeshClientDlg, CDialogEx)
     ON_MESSAGE(WM_MESH_DEVICE_DISCONNECT, &CMeshClientDlg::OnMeshDeviceDisconnect)
     ON_MESSAGE(WM_MESH_DEVICE_ADV_REPORT, &CMeshClientDlg::OnMeshDeviceAdvReport)
     ON_MESSAGE(WM_MESH_DEVICE_CCCD_PUT_COMPLETE, &CMeshClientDlg::OnMeshDeviceCCCDPutComplete)
+    ON_MESSAGE(WM_SOCKET_CMD, OnSocketCmd)
 
 #if defined(MESH_AUTOMATION_ENABLED) && (MESH_AUTOMATION_ENABLED == TRUE)
     ON_MESSAGE(WM_SOCKET, &CMeshClientDlg::OnSocketMessage)
@@ -440,7 +461,6 @@ void CMeshClientDlg::OnClose()
     Sleep(1000);
 
     mesh_adv_scanner_close();
-    mesh_adv_publisher_close();
 
     // Save main window position
     WINDOWPLACEMENT wp;
@@ -694,6 +714,10 @@ BOOL CMeshClientDlg::OnInitDialog()
 
     Sleep(50);
 #endif
+
+    // Initialize command socket
+    mesh_socket_if_init();
+
     return TRUE;  // return TRUE  unless you set the focus to a control
 }
 
@@ -1492,8 +1516,13 @@ void provision_status(uint8_t status, uint8_t *p_uuid)
 
     Log(buf);
 
+    if(status == MESH_CLIENT_PROVISION_STATUS_FAILED)
+        mesh_socket_if_on_provision_end(MESH_CLIENT_ERR_PROCEDURE_NOT_COMPLETE, NULL);
+
     if (status != MESH_CLIENT_PROVISION_STATUS_SUCCESS)
         return;
+
+    mesh_socket_if_on_provision_end(MESH_CLIENT_SUCCESS, NULL);
 
     for (char *p_component_name = p_devices; p_component_name != NULL && *p_component_name != 0; p_component_name += (strlen(p_component_name) + 1))
     {
@@ -1551,6 +1580,10 @@ void provision_status(uint8_t status, uint8_t *p_uuid)
 void database_changed(char *mesh_name)
 {
     Log(L"database changed\n");
+    // Update drop-down control "Move Device from"
+    CMeshClientDlg* pDlg = (CMeshClientDlg*)theApp.m_pMainWnd;
+    if (pDlg)
+        pDlg->OnCbnSelchangeConfigureMoveDevice();
 }
 
 void onoff_status(const char *device_name, uint8_t present, uint8_t target, uint32_t remaining_time)
@@ -3351,3 +3384,263 @@ LRESULT CMeshClientDlg::OnSocketMessage(WPARAM wParam, LPARAM lParam)
 }
 
 #endif
+
+static mesh_socket_if_response_t* p_mesh_socket_if_response = NULL;
+
+// Handler of the marshalled socket commands
+LRESULT CMeshClientDlg::OnSocketCmd(WPARAM op, LPARAM lparam)
+{
+    BYTE* msg = (BYTE*)lparam;
+    uint8_t status;
+    switch (op)
+    {
+    // On provision command set UUID to the combobox IDC_PROVISION_UUID and start provisioning
+    case MESH_SOCKET_IF_CMD_PROVISION:
+        ((CComboBox*)GetDlgItem(IDC_PROVISION_UUID))->ResetContent();
+        ProcessUnprovisionedDevice(msg, 0, NULL, 0);
+        status = mesh_client_set_unprovisioned(msg);
+        if (status == MESH_CLIENT_SUCCESS)
+            status = mesh_client_provision("", "", msg, 0);
+        if (status != MESH_CLIENT_SUCCESS)
+            mesh_socket_if_on_provision_end(status, NULL);
+        break;
+    }
+    free(msg);
+    return S_OK;
+}
+
+// Commands handler of socket interface
+wiced_bool_t mesh_socket_if_handler(const uint8_t* cmd, uint8_t cmd_len)
+{
+    wiced_bool_t    res = WICED_FALSE;
+    int32_t         sleep_time, timeout_ms = -1;
+    uint8_t         opcode;
+    uint8_t         *msg;
+    CMeshClientDlg  *pDlg;
+
+    // If socket interface is initialized
+    if (p_mesh_socket_if_response)
+    {
+        // Reset response - we will be waiting for non-0 len
+        p_mesh_socket_if_response->len = 0;
+        opcode = *cmd++;
+        cmd_len--;
+        switch (opcode)
+        {
+        // Start provisioning - mast contain 16 bytes data with node UUID
+        case MESH_SOCKET_IF_CMD_PROVISION:
+            if (cmd_len == 16)
+                timeout_ms = MESH_SOCKET_IF_CMD_PROVISION_TIMEOUT_SEC * 1000;
+            break;
+        }
+        // If command has been handled and it is asynchronous (requested non-0 timeout)
+        if (timeout_ms > 0)
+        {
+            // Post that command through window message
+            if ((pDlg = (CMeshClientDlg*)theApp.m_pMainWnd) == NULL)
+                timeout_ms = -1;
+            else if ((msg = (uint8_t*)malloc(cmd_len)) == NULL)
+                timeout_ms = -1;
+            else
+            {
+                memcpy(msg, cmd, cmd_len);
+                if (!pDlg->PostMessage(WM_SOCKET_CMD, opcode, (LPARAM)msg))
+                {
+                    free(msg);
+                    timeout_ms = -1;
+                }
+            }
+        }
+        // If command has been handled and it is asynchronous (requested non-0 timeout)
+        if (timeout_ms > 0)
+        {
+            // Wait for response
+            while (p_mesh_socket_if_response->len == 0)
+            {
+                sleep_time = timeout_ms > 200 ? 200 : timeout_ms;
+                timeout_ms -= sleep_time;
+                if (sleep_time == 0)
+                    break;
+                Sleep(sleep_time);
+            }
+        }
+        // On error print log
+        if(timeout_ms < 0)
+            Log("unknown socket command\n");
+        else
+        {
+            // On timeout print log
+            if (p_mesh_socket_if_response->len == 0)
+                Log("socket provision timeout\n");
+            // On received response print log and return true - it means send response to the client of the socket interface
+            else
+            {
+                Log("socket provision end. len=%d data=%02x...\n", p_mesh_socket_if_response->len, p_mesh_socket_if_response->data[0]);
+                res = WICED_TRUE;
+            }
+        }
+    }
+    return res;
+}
+
+// Should be called on provision end. It initializes response data for socket interface
+void mesh_socket_if_on_provision_end(uint8_t status, uint8_t* devkey)
+{
+    uint8_t len = 1;
+    if (p_mesh_socket_if_response)
+    {
+        p_mesh_socket_if_response->data[0] = status;
+        if (devkey != NULL)
+        {
+            len += 16;
+            memcpy(&p_mesh_socket_if_response->data[1], devkey, 16);
+        }
+        p_mesh_socket_if_response->len = len;
+    }
+}
+
+// UI implements that function. It will be called at startap with non-NULL p_response and at exit with NULL p_response
+void mesh_socket_if_init_response(mesh_socket_if_response_t* p_response)
+{
+    p_mesh_socket_if_response = p_response;
+}
+
+// Below definitions are related to mesh socket interface
+
+// MeshClient's listenning socket port
+#define MESH_SOCKET_IF_PORT 12012
+
+// Handle of the socket interface thread
+static HANDLE   mesh_socket_if_thread_h = NULL;
+// Listening socket to receive commands
+static SOCKET   mesh_socket_if_listen = INVALID_SOCKET;
+// Structure for response to send to the client socket
+static mesh_socket_if_response_t mesh_socket_if_response = { 0 };
+
+// Thread of the socket interface
+DWORD WINAPI mesh_socket_if_thread_proc(void* param)
+{
+    SOCKADDR_IN     service;
+    char            buf[256];
+    char            msg_len;
+    int             len;
+    SOCKET          client_socket = INVALID_SOCKET;
+
+    Log("socket thread started\n");
+
+    service.sin_family = AF_INET;
+    service.sin_addr.s_addr = inet_addr("127.0.0.1");
+    service.sin_port = htons(MESH_SOCKET_IF_PORT);
+
+    // Create socket and listen for incomming connections
+    if (INVALID_SOCKET == (mesh_socket_if_listen = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP)))
+    {
+        Log("socket failed with error: %d\n", WSAGetLastError());
+    }
+    else if (SOCKET_ERROR == ::bind(mesh_socket_if_listen, (SOCKADDR*)&service, sizeof(service)))
+    {
+        Log("bind failed. err=%d\n", WSAGetLastError());
+    }
+    else if (SOCKET_ERROR == listen(mesh_socket_if_listen, 1))
+    {
+        Log("listen failed. err=%d\n", WSAGetLastError());
+    }
+    else
+    {
+        // In the loop accept incomming connection, receive command, handle command and send response
+        while (1)
+        {
+            if (INVALID_SOCKET == (client_socket = accept(mesh_socket_if_listen, NULL, NULL)))
+            {
+                Log("accept failed. err=%d\n", WSAGetLastError());
+                break;
+            }
+            while (1)
+            {
+                if ((len = recv(client_socket, &msg_len, 1, 0)) != 1)
+                {
+                    Log("read failed. err=%d\n", WSAGetLastError());
+                    break;
+                }
+                if (msg_len < 1 || msg_len >(int)sizeof(buf))
+                {
+                    Log("invalid msg len %d\n", msg_len);
+                    break;
+                }
+                if ((len = recv(client_socket, buf, msg_len, 0)) != msg_len)
+                {
+                    Log("invalid message. len=%d expected=%d err=%d\n", len, msg_len, WSAGetLastError());
+                    break;
+                }
+                if (!mesh_socket_if_handler((uint8_t*)buf, (uint8_t)len))
+                {
+                    Log("handler didn't recognize that message");
+                    break;
+                }
+                if (SOCKET_ERROR == ::send(client_socket, (const char*)mesh_socket_if_response.data, mesh_socket_if_response.len, 0))
+                {
+                    Log("send failed. err=%d\n", WSAGetLastError());
+                    break;
+                }
+            }
+            // Close socket on error (or if client closes connection)
+            if (client_socket != INVALID_SOCKET)
+                closesocket(client_socket);
+        }
+    }
+    // Release allocated resources
+    if (mesh_socket_if_listen != INVALID_SOCKET)
+        closesocket(mesh_socket_if_listen);
+    if (mesh_socket_if_thread_h)
+        CloseHandle(mesh_socket_if_thread_h);
+    mesh_socket_if_thread_h = NULL;
+    Log("socket thread exits\n");
+    return 0;
+}
+
+// Initializes socket interface
+wiced_bool_t mesh_socket_if_init(void)
+{
+    wiced_bool_t res = WICED_FALSE;
+    if (mesh_socket_if_thread_h)
+        Log("Socket interface is active already");
+    else
+    {
+        WSADATA wsaData;
+        int err = WSAStartup(MAKEWORD(2, 0), &wsaData);
+        if (err != 0)
+            Log("WSAStartup failed. err=%d", err);
+        else
+        {
+            memset(&mesh_socket_if_response, 0, sizeof(mesh_socket_if_response));
+            mesh_socket_if_init_response(&mesh_socket_if_response);
+            mesh_socket_if_thread_h = CreateThread(NULL, 0, &mesh_socket_if_thread_proc, NULL, 0, NULL);
+            if (mesh_socket_if_thread_h == NULL)
+            {
+                Log("Failed to create socket thread. err=%d", GetLastError());
+                mesh_socket_if_init_response(NULL);
+            }
+            else
+            {
+                Log("Socket thread started");
+                res = WICED_TRUE;
+            }
+        }
+    }
+    return res;
+}
+
+// Resets (clears) socket interface
+void mesh_socket_if_reset(void)
+{
+    Log("reset socket interface. h=%p socket_listen:%x\n", (uint32_t)mesh_socket_if_thread_h, mesh_socket_if_listen);
+    mesh_socket_if_init_response(NULL);
+    if (mesh_socket_if_thread_h)
+    {
+        if (mesh_socket_if_listen != INVALID_SOCKET)
+            closesocket(mesh_socket_if_listen);
+        WaitForSingleObject(mesh_socket_if_thread_h, 10000);
+        CloseHandle(mesh_socket_if_thread_h);
+        mesh_socket_if_thread_h = NULL;
+    }
+}

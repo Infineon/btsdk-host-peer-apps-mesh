@@ -58,6 +58,7 @@
 #define MESH_JSON_TAG_NODES                         0x0080
 #define MESH_JSON_TAG_GROUPS                        0x0100
 #define MESH_JSON_TAG_SCENES                        0x0200
+#define MESH_JSON_TAG_SOL_SEQ_NUM                   0x0400
 #define MESH_JSON_TAG_MANDATORY (MESH_JSON_TAG_MESH_UUID | MESH_JSON_TAG_NAME | MESH_JSON_TAG_PROVISIONERS | MESH_JSON_TAG_NET_KEYS | MESH_JSON_TAG_NODES)
 
 #define MESH_JSON_KEY_TAG_NAME                      0x0001
@@ -93,13 +94,16 @@
 #define MESH_JSON_NODE_TAG_CRPL                     0x0000
 #define MESH_JSON_NODE_TAG_FEATURES                 0x0000
 #define MESH_JSON_NODE_TAG_BEACON                   0x0000
+#define MESH_JSON_NODE_TAG_PRIVATE_BEACON           0x0000
+#define MESH_JSON_NODE_TAG_RANDOM_UPDATE_INTERVAL   0x0000
 #define MESH_JSON_NODE_TAG_DEFAULT_TTL              0x0000
 #define MESH_JSON_NODE_TAG_NET_TRANSMIT             0x0000
 #define MESH_JSON_NODE_TAG_RELAY_REXMIT             0x0000
 #define MESH_JSON_NODE_TAG_APP_KEYS                 0x0000
 #define MESH_JSON_NODE_TAG_ELEMENTS                 0x0000
-#define MESH_JSON_NODE_TAG_REJECTLISTED             0x0000
+#define MESH_JSON_NODE_TAG_EXCLUDED                 0x0000
 #define MESH_JSON_NODE_TAG_KEY_COMPOSITION          0x0000
+#define MESH_JSON_NODE_TAG_ON_DEMAND_PRIVATE_PROXY  0x0000
 
 #define MESH_JSON_TAG_NODE_MANDATORY (MESH_JSON_NODE_TAG_UUID | MESH_JSON_NODE_TAG_UNICAST_ADDR | MESH_JSON_NODE_TAG_DEVICE_KEY | MESH_JSON_NODE_TAG_SECURITY | MESH_JSON_NODE_TAG_NET_KEYS | MESH_JSON_NODE_TAG_CONFIG_COMPLETE)
 
@@ -185,6 +189,7 @@
 #define FOUNDATION_FEATURE_BIT_PROXY                0x0002
 #define FOUNDATION_FEATURE_BIT_FRIEND               0x0004
 #define FOUNDATION_FEATURE_BIT_LOW_POWER            0x0008
+#define FOUNDATION_FEATURE_BIT_PRIVATE_PROXY        0x0010
 
 #define wiced_bt_get_buffer malloc
 #define wiced_bt_free_buffer free
@@ -384,6 +389,15 @@ wiced_bt_mesh_db_mesh_t *mesh_json_read_file(FILE *fp)
                 break;
             }
             tags |= MESH_JSON_TAG_SCENES;
+        }
+        else if (strcmp(tagname, "solicitationSeqNum") == 0)
+        {
+            if (!mesh_json_read_hex32(fp, c1, &p_mesh->solicitation_seq_num))
+            {
+                failed = WICED_TRUE;
+                break;
+            }
+            tags |= MESH_JSON_TAG_SOL_SEQ_NUM;
         }
         else
         {
@@ -1378,9 +1392,11 @@ int mesh_json_read_nodes(FILE *fp, char prefix, wiced_bt_mesh_db_mesh_t *p_mesh)
         memset(&node, 0, sizeof(wiced_bt_mesh_db_node_t));
         node.feature.relay = MESH_FEATURE_SUPPORTED_UNKNOWN;
         node.feature.gatt_proxy = MESH_FEATURE_SUPPORTED_UNKNOWN;
+        node.feature.private_gatt_proxy = MESH_FEATURE_SUPPORTED_UNKNOWN;
         node.feature.low_power = MESH_FEATURE_SUPPORTED_UNKNOWN;
         node.feature.friend = MESH_FEATURE_SUPPORTED_UNKNOWN;
         node.beacon = MESH_FEATURE_SUPPORTED_UNKNOWN;
+        node.private_beacon = MESH_FEATURE_SUPPORTED_UNKNOWN;
         node.default_ttl = MESH_FEATURE_SUPPORTED_UNKNOWN;
         node.network_transmit.count = MESH_FEATURE_SUPPORTED_UNKNOWN;
         node.relay_rexmit.count = MESH_FEATURE_SUPPORTED_UNKNOWN;
@@ -1476,11 +1492,29 @@ int mesh_json_read_nodes(FILE *fp, char prefix, wiced_bt_mesh_db_mesh_t *p_mesh)
                     return 0;
                 tags |= MESH_JSON_NODE_TAG_BEACON;
             }
+            else if (strcmp(tagname, "privateBeacon") == 0)
+            {
+                if (!mesh_json_read_boolean(fp, c1, &node.private_beacon))
+                    return 0;
+                tags |= MESH_JSON_NODE_TAG_PRIVATE_BEACON;
+            }
+            else if (strcmp(tagname, "randomUpdateInterval") == 0)
+            {
+                if (!mesh_json_read_uint8(fp, c1, &node.random_update_interval))
+                    return 0;
+                tags |= MESH_JSON_NODE_TAG_RANDOM_UPDATE_INTERVAL;
+            }
             else if (strcmp(tagname, "defaultTTL") == 0)
             {
                 if (!mesh_json_read_uint8(fp, c1, &node.default_ttl))
                     return 0;
                 tags |= MESH_JSON_NODE_TAG_DEFAULT_TTL;
+            }
+            else if (strcmp(tagname, "onDemandPrivateProxy") == 0)
+            {
+                if (!mesh_json_read_uint8(fp, c1, &node.on_demand_private_proxy))
+                    return 0;
+                tags |= MESH_JSON_NODE_TAG_ON_DEMAND_PRIVATE_PROXY;
             }
             else if (strcmp(tagname, "networkTransmit") == 0)
             {
@@ -1506,11 +1540,11 @@ int mesh_json_read_nodes(FILE *fp, char prefix, wiced_bt_mesh_db_mesh_t *p_mesh)
                     return 0;
                 tags |= MESH_JSON_NODE_TAG_ELEMENTS;
             }
-            else if (strcmp(tagname, "rejectlisted") == 0)
+            else if (strcmp(tagname, "excluded") == 0)
             {
                 if (!mesh_json_read_boolean(fp, c1, &node.blocked))
                     return 0;
-                tags |= MESH_JSON_NODE_TAG_REJECTLISTED;
+                tags |= MESH_JSON_NODE_TAG_EXCLUDED;
             }
             else
             {
@@ -2187,6 +2221,12 @@ int mesh_json_read_features(FILE *fp, char prefix, wiced_bt_mesh_db_node_t *node
         {
             if ((!mesh_json_read_uint8(fp, c1, &node->feature.gatt_proxy)) ||
                 ((node->feature.gatt_proxy != MESH_FEATURE_DISABLED) && (node->feature.gatt_proxy != MESH_FEATURE_ENABLED) && (node->feature.gatt_proxy != MESH_FEATURE_UNSUPPORTED)))
+                return 0;
+        }
+        else if (strcmp(tagname, "private_proxy") == 0)
+        {
+            if ((!mesh_json_read_uint8(fp, c1, &node->feature.private_gatt_proxy)) ||
+                ((node->feature.private_gatt_proxy != MESH_FEATURE_DISABLED) && (node->feature.private_gatt_proxy != MESH_FEATURE_ENABLED) && (node->feature.private_gatt_proxy != MESH_FEATURE_UNSUPPORTED)))
                 return 0;
         }
         else if (strcmp(tagname, "friend") == 0)
@@ -3343,7 +3383,7 @@ void mesh_json_write_config_key(FILE *fp, wiced_bt_mesh_db_key_idx_phase *p_key,
 void mesh_json_write_node(FILE *fp, wiced_bt_mesh_db_node_t *node, int is_last)
 {
     int i;
-    wiced_bool_t no_other_featurs;
+    uint16_t features = 0;
 
     fputs("    {\n", fp);
 
@@ -3367,46 +3407,58 @@ void mesh_json_write_node(FILE *fp, wiced_bt_mesh_db_node_t *node, int is_last)
         mesh_json_write_hex16(fp, 6, "vid", node->vid, 0);
         mesh_json_write_hex16(fp, 6, "crpl", node->crpl, 0);
     }
-    if ((node->feature.relay != MESH_FEATURE_SUPPORTED_UNKNOWN) ||
-        (node->feature.gatt_proxy != MESH_FEATURE_SUPPORTED_UNKNOWN) ||
-        (node->feature.low_power != MESH_FEATURE_SUPPORTED_UNKNOWN) ||
-        (node->feature.friend != MESH_FEATURE_SUPPORTED_UNKNOWN))
+    if (node->feature.relay != MESH_FEATURE_SUPPORTED_UNKNOWN)
+        features |= FOUNDATION_FEATURE_BIT_RELAY;
+    if (node->feature.gatt_proxy != MESH_FEATURE_SUPPORTED_UNKNOWN)
+        features |= FOUNDATION_FEATURE_BIT_PROXY;
+    if (node->feature.private_gatt_proxy != MESH_FEATURE_SUPPORTED_UNKNOWN)
+        features |= FOUNDATION_FEATURE_BIT_PRIVATE_PROXY;
+    if (node->feature.low_power != MESH_FEATURE_SUPPORTED_UNKNOWN)
+        features |= FOUNDATION_FEATURE_BIT_LOW_POWER;
+    if (node->feature.friend != MESH_FEATURE_SUPPORTED_UNKNOWN)
+        features |= FOUNDATION_FEATURE_BIT_FRIEND;
+    if (features)
     {
         fputs("      \"features\":{\n", fp);
-        if (node->feature.relay != MESH_FEATURE_SUPPORTED_UNKNOWN)
+        if (features & FOUNDATION_FEATURE_BIT_RELAY)
         {
-            no_other_featurs =
-                (node->feature.gatt_proxy == MESH_FEATURE_SUPPORTED_UNKNOWN) &&
-                (node->feature.low_power == MESH_FEATURE_SUPPORTED_UNKNOWN) &&
-                (node->feature.friend == MESH_FEATURE_SUPPORTED_UNKNOWN);
-
-            mesh_json_write_int(fp, 8, "relay", node->feature.relay, no_other_featurs);
+            features &= ~FOUNDATION_FEATURE_BIT_RELAY;
+            mesh_json_write_int(fp, 8, "relay", node->feature.relay, features == 0);
         }
-        if (node->feature.gatt_proxy != MESH_FEATURE_SUPPORTED_UNKNOWN)
+        if (features & FOUNDATION_FEATURE_BIT_PROXY)
         {
-            no_other_featurs =
-                (node->feature.low_power == MESH_FEATURE_SUPPORTED_UNKNOWN) &&
-                (node->feature.friend == MESH_FEATURE_SUPPORTED_UNKNOWN);
-
-            mesh_json_write_int(fp, 8, "proxy", node->feature.gatt_proxy, no_other_featurs);
+            features &= ~FOUNDATION_FEATURE_BIT_PROXY;
+            mesh_json_write_int(fp, 8, "proxy", node->feature.gatt_proxy, features == 0);
         }
-        if (node->feature.low_power != MESH_FEATURE_SUPPORTED_UNKNOWN)
+        if (features & FOUNDATION_FEATURE_BIT_PRIVATE_PROXY)
         {
-            no_other_featurs = (node->feature.friend == MESH_FEATURE_SUPPORTED_UNKNOWN);
-
-            mesh_json_write_int(fp, 8, "lowPower", node->feature.low_power, no_other_featurs);
+            features &= ~FOUNDATION_FEATURE_BIT_PRIVATE_PROXY;
+            mesh_json_write_int(fp, 8, "private_proxy", node->feature.private_gatt_proxy, features == 0);
         }
-        if (node->feature.friend != MESH_FEATURE_SUPPORTED_UNKNOWN)
+        if (features & FOUNDATION_FEATURE_BIT_LOW_POWER)
         {
-            mesh_json_write_int(fp, 8, "friend", node->feature.friend, 1);
+            features &= ~FOUNDATION_FEATURE_BIT_LOW_POWER;
+            mesh_json_write_int(fp, 8, "lowPower", node->feature.low_power, features == 0);
+        }
+        if (features & FOUNDATION_FEATURE_BIT_FRIEND)
+        {
+            features &= ~FOUNDATION_FEATURE_BIT_FRIEND;
+            mesh_json_write_int(fp, 8, "friend", node->feature.friend, features == 0);
         }
         fputs("      },\n", fp);
     }
     if (node->beacon != MESH_FEATURE_SUPPORTED_UNKNOWN)
         mesh_json_write_boolean(fp, 6, "secureNetworkBeacon", node->beacon, 0);
+    if (node->private_beacon != MESH_FEATURE_SUPPORTED_UNKNOWN)
+        mesh_json_write_boolean(fp, 6, "privateBeacon", node->private_beacon, 0);
+    if (node->random_update_interval != 0)
+        mesh_json_write_int(fp, 6, "randomUpdateInterval", node->random_update_interval, 0);
 
     if (node->default_ttl != MESH_FEATURE_SUPPORTED_UNKNOWN)
         mesh_json_write_int(fp, 6, "defaultTTL", node->default_ttl, 0);
+
+    if (node->on_demand_private_proxy != 0)
+        mesh_json_write_int(fp, 6, "onDemandPrivateProxy", node->on_demand_private_proxy, 0);
 
     if (node->network_transmit.count != MESH_FEATURE_SUPPORTED_UNKNOWN)
     {
@@ -3437,7 +3489,7 @@ void mesh_json_write_node(FILE *fp, wiced_bt_mesh_db_node_t *node, int is_last)
         mesh_json_write_element(fp, &node->element[i], i == node->num_elements - 1);
     fputs("      ],\n", fp);
 
-    mesh_json_write_boolean(fp, 6, "rejectlisted", node->blocked, 1);
+    mesh_json_write_boolean(fp, 6, "excluded", node->blocked, 1);
     if (is_last)
         fputs("    }\n", fp);
     else
@@ -3484,6 +3536,8 @@ void mesh_json_write_file(FILE *fp, wiced_bt_mesh_db_mesh_t *p_mesh)
     fputs(mesh_header, fp);
     mesh_json_write_hex128(fp, 2, "meshUUID", p_mesh->uuid, 0);
     mesh_json_write_string(fp, 2, "meshName", p_mesh->name, 0);
+    if (p_mesh->solicitation_seq_num != 0)
+        mesh_json_write_hex32(fp, 2, "solicitationSeqNum", p_mesh->solicitation_seq_num, 0);
     fputs("  \"provisioners\":[\n", fp);
     for (i = 0; i < p_mesh->num_provisioners; i++)
         mesh_json_write_provisioner(fp, &p_mesh->provisioner[i], i == p_mesh->num_provisioners - 1);

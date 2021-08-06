@@ -42,6 +42,10 @@
 #include "wiced_bt_mesh_model_defs.h"
 #include "wiced_bt_mesh_models.h"
 #include "wiced_bt_mesh_provision.h"
+#include "wiced_bt_mesh_app.h"
+#ifdef PRIVATE_PROXY_SUPPORTED
+#include "wiced_bt_mesh_private_proxy.h"
+#endif
 
 //#define MIBLE
 #ifdef MIBLE
@@ -696,6 +700,59 @@ void process_node_identity_status(uint8_t *p_buffer, uint16_t len)
 
     mesh_provision_process_event(WICED_BT_MESH_CONFIG_NODE_IDENTITY_STATUS, p_event, &data);
 }
+
+#ifdef PRIVATE_PROXY_SUPPORTED
+void process_private_gatt_proxy_status(uint8_t *p_buffer, uint16_t len)
+{
+    wiced_bt_mesh_config_private_gatt_proxy_status_data_t data;
+    wiced_bt_mesh_event_t *p_event = wiced_bt_mesh_event_from_hci_header(&p_buffer, &len);
+    if (p_event == NULL)
+        return;
+
+    data.state = p_buffer[0];
+
+    mesh_provision_process_event(WICED_BT_MESH_CONFIG_PRIVATE_GATT_PROXY_STATUS, p_event, &data);
+}
+
+void process_pirvate_beacon_status(uint8_t *p_buffer, uint16_t len)
+{
+    wiced_bt_mesh_config_private_beacon_status_data_t data;
+    wiced_bt_mesh_event_t *p_event = wiced_bt_mesh_event_from_hci_header(&p_buffer, &len);
+    if (p_event == NULL)
+        return;
+
+    data.state = p_buffer[0];
+    data.random_update_interval = p_buffer[1];
+
+    mesh_provision_process_event(WICED_BT_MESH_CONFIG_PRIVATE_BEACON_STATUS, p_event, &data);
+}
+
+void process_private_node_identity_status(uint8_t *p_buffer, uint16_t len)
+{
+    wiced_bt_mesh_config_private_node_identity_status_data_t data;
+    wiced_bt_mesh_event_t *p_event = wiced_bt_mesh_event_from_hci_header(&p_buffer, &len);
+    if (p_event == NULL)
+        return;
+
+    data.status = p_buffer[0];
+    data.net_key_idx = p_buffer[1] + (p_buffer[2] << 8);
+    data.identity = p_buffer[3];
+
+    mesh_provision_process_event(WICED_BT_MESH_CONFIG_PRIVATE_NODE_IDENTITY_STATUS, p_event, &data);
+}
+
+void process_on_demand_private_proxy_status(uint8_t *p_buffer, uint16_t len)
+{
+    wiced_bt_mesh_config_on_demand_private_proxy_status_data_t data;
+    wiced_bt_mesh_event_t *p_event = wiced_bt_mesh_event_from_hci_header(&p_buffer, &len);
+    if (p_event == NULL)
+        return;
+
+    data.state = p_buffer[0];
+
+    mesh_provision_process_event(WICED_BT_MESH_CONFIG_ON_DEMAND_PRIVATE_PROXY_STATUS, p_event, &data);
+}
+#endif
 
 void process_proxy_filter_status(uint8_t *p_buffer, uint16_t len)
 {
@@ -1475,6 +1532,69 @@ wiced_bool_t wiced_bt_mesh_config_node_identity_set(wiced_bt_mesh_event_t *p_eve
     return WICED_TRUE;
 }
 
+#ifdef PRIVATE_PROXY_SUPPORTED
+wiced_bool_t wiced_bt_mesh_config_private_gatt_proxy_set(wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_config_private_gatt_proxy_set_data_t *p_data)
+{
+    uint8_t buffer[128];
+    uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    if (p == NULL)
+        return WICED_FALSE;
+
+    *p++ = p_data->state;
+
+    wiced_hci_send(HCI_CONTROL_MESH_COMMAND_CONFIG_PRIVATE_GATT_PROXY_SET, buffer, (uint16_t)(p - buffer));
+    return WICED_TRUE;
+}
+
+wiced_bool_t wiced_bt_mesh_config_private_beacon_set(wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_config_private_beacon_set_data_t *p_data)
+{
+    uint8_t buffer[128];
+    uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    if (p == NULL)
+        return WICED_FALSE;
+
+    *p++ = p_data->state;
+    *p++ = p_data->random_update_interval;
+
+    wiced_hci_send(HCI_CONTROL_MESH_COMMAND_CONFIG_PRIVATE_BEACON_SET, buffer, (uint16_t)(p - buffer));
+    return WICED_TRUE;
+}
+
+wiced_bool_t wiced_bt_mesh_config_private_node_identity_set(wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_config_private_node_identity_set_data_t *p_set)
+{
+    uint8_t buffer[128];
+    uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
+
+    if (p == NULL)
+        return WICED_FALSE;
+
+    *p++ = p_set->net_key_idx & 0xff;
+    *p++ = (p_set->net_key_idx >> 8) & 0xff;
+    *p++ = p_set->identity;
+
+    wiced_hci_send(HCI_CONTROL_MESH_COMMAND_CONFIG_PRIVATE_NODE_IDENTITY_SET, buffer, (uint16_t)(p - buffer));
+    return WICED_TRUE;
+}
+
+wiced_bool_t wiced_bt_mesh_config_on_demand_private_proxy_set(wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_config_on_demand_private_proxy_set_data_t *p_data)
+{
+    uint8_t buffer[128];
+    uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    if (p == NULL)
+        return WICED_FALSE;
+
+    *p++ = p_data->state;
+
+    wiced_hci_send(HCI_CONTROL_MESH_COMMAND_CONFIG_ON_DEMAND_PRIVATE_PROXY_SET, buffer, (uint16_t)(p - buffer));
+    return WICED_TRUE;
+}
+#endif
+
 wiced_bool_t wiced_bt_mesh_lpn_poll_timeout_get(wiced_bt_mesh_event_t* p_event, wiced_bt_mesh_lpn_poll_timeout_get_data_t* p_get)
 {
     uint8_t buffer[128];
@@ -2249,8 +2369,7 @@ wiced_result_t wiced_bt_mesh_model_scheduler_client_send_action_get(wiced_bt_mes
     if (p == NULL)
         return WICED_BT_BADARG;
 
-    *p++ = p_data->action_number & 0xff;
-    *p++ = (p_data->action_number >> 8) & 0xff;
+    *p++ = p_data->action_number;
 
     return wiced_hci_send(HCI_CONTROL_MESH_COMMAND_SCHEDULER_ACTION_GET, buffer, (uint16_t)(p - buffer));
 }
@@ -3021,7 +3140,7 @@ uint8_t *wiced_bt_mesh_format_hci_header(uint16_t dst, uint16_t app_key_idx, uin
     *p++ = (app_key_idx >> 8) & 0xff;
     *p++ = element_idx;
     *p++ = reliable;
-    *p++ = send_segmented;
+    *p++ = send_segmented == 0 ? 0 : WICED_BT_MESH_HCI_COMMAND_FLAGS_SEND_SEGMENTED;
     *p++ = ttl;
     *p++ = retransmit_count;
     *p++ = retransmit_interval;

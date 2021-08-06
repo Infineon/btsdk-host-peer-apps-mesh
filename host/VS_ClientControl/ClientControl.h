@@ -63,6 +63,7 @@ public:
     DECLARE_MESSAGE_MAP( )
 
     public:
+        BOOL bConnectedMesh;
         BOOL bMeshPerfMode;
 
 };
@@ -80,8 +81,17 @@ void WriteLog( const char * format ... );
 
 extern CClientControlApp theApp;
 
-extern ComHelper *m_ComHelper;
+extern int idxPageLight;
+extern int idxPageMain;
+extern int idxPageConfig;
+extern int idxPageDirectedForwarding;
+extern int idxPageConnectedMesh;
+extern int idxPageMeshPerf;
+
+extern ComHelper* m_ComHelper;
+extern ComHelper* m_ComHelper2;
 extern int ComPort;
+extern int ComPort2;
 extern int as32BaudRate[4];
 extern int aComPorts[];
 extern int ComPortSelected;

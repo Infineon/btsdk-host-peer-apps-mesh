@@ -1420,9 +1420,11 @@ wiced_bt_mesh_db_node_t *wiced_bt_mesh_db_node_create(wiced_bt_mesh_db_mesh_t *m
     }
     node.feature.relay = MESH_FEATURE_SUPPORTED_UNKNOWN;
     node.feature.gatt_proxy = MESH_FEATURE_SUPPORTED_UNKNOWN;
+    node.feature.private_gatt_proxy = MESH_FEATURE_SUPPORTED_UNKNOWN;
     node.feature.low_power = MESH_FEATURE_SUPPORTED_UNKNOWN;
     node.feature.friend = MESH_FEATURE_SUPPORTED_UNKNOWN;
     node.beacon = MESH_FEATURE_SUPPORTED_UNKNOWN;
+    node.private_beacon = MESH_FEATURE_SUPPORTED_UNKNOWN;
     node.default_ttl = MESH_FEATURE_SUPPORTED_UNKNOWN;
     node.network_transmit.count = MESH_FEATURE_SUPPORTED_UNKNOWN;
     node.relay_rexmit.count = MESH_FEATURE_SUPPORTED_UNKNOWN;
@@ -2757,6 +2759,116 @@ wiced_bool_t wiced_bt_mesh_db_beacon_get(wiced_bt_mesh_db_mesh_t *mesh_db, uint1
     *state = node->beacon;
     return WICED_TRUE;
 }
+
+#ifdef PRIVATE_PROXY_SUPPORTED
+/*
+ * Get Private Beacons State.
+ * The function gets the Private Beacons State of the mesh device.
+ */
+wiced_bool_t wiced_bt_mesh_db_private_beacon_get(wiced_bt_mesh_db_mesh_t *mesh_db, uint16_t unicast_addr, uint8_t *state, uint8_t *random_update_interval)
+{
+    wiced_bt_mesh_db_node_t *node = wiced_bt_mesh_db_node_get_by_element_addr(mesh_db, unicast_addr);
+    if (node == NULL)
+        return WICED_FALSE;
+
+    *state = node->private_beacon;
+    *random_update_interval = node->random_update_interval;
+    return WICED_TRUE;
+}
+
+/*
+ * Set Private Beacons State.
+ * The function sets the Private Beacons State in the configuration of the mesh device.  A provisioner should call this function after successfully executing Set or Get Private Beacon State procedure.
+ */
+wiced_bool_t wiced_bt_mesh_db_private_beacon_set(wiced_bt_mesh_db_mesh_t *mesh_db, uint16_t unicast_addr, uint8_t state, uint8_t random_update_interval)
+{
+    wiced_bt_mesh_db_node_t *node = wiced_bt_mesh_db_node_get_by_element_addr(mesh_db, unicast_addr);
+    if (node == NULL)
+        return WICED_FALSE;
+
+    node->private_beacon = state;
+    node->random_update_interval = random_update_interval;
+    return WICED_TRUE;
+}
+
+/*
+* Get Private GATT Proxy State.
+* The function gets the Private GATT Proxy State in the configuration of the mesh device.
+*/
+wiced_bool_t wiced_bt_mesh_db_private_gatt_proxy_get(wiced_bt_mesh_db_mesh_t *mesh_db, uint16_t unicast_addr, uint8_t *state)
+{
+    wiced_bt_mesh_db_node_t *node = wiced_bt_mesh_db_node_get_by_element_addr(mesh_db, unicast_addr);
+    if ((node == NULL) || (node->feature.private_gatt_proxy == MESH_FEATURE_SUPPORTED_UNKNOWN))
+        return WICED_FALSE;
+
+    *state = node->feature.private_gatt_proxy;
+    return WICED_TRUE;
+}
+
+/*
+* Set Private GATT Proxy State.
+* The function sets Private GATT Proxy State in the configuration of the mesh device.  A provisioner should call this function after successfully executing Set or Get Private GATT Proxy State procedure.
+*/
+wiced_bool_t wiced_bt_mesh_db_private_gatt_proxy_set(wiced_bt_mesh_db_mesh_t *mesh_db, uint16_t unicast_addr, uint8_t state)
+{
+    wiced_bt_mesh_db_node_t *node = wiced_bt_mesh_db_node_get_by_element_addr(mesh_db, unicast_addr);
+    if (node == NULL)
+        return WICED_FALSE;
+
+    node->feature.private_gatt_proxy = state;
+    return WICED_TRUE;
+}
+
+/*
+* Get On-Demand Private GATT Proxy State.
+* The function gets the On-Demand Private GATT Proxy State in the configuration of the mesh device.
+*/
+wiced_bool_t wiced_bt_mesh_db_on_demand_private_proxy_get(wiced_bt_mesh_db_mesh_t *mesh_db, uint16_t unicast_addr, uint8_t *state)
+{
+    wiced_bt_mesh_db_node_t *node = wiced_bt_mesh_db_node_get_by_element_addr(mesh_db, unicast_addr);
+    if ((node == NULL) || (node->on_demand_private_proxy == MESH_FEATURE_SUPPORTED_UNKNOWN))
+        return WICED_FALSE;
+
+    *state = node->on_demand_private_proxy;
+    return WICED_TRUE;
+}
+
+/*
+* Set On-Demand Private GATT Proxy State.
+* The function sets On-Demand Private GATT Proxy State in the configuration of the mesh device.  A provisioner should call this function after successfully executing Set or Get Private GATT Proxy State procedure.
+*/
+wiced_bool_t wiced_bt_mesh_db_on_demand_private_proxy_set(wiced_bt_mesh_db_mesh_t *mesh_db, uint16_t unicast_addr, uint8_t state)
+{
+    wiced_bt_mesh_db_node_t *node = wiced_bt_mesh_db_node_get_by_element_addr(mesh_db, unicast_addr);
+    if (node == NULL)
+        return WICED_FALSE;
+
+    node->on_demand_private_proxy = state;
+    return WICED_TRUE;
+}
+#endif
+
+#ifdef DIRECTED_FORWARDING_SERVER_SUPPORTED
+wiced_bool_t wiced_bt_mesh_db_df_control_get(wiced_bt_mesh_db_mesh_t* mesh_db, uint16_t unicast_addr, wiced_bt_mesh_df_state_control_t* df_control)
+{
+    wiced_bt_mesh_db_node_t* node = wiced_bt_mesh_db_node_get_by_element_addr(mesh_db, unicast_addr);
+    if ((node == NULL) || (node->df.forwarding == WICED_BT_MESH_DF_STATE_CONTROL_NOT_SUPPORTED))
+        return WICED_FALSE;
+
+    *df_control = node->df;
+    return WICED_TRUE;
+}
+
+wiced_bool_t wiced_bt_mesh_db_df_control_set(wiced_bt_mesh_db_mesh_t* mesh_db, uint16_t unicast_addr, wiced_bt_mesh_df_state_control_t* df_control)
+{
+    wiced_bt_mesh_db_node_t* node = wiced_bt_mesh_db_node_get_by_element_addr(mesh_db, unicast_addr);
+    if (node == NULL)
+        return WICED_FALSE;
+
+    node->df = *df_control;
+    return WICED_TRUE;
+}
+#endif
 
 uint8_t process_nibble(char n)
 {

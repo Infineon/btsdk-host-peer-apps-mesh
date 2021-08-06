@@ -59,6 +59,7 @@
 #define WM_USER_LOG                     (WM_USER + 109)
 #define WM_TIMER_CALLBACK               (WM_USER + 110)
 #define WM_MESH_DEVICE_CCCD_PUT_COMPLETE    (WM_USER + 111)
+#define WM_SOCKET_CMD                   (WM_USER + 112)
 
 #define WM_SOCKET (WM_USER + 181)
 
@@ -149,6 +150,7 @@ protected:
     LRESULT OnTimerCallback(WPARAM op, LPARAM lparam);
     LRESULT OnProxyDataIn(WPARAM op, LPARAM lparam);
     LRESULT OnProvisioningDataIn(WPARAM op, LPARAM lparam);
+    LRESULT OnSocketCmd(WPARAM op, LPARAM lparam);
 
     void SetHexValueInt(DWORD id, DWORD val, DWORD val_len);
     void GetDlgItemTextUTF8(int id, char* buf, DWORD buf_len);

@@ -89,7 +89,7 @@ public:
 
     int StartLEAdvertisementPublisher();
     int StopLEAdvertisementPublisher();
-    int InitializePublisher();
+    int InitializePublisher(uint16_t company_id, uint16_t service_id, uint8_t *data, uint8_t data_len);
 
 private:
     BOOL m_bStop;

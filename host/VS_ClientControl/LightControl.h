@@ -48,7 +48,7 @@ public:
     void SetDlgItemHex(DWORD id, DWORD val);
     DWORD GetHexValue(DWORD id, LPBYTE buf, DWORD buf_size);
     DWORD GetHexValueInt(DWORD id);
-    void ProcessData(DWORD opcode, LPBYTE p_data, DWORD len);
+    void ProcessData(INT port_num, DWORD opcode, LPBYTE p_data, DWORD len);
     void ProcessEvent(LPBYTE p_data, DWORD len);
     CListBox *m_trace;
 

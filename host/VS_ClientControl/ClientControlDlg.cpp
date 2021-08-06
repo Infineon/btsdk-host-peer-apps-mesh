@@ -49,16 +49,18 @@
 #include "wiced_mesh_client.h"
 #include "hci_control_api.h"
 #include "MeshPerf.h"
+#ifdef DIRECTED_FORWARDING_SUPPORTED
+#include "DirectedForwarding.h"
+#endif
 
 ComHelper *m_ComHelper;
+ComHelper* m_ComHelper2 = NULL;
 
 BYTE world_day_of_week[7] = { 1 << 6, 1 << 0, 1 << 1, 1 << 2, 1 << 3, 1 << 4, 1 << 5 };
 
 #ifndef assert
 #define assert
 #endif
-
-#define MESH_CLIENTCONTROL_LOG_TO_FILE 0
 
 char log_filename[MAX_PATH] = { 0 };
 
@@ -140,7 +142,8 @@ CComboBox *settingPropIdComMsg;
 UINT16 property_id = WICED_BT_MESH_PROPERTY_PRESENT_AMBIENT_TEMPERATURE;
 UINT16 setting_property_id = TEMPERATURE_SETTING_PROP_ID;
 UINT8 prop_value_len = 2;
-int ComPort;
+int ComPort = 0;
+int ComPort2 = 0;
 IMPLEMENT_DYNCREATE(CClientControlDlg, CPropertyPage)
 
 // CClientControlDlg dialog
@@ -362,11 +365,8 @@ BOOL CClientControlDlg::OnSetActive()
     static BOOL initialized = FALSE;
     CPropertyPage::OnSetActive();
 
-#ifndef NO_LIGHT_CONTROL
-    ((CClientDialog *)theApp.m_pMainWnd)->m_active_page = 2;
-#else
-    ((CClientDialog *)theApp.m_pMainWnd)->m_active_page = 1;
-#endif
+    ((CClientDialog *)theApp.m_pMainWnd)->m_active_page = idxPageMain;
+
     // Set the icon for this dialog.  The framework does this automatically
     //  when the application's main window is not a dialog
     SetIcon(m_hIcon, TRUE);            // Set big icon
@@ -719,82 +719,75 @@ HCURSOR CClientControlDlg::OnQueryDragIcon()
 }
 
 
-void HandleWicedEvent(DWORD opcode, DWORD len, BYTE *p_data)
+void HandleWicedEvent(int com_port, DWORD opcode, DWORD len, BYTE *p_data)
 {
     CClientDialog *pSheet = (CClientDialog *)theApp.m_pMainWnd;
+    if (pSheet == NULL)
+        return;
 
-    switch (pSheet->m_active_page)
+    if (pSheet->m_active_page == idxPageConnectedMesh)
     {
-#ifndef NO_LIGHT_CONTROL
-        case 3:
-#else
-        case 2:
+        ConnectedMesh  *pDlg = &pSheet->pageConnectedMesh;
+        pDlg->ProcessData(com_port, opcode, p_data, len);
+        return;
+    }
+#ifdef DIRECTED_FORWARDING_SUPPORTED
+    else if (pSheet->m_active_page == idxPageDirectedForwarding)
+    {
+        CDirectedForwarding*pDlg = &pSheet->pageDirectedForwarding;
+        pDlg->ProcessData(com_port, opcode, p_data, len);
+        return;
+    }
 #endif
-        {
-            CConfig *pDlg = &pSheet->pageConfig;
-            pDlg->ProcessData(opcode, p_data, len);
-            return;
-        }
-#ifndef NO_LIGHT_CONTROL
-        case 2:
-#else
-        case 1:
-#endif
-        {
-            CClientControlDlg *pDlg = &pSheet->pageMain;
-            pDlg->ProcessData(opcode, p_data, len);
-            return;
-        }
-#ifndef NO_LIGHT_CONTROL
-        case 1:
-        {
-            CLightControl *pDlg = &pSheet->pageLight;
-            pDlg->ProcessData(opcode, p_data, len);
-            return;
-        }
-#endif
+    else if (pSheet->m_active_page == idxPageConfig)
+    {
+        CConfig *pDlg = &pSheet->pageConfig;
+        pDlg->ProcessData(opcode, p_data, len);
+        return;
+    }
+    else if (pSheet->m_active_page == idxPageMain)
+    {
+        CClientControlDlg *pDlg = &pSheet->pageMain;
+        pDlg->ProcessData(com_port, opcode, p_data, len);
+        return;
+    }
+    else if (pSheet->m_active_page == idxPageLight)
+    {
+        CLightControl *pDlg = &pSheet->pageLight;
+        pDlg->ProcessData(com_port, opcode, p_data, len);
+        return;
     }
 }
 
 void HandleHciEvent(BYTE *p_data, DWORD len)
 {
     CClientDialog *pSheet = (CClientDialog *)theApp.m_pMainWnd;
+    if (pSheet == NULL)
+        return;
 
-    switch (pSheet->m_active_page)
+    if (pSheet->m_active_page == idxPageConfig)
     {
-#ifndef NO_LIGHT_CONTROL
-        case 3:
-#else
-        case 2:
-#endif
-        {
-            CConfig *pDlg = &pSheet->pageConfig;
-            pDlg->ProcessEvent(p_data, len);
-            return;
-        }
-#ifndef NO_LIGHT_CONTROL
-        case 2:
-#else
-        case 1:
-#endif
-        {
-            CClientControlDlg *pDlg = &pSheet->pageMain;
-            pDlg->ProcessEvent(p_data, len);
-            return;
-        }
-#ifndef NO_LIGHT_CONTROL
-        case 1:
-        {
-            CLightControl *pDlg = &pSheet->pageLight;
-            pDlg->ProcessEvent(p_data, len);
-            return;
-        }
-#endif
+        CConfig *pDlg = &pSheet->pageConfig;
+        pDlg->ProcessEvent(p_data, len);
+        return;
+    }
+    else if (pSheet->m_active_page == idxPageMain)
+    {
+        CClientControlDlg *pDlg = &pSheet->pageMain;
+        pDlg->ProcessEvent(p_data, len);
+        return;
+    }
+    else if (pSheet->m_active_page == idxPageLight)
+    {
+        CLightControl *pDlg = &pSheet->pageLight;
+        pDlg->ProcessEvent(p_data, len);
+        return;
     }
 }
 
 #include <WinSock2.h>
 SOCKET log_sock = INVALID_SOCKET;
+extern int host_mode_instance;
 
 // mapping between wiced trace types and spy trace types (evt, cmd, rx data, tx data)
 static int wiced_trace_to_spy_trace[] = { 0, 4, 3, 6, 7 };
@@ -848,7 +841,7 @@ void TraceHciPkt(BYTE type, BYTE *buffer, USHORT length)
     memset(&socket_addr, 0, sizeof(socket_addr));
     socket_addr.sin_family = AF_INET;
     socket_addr.sin_addr.s_addr = ntohl(0x7f000001);
-    socket_addr.sin_port = 9876;
+    socket_addr.sin_port = 9876 + host_mode_instance;
 
     length = sendto(log_sock, (const char *)buf, length + 8, 0, (SOCKADDR *)&socket_addr, sizeof(SOCKADDR_IN));
 }
@@ -857,7 +850,7 @@ void CClientControlDlg::ProcessEvent(LPBYTE p_data, DWORD len)
 {
 }
 
-void CClientControlDlg::ProcessData(DWORD opcode, LPBYTE p_data, DWORD len)
+void CClientControlDlg::ProcessData(INT port_num, DWORD opcode, LPBYTE p_data, DWORD len)
 {
     WCHAR   trace[1024];
     switch (opcode)
@@ -1187,53 +1180,89 @@ void Log(WCHAR *fmt, ...)
         if (fp)
         {
             fputws(msg, fp);
+            fputws(L"\n", fp);
             fclose(fp);
         }
     }
 
     CClientDialog *pSheet = (CClientDialog *)theApp.m_pMainWnd;
+    if (pSheet == NULL)
+        return;
 
-    switch (pSheet->m_active_page)
+    if (pSheet->m_active_page == idxPageConnectedMesh)
     {
-#ifndef NO_LIGHT_CONTROL
-        case 3:
-#else
-        case 2:
+        ConnectedMesh* pDlg = &pSheet->pageConnectedMesh;
+        if (pDlg && pDlg->m_hWnd && ::IsWindow(pDlg->m_hWnd) && ::IsWindow(pDlg->m_trace->m_hWnd))
+            pDlg->m_trace->SetCurSel(pDlg->m_trace->AddString(msg));
+        return;
+    }
+#ifdef DIRECTED_FORWARDING_SUPPORTED
+    else if (pSheet->m_active_page == idxPageDirectedForwarding)
+    {
+        CDirectedForwarding* pDlg = &pSheet->pageDirectedForwarding;
+        if (pDlg && pDlg->m_hWnd && ::IsWindow(pDlg->m_hWnd) && ::IsWindow(pDlg->m_trace->m_hWnd))
+            pDlg->m_trace->SetCurSel(pDlg->m_trace->AddString(msg));
+        return;
+    }
 #endif
-        {
-            CConfig *pDlg = &pSheet->pageConfig;
-            if (pDlg && pDlg->m_hWnd && ::IsWindow(pDlg->m_hWnd) && ::IsWindow(pDlg->m_trace->m_hWnd))
-                pDlg->m_trace->SetCurSel(pDlg->m_trace->AddString(msg));
-            return;
-        }
-#ifndef NO_LIGHT_CONTROL
-        case 2:
-#else
-        case 1:
-#endif
-        {
-            CClientControlDlg *pDlg = &pSheet->pageMain;
-            if (pDlg && pDlg->m_hWnd && ::IsWindow(pDlg->m_hWnd) && ::IsWindow(pDlg->m_trace->m_hWnd))
-                pDlg->m_trace->SetCurSel(pDlg->m_trace->AddString(msg));
-            return;
-        }
-#ifndef NO_LIGHT_CONTROL
-        case 1:
-        {
-            CLightControl *pDlg = &pSheet->pageLight;
-            if (pDlg && pDlg->m_hWnd && ::IsWindow(pDlg->m_hWnd) && ::IsWindow(pDlg->m_trace->m_hWnd))
-                pDlg->m_trace->SetCurSel(pDlg->m_trace->AddString(msg));
+    else if (pSheet->m_active_page == idxPageConfig)
+    {
+        CConfig *pDlg = &pSheet->pageConfig;
+        if (pDlg && pDlg->m_hWnd && ::IsWindow(pDlg->m_hWnd) && ::IsWindow(pDlg->m_trace->m_hWnd))
+            pDlg->m_trace->SetCurSel(pDlg->m_trace->AddString(msg));
+        return;
+    }
+    else if (pSheet->m_active_page == idxPageMain)
+    {
+        CClientControlDlg *pDlg = &pSheet->pageMain;
+        if (pDlg && pDlg->m_hWnd && ::IsWindow(pDlg->m_hWnd) && ::IsWindow(pDlg->m_trace->m_hWnd))
+            pDlg->m_trace->SetCurSel(pDlg->m_trace->AddString(msg));
+        return;
+    }
+    else if (pSheet->m_active_page == idxPageLight)
+    {
+        CLightControl *pDlg = &pSheet->pageLight;
+        if (pDlg && pDlg->m_hWnd && ::IsWindow(pDlg->m_hWnd) && ::IsWindow(pDlg->m_trace->m_hWnd))
+            pDlg->m_trace->SetCurSel(pDlg->m_trace->AddString(msg));
+        return;
+    }
+    else if (pSheet->m_active_page == idxPageMeshPerf)
+    {
+        CMeshPerformance* pDlg = &pSheet->pageMeshPerf;
+        if (pDlg && pDlg->m_hWnd && ::IsWindow(pDlg->m_hWnd) && ::IsWindow(pDlg->m_trace->m_hWnd))
+            pDlg->m_trace->SetCurSel(pDlg->m_trace->AddString(msg));
+        return;
+    }
+}
 
-            if (theApp.bMeshPerfMode)
-            {
-                CMeshPerformance* pDlg = &pSheet->pageMeshPerf;
-                if (pDlg && pDlg->m_hWnd && ::IsWindow(pDlg->m_hWnd) && ::IsWindow(pDlg->m_trace->m_hWnd))
-                    pDlg->m_trace->SetCurSel(pDlg->m_trace->AddString(msg));
-            }
+void LogFile(WCHAR* fmt, ...)
+{
+    WCHAR   msg[1002];
 
-            return;
+    va_list cur_arg;
+
+    if (strlen(log_filename))
+    {
+        FILE* fp;
+        fopen_s(&fp, log_filename, "a");
+        if (fp)
+        {
+            SYSTEMTIME st;
+            GetLocalTime(&st);
+
+            memset(msg, 0, sizeof(msg));
+
+            int len = swprintf_s(msg, 1002, L"%02d:%02d:%02d.%03d ", st.wHour, st.wMinute, st.wSecond, st.wMilliseconds);
+
+            va_start(cur_arg, fmt);
+            vswprintf(&msg[wcslen(msg)], (sizeof(msg) / sizeof(WCHAR)) - wcslen(msg), fmt, cur_arg);
+            va_end(cur_arg);
+
+            wcscat(msg, L"\n");
+
+            fputws(msg, fp);
+            fclose(fp);
         }
-#endif
     }
 }
 
@@ -1270,46 +1299,49 @@ extern "C" void Log(char *fmt, ...)
 
     CClientDialog *pSheet = (CClientDialog *)theApp.m_pMainWnd;
 
-    switch (pSheet->m_active_page)
+    if (pSheet->m_active_page == idxPageConnectedMesh)
     {
-#ifndef NO_LIGHT_CONTROL
-        case 3:
-#else
-        case 2:
+        ConnectedMesh* pDlg = &pSheet->pageConnectedMesh;
+        if (pDlg && pDlg->m_hWnd && ::IsWindow(pDlg->m_hWnd) && ::IsWindow(pDlg->m_trace->m_hWnd))
+            pDlg->m_trace->SetCurSel(pDlg->m_trace->AddString(wmsg));
+        return;
+    }
+#ifdef DIRECTED_FORWARDING_SUPPORTED
+    else if (pSheet->m_active_page == idxPageDirectedForwarding)
+    {
+        CDirectedForwarding* pDlg = &pSheet->pageDirectedForwarding;
+        if (pDlg && pDlg->m_hWnd && ::IsWindow(pDlg->m_hWnd) && ::IsWindow(pDlg->m_trace->m_hWnd))
+            pDlg->m_trace->SetCurSel(pDlg->m_trace->AddString(wmsg));
+        return;
+    }
 #endif
-        {
-            CConfig *pDlg = &pSheet->pageConfig;
-            if (pDlg && pDlg->m_hWnd && ::IsWindow(pDlg->m_hWnd) && ::IsWindow(pDlg->m_trace->m_hWnd))
-                pDlg->m_trace->SetCurSel(pDlg->m_trace->AddString(wmsg));
-            return;
-        }
-#ifndef NO_LIGHT_CONTROL
-        case 2:
-#else
-        case 1:
-#endif
-        {
-            CClientControlDlg *pDlg = &pSheet->pageMain;
-            if (pDlg && pDlg->m_hWnd && ::IsWindow(pDlg->m_hWnd) && ::IsWindow(pDlg->m_trace->m_hWnd))
-                pDlg->m_trace->SetCurSel(pDlg->m_trace->AddString(wmsg));
-            return;
-        }
-#ifndef NO_LIGHT_CONTROL
-        case 1:
-        {
-            CLightControl *pDlg = &pSheet->pageLight;
-            if (pDlg && pDlg->m_hWnd && ::IsWindow(pDlg->m_hWnd) && ::IsWindow(pDlg->m_trace->m_hWnd))
-                pDlg->m_trace->SetCurSel(pDlg->m_trace->AddString(wmsg));
-
-            if (theApp.bMeshPerfMode)
-            {
-                CMeshPerformance* pDlg = &pSheet->pageMeshPerf;
-                if (pDlg && pDlg->m_hWnd && ::IsWindow(pDlg->m_hWnd) && ::IsWindow(pDlg->m_trace->m_hWnd))
-                    pDlg->m_trace->SetCurSel(pDlg->m_trace->AddString(wmsg));
-            }
-            return;
-        }
-#endif
+    else if (pSheet->m_active_page == idxPageConfig)
+    {
+        CConfig *pDlg = &pSheet->pageConfig;
+        if (pDlg && pDlg->m_hWnd && ::IsWindow(pDlg->m_hWnd) && ::IsWindow(pDlg->m_trace->m_hWnd))
+            pDlg->m_trace->SetCurSel(pDlg->m_trace->AddString(wmsg));
+        return;
+    }
+    else if (pSheet->m_active_page == idxPageMain)
+    {
+        CClientControlDlg *pDlg = &pSheet->pageMain;
+        if (pDlg && pDlg->m_hWnd && ::IsWindow(pDlg->m_hWnd) && ::IsWindow(pDlg->m_trace->m_hWnd))
+            pDlg->m_trace->SetCurSel(pDlg->m_trace->AddString(wmsg));
+        return;
+    }
+    else if (pSheet->m_active_page == idxPageLight)
+    {
+        CLightControl *pDlg = &pSheet->pageLight;
+        if (pDlg && pDlg->m_hWnd && ::IsWindow(pDlg->m_hWnd) && ::IsWindow(pDlg->m_trace->m_hWnd))
+            pDlg->m_trace->SetCurSel(pDlg->m_trace->AddString(wmsg));
+        return;
+    }
+    else if (pSheet->m_active_page == idxPageMeshPerf)
+    {
+        CMeshPerformance* pDlg = &pSheet->pageMeshPerf;
+        if (pDlg && pDlg->m_hWnd && ::IsWindow(pDlg->m_hWnd) && ::IsWindow(pDlg->m_trace->m_hWnd))
+            pDlg->m_trace->SetCurSel(pDlg->m_trace->AddString(wmsg));
+        return;
     }
 }
 
@@ -5625,7 +5657,10 @@ void tai_to_utc_local_time(ULONGLONG tai_seconds, int *year, int *month, int *da
 void CClientControlDlg::OnBnClickedTcCfgIdentity()
 {
     m_trace->SetCurSel(m_trace->AddString(L"Config: Begin advert Node Identity"));
-    m_ComHelper->SendWicedCommand(HCI_CONTROL_MESH_COMMAND_CORE_CFG_ADV_IDENTITY, NULL, 0);
+    // Set node identity for all networks for 60 seconds
+    // params:=<action><type>; <action>=1 means set; <type>=1 means NODE IDENTITY USER
+    BYTE params[] = { 1, 1 };
+    m_ComHelper->SendWicedCommand(HCI_CONTROL_MESH_COMMAND_CORE_CFG_ADV_IDENTITY, params, (DWORD)sizeof(params));
 }
 
 

@@ -81,11 +81,17 @@ protected:
     // overlap IO for Read and Write
     OVERLAPPED m_OverlapRead;
     OVERLAPPED m_OverlapWrite;
+    OVERLAPPED m_OverlapStateChange;
     HANDLE m_handle;
     HANDLE m_hThreadRead;
     HANDLE m_hShutdown;
     BOOL m_bClosing;
+    BOOL m_bResetting;
     BOOL m_CleanHciState;
+    SOCKET m_ClientSocket;
+    int     m_instance;
+    BOOL    m_RtsOn;
+    int     m_comPort;
 };
 
 
@@ -96,6 +102,7 @@ class ComHelperHostMode : public ComHelper
 {
 public:
     ComHelperHostMode(HWND hWnd);
+    ComHelperHostMode(HWND hWnd, int instance);
     virtual ~ComHelperHostMode();
 
     virtual BOOL OpenPort(int port, int baudRate);
@@ -103,7 +110,6 @@ public:
     virtual DWORD Read(LPBYTE b, DWORD dwLen);
     virtual DWORD Write(LPBYTE b, DWORD dwLen);
     virtual BOOL IsOpened();
-
 };
 
 extern void DumpData(char* description, void* p, UINT32 length, UINT32 max_lines);

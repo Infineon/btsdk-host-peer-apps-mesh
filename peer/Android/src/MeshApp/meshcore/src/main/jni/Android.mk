@@ -39,6 +39,7 @@ LOCAL_MODULE    := ccStaticLibrary
 LOCAL_SRC_FILES := prebuild/$(TARGET_ARCH_ABI)/libwicedmesh.a
 LOCAL_C_INCLUDES := $(wildcard $(LOCAL_PATH)/../../../../../../../../../../dev-kit/baselib/20819A1/COMPONENT_20819A1/include)
 LOCAL_C_INCLUDES += $(wildcard $(LOCAL_PATH)/../../../../../../../../../../dev-kit/btsdk-include)
+LOCAL_C_INCLUDES += $(wildcard $(LOCAL_PATH)/../../../../../../../../../../dev-kit/libraries/mesh_libs/include)
 LOCAL_C_INCLUDES += $(wildcard $(LOCAL_PATH)/../../../../../../../../../../dev-kit/baselib/20819A1/COMPONENT_20819A1/include/hal)
 LOCAL_C_INCLUDES += $(wildcard $(LOCAL_PATH)/../../../../../../../../../../dev-kit/baselib/20819A1/COMPONENT_20819A1/include/internal)
 LOCAL_C_INCLUDES += $(wildcard $(LOCAL_PATH)/../../../../../../../../../../dev-kit/baselib/20819A1/COMPONENT_20819A1/include/stack)
@@ -74,6 +75,7 @@ MY_CPP_LIST += $(wildcard $(LOCAL_PATH)/mesh_libs/ccm.cpp)
 MY_CPP_LIST += $(wildcard $(LOCAL_PATH)/mesh_libs/p_256_ecc_pp.c)
 MY_CPP_LIST += $(wildcard $(LOCAL_PATH)/mesh_libs/p_256_curvepara.c)
 MY_CPP_LIST += $(wildcard $(LOCAL_PATH)/mesh_libs/p_256_multprecision.c)
+MY_CPP_LIST += $(wildcard $(LOCAL_PATH)/mesh_libs/sha2.c)
 
 LOCAL_SRC_FILES := $(MY_CPP_LIST:$(LOCAL_PATH)/%=%)
 
@@ -82,6 +84,7 @@ LOCAL_CFLAGS += -fno-stack-protector
 LOCAL_LDLIBS := -llog
 LOCAL_C_INCLUDES := $(wildcard $(LOCAL_PATH)/../../../../../../../../../../dev-kit/baselib/20819A1/COMPONENT_20819A1/include)
 LOCAL_C_INCLUDES += $(wildcard $(LOCAL_PATH)/../../../../../../../../../../dev-kit/btsdk-include)
+LOCAL_C_INCLUDES += $(wildcard $(LOCAL_PATH)/../../../../../../../../../../dev-kit/libraries/mesh_libs/include)
 LOCAL_C_INCLUDES += $(wildcard $(LOCAL_PATH)/../../../../../../../../../../dev-kit/baselib/20819A1/COMPONENT_20819A1/include/hal)
 LOCAL_C_INCLUDES += $(wildcard $(LOCAL_PATH)/../../../../../../../../../../dev-kit/baselib/20819A1/COMPONENT_20819A1/include/internal)
 LOCAL_C_INCLUDES += $(wildcard $(LOCAL_PATH)/../../../../../../../../../../dev-kit/baselib/20819A1/COMPONENT_20819A1/include/stack)

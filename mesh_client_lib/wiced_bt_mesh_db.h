@@ -41,6 +41,9 @@
 
 #include <wiced_bt_mesh_models.h>
 #include "stdint.h"
+#ifdef DIRECTED_FORWARDING_SERVER_SUPPORTED
+#include "wiced_bt_mesh_mdf.h"
+#endif
 
 typedef unsigned int wiced_bool_t;
 #define WICED_TRUE  1
@@ -200,6 +203,7 @@ typedef struct
 {
     uint8_t relay;
     uint8_t gatt_proxy;
+    uint8_t private_gatt_proxy;
     uint8_t low_power;
     uint8_t friend;
 } wiced_bt_mesh_db_features_t;
@@ -231,8 +235,12 @@ typedef struct
     wiced_bt_mesh_db_key_idx_phase *app_key;
     uint8_t  default_ttl;
     uint8_t  beacon;
+    uint8_t  private_beacon;
     wiced_bt_mesh_db_transmit_t network_transmit;
     wiced_bt_mesh_db_transmit_t relay_rexmit;
+#ifdef DIRECTED_FORWARDING_SERVER_SUPPORTED
+    wiced_bt_mesh_df_state_control_t    df;
+#endif
     uint8_t  num_elements;
     wiced_bt_mesh_db_element_t *element;
 
@@ -244,6 +252,8 @@ typedef struct
     uint8_t     scanning_state;
     uint8_t     active_scan_supported;
 
+    uint8_t  random_update_interval;
+    uint8_t  on_demand_private_proxy;
 } wiced_bt_mesh_db_node_t;
 
 typedef struct
@@ -273,6 +283,7 @@ typedef struct
     wiced_bt_mesh_db_group_t *group;
     uint16_t num_scenes;
     wiced_bt_mesh_db_scene_t *scene;
+    uint32_t solicitation_seq_num;
 } wiced_bt_mesh_db_mesh_t;
 
 #ifdef __cplusplus
@@ -527,6 +538,54 @@ wiced_bool_t wiced_bt_mesh_db_beacon_set(wiced_bt_mesh_db_mesh_t *p_mesh_db, uin
  * The function gets the Send Network Beacons State of the mesh device.
  */
 wiced_bool_t wiced_bt_mesh_db_beacon_get(wiced_bt_mesh_db_mesh_t *p_mesh_db, uint16_t unicast_addr, uint8_t *state);
+
+#ifdef PRIVATE_PROXY_SUPPORTED
+/*
+ * Set Private Beacons State.
+ * The function sets the Private Beacons State in the configuration of the mesh device.  A provisioner should call this function after successfully executing Set or Get Private Beacon State procedure.
+ */
+wiced_bool_t wiced_bt_mesh_db_private_beacon_set(wiced_bt_mesh_db_mesh_t *mesh_db, uint16_t unicast_addr, uint8_t state, uint8_t random_update_interval);
+
+/*
+ * Get Private Beacons State.
+ * The function gets the Private Beacons State of the mesh device.
+ */
+wiced_bool_t wiced_bt_mesh_db_private_beacon_get(wiced_bt_mesh_db_mesh_t *mesh_db, uint16_t unicast_addr, uint8_t *state, uint8_t *random_update_interval);
+
+/*
+* Set Private GATT Proxy State.
+* The function sets Private GATT Proxy State in the configuration of the mesh device.  A provisioner should call this function after successfully executing Set or Get Private GATT Proxy State procedure.
+*/
+wiced_bool_t wiced_bt_mesh_db_private_gatt_proxy_set(wiced_bt_mesh_db_mesh_t *mesh_db, uint16_t unicast_addr, uint8_t state);
+
+/*
+* Get Private GATT Proxy State.
+* The function gets the Private GATT Proxy State in the configuration of the mesh device.
+*/
+wiced_bool_t wiced_bt_mesh_db_private_gatt_proxy_get(wiced_bt_mesh_db_mesh_t *mesh_db, uint16_t unicast_addr, uint8_t *state);
+
+/*
+* Set On-Demand Private GATT Proxy State.
+* The function sets On-Demand Private GATT Proxy State in the configuration of the mesh device.  A provisioner should call this function after successfully executing Set or Get On-Demand Private Proxy State procedure.
+*/
+wiced_bool_t wiced_bt_mesh_db_on_demand_private_proxy_set(wiced_bt_mesh_db_mesh_t *mesh_db, uint16_t unicast_addr, uint8_t state);
+
+/*
+* Get On-Demand Private GATT Proxy State.
+* The function gets the On-Demand Private GATT Proxy State in the configuration of the mesh device.
+*/
+wiced_bool_t wiced_bt_mesh_db_on_demand_private_proxy_get(wiced_bt_mesh_db_mesh_t *mesh_db, uint16_t unicast_addr, uint8_t *state);
+#endif
+
+#ifdef DIRECTED_FORWARDING_SERVER_SUPPORTED
+/*
+ * Get Directed Forwarding Control State.
+ * The function gets the Directed Forwarding Control State of the mesh device.
+ */
+wiced_bool_t wiced_bt_mesh_db_df_control_get(wiced_bt_mesh_db_mesh_t* mesh_db, uint16_t unicast_addr, wiced_bt_mesh_df_state_control_t* df_control);
+
+wiced_bool_t wiced_bt_mesh_db_df_control_set(wiced_bt_mesh_db_mesh_t* mesh_db, uint16_t unicast_addr, wiced_bt_mesh_df_state_control_t* df_control);
+#endif
 
 /*
  * Get all networks.

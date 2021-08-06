@@ -82,7 +82,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;_WINDOWS;CLIENTCONTROL;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.\;..\..\include;..\..\mesh_client_lib;..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include;..\..\..\..\dev-kit\btsdk-include;..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\hal;..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\stack;..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\internal</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\;..\..\include;..\..\mesh_client_lib;..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include;..\..\..\..\dev-kit\btsdk-include;..\..\..\..\dev-kit\libraries\mesh_libs\include;..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\hal;..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\stack;..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\internal</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
     </ClCompile>
     <Link>
@@ -112,7 +112,7 @@
       <IntrinsicFunctions>false</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;_WINDOWS;CLIENTCONTROL;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.\;..\..\include;..\..\mesh_client_lib;..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include;..\..\..\..\dev-kit\btsdk-include;..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\hal;..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\stack;..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\internal</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\;..\..\include;..\..\mesh_client_lib;..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include;..\..\..\..\dev-kit\btsdk-include;..\..\..\..\dev-kit\libraries\mesh_libs\include;..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\hal;..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\stack;..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\internal</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <SupportJustMyCode>true</SupportJustMyCode>
@@ -150,7 +150,7 @@
       <IntrinsicFunctions>false</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;_WINDOWS;CLIENTCONTROL;NDEBUG;MESH_AUTOMATION_ENABLED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.\;.\automation;..\..\mesh_client_lib;..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include;..\..\..\..\dev-kit\btsdk-include;..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\hal;..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\stack;..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\internal;..\..\..\test\automation\nanopb</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\;.\automation;..\..\mesh_client_lib;..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include;..\..\..\..\dev-kit\btsdk-include;..\..\..\..\dev-kit\libraries\mesh_libs\include;..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\hal;..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\stack;..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\internal;..\..\..\test\automation\nanopb</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <SupportJustMyCode>true</SupportJustMyCode>
@@ -209,6 +209,7 @@
     <ClInclude Include=".\automation\script_app.h" />
     <ClInclude Include="ClientControl.h" />
     <ClInclude Include="ClientControlDlg.h" />
+    <ClInclude Include="ConnectedMesh.h" />
     <ClInclude Include="LightLCConfig.h" />
     <ClInclude Include="ControlComm.h" />
     <ClInclude Include="LightControl.h" />
@@ -267,6 +268,7 @@
     <ClCompile Include="ClientControlDlg.cpp" />
     <ClCompile Include="Config.cpp" />
     <ClCompile Include="ControlComm.cpp" />
+    <ClCompile Include="ConnectedMesh.cpp" />
     <ClCompile Include="FwDownload.cpp" />
     <ClCompile Include="LightControl.cpp" />
     <ClCompile Include="LightLCConfig.cpp" />

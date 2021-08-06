@@ -82,6 +82,7 @@ mtb_release {
     INCLUDEPATH += $$_PRO_FILE_PWD_/../../../../dev-kit/baselib/20819A1/COMPONENT_20819A1/include/hal
     INCLUDEPATH += $$_PRO_FILE_PWD_/../../../../dev-kit/baselib/20819A1/COMPONENT_20819A1/include/stack
     INCLUDEPATH += $$_PRO_FILE_PWD_/../../../../dev-kit/btsdk-include
+    INCLUDEPATH += $$_PRO_FILE_PWD_/../../../../dev-kit/libraries/mesh_libs/include
     INCLUDEPATH += $$_PRO_FILE_PWD_/../../include
     INCLUDEPATH += $$_PRO_FILE_PWD_/../../mesh_client_lib
 }

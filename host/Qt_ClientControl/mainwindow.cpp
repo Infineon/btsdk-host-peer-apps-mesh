@@ -463,6 +463,20 @@ MainWindow::MainWindow(QWidget *parent) :
     m_state = STATE_IDLE;
     m_pPatch = NULL;
     m_dwPatchSize = 0;
+
+    // Move to group is not implemented yet. Hide all related controls(widgets)
+    ui->label_6->setVisible(false);
+    ui->label_15->setVisible(false);
+    ui->label_48->setVisible(false);
+    ui->cbMoveDevice->setVisible(false);
+    ui->cbFrom->setVisible(false);
+    ui->cbToGrp->setVisible(false);
+    ui->btnConfigSub->setVisible(false);
+
+    // Hide Connect button because support for Connect/Disconnect isn't implemented yet.
+    // It works fine without that button. If it is connected then it transmits through GATT. If disconnected then it transmits through ADV.
+    ui->btnConnect->setVisible(false);
+
     Log("Mesh Client ready");
 }
 

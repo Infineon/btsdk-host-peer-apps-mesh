@@ -41,6 +41,9 @@
 #define VC_EXTRALEAN            // Exclude rarely-used stuff from Windows headers
 #endif
 
+// Enable Mesh Directed Forwarding support
+//#define DIRECTED_FORWARDING_SUPPORTED
+
 #include "targetver.h"
 
 #define _ATL_CSTRING_EXPLICIT_CONSTRUCTORS      // some CString constructors will be explicit

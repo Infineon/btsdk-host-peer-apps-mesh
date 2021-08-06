@@ -982,13 +982,6 @@ wiced_bool_t wiced_bt_mesh_blob_transfer_client_get_node_status(uint16_t unicast
 typedef wiced_bool_t(wiced_bt_mesh_fw_update_server_callback_t)(uint16_t event, uint8_t *p_data, uint16_t data_len);
 
 /**
- * \brief Firmware Update Server Module initialization
- *
- * @return      None
- */
-void wiced_bt_mesh_model_fw_update_server_init();
-
-/**
  * \brief Firmware Update Server Message Handler
  * \details The Mesh Core library calls this function for each message received.  The function returns WICED_TRUE if the message is destined for this specific model and successfully processed, and returns WICED_FALSE otherwise.
  * The function parses the message and if appropriate calls the parent back to perform functionality.
@@ -1022,15 +1015,6 @@ wiced_bool_t wiced_bt_mesh_model_fw_update_server_message_handler(wiced_bt_mesh_
  * @return      None
  */
 typedef void(wiced_bt_mesh_blob_transfer_server_callback_t)(uint16_t event, void *p_data);
-
-/**
- * \brief BLOB Transfer Server Module initialization
- *
- * @param       supported_transfer_mode     Push/Pull modes
- *
- * @return      None
- */
-void wiced_bt_mesh_model_blob_transfer_server_init(uint8_t supported_transfer_mode);
 
 /**
  * \brief BLOB Transfer Server Message Handler

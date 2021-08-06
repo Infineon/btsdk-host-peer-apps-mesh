@@ -65,6 +65,12 @@
 #include "wiced_bt_mesh_dfu.h"
 #include "wiced_mesh_client_dfu.h"
 #endif
+#if ( defined(DIRECTED_FORWARDING_SERVER_SUPPORTED) || defined(NETWORK_FILTER_SERVER_SUPPORTED))
+#include "wiced_bt_mesh_mdf.h"
+#endif
+#ifdef PRIVATE_PROXY_SUPPORTED
+#include "wiced_bt_mesh_private_proxy.h"
+#endif
 
 //#ifndef CLIENTCONTROL
 extern void ods(char * fmt_str, ...);
@@ -113,6 +119,10 @@ extern void ods(char * fmt_str, ...);
 #define CONFIG_OPERATION_SENSOR_CADENCE_GET 19
 #define CONFIG_OPERATION_FILTER_DEL         20
 #define CONFIG_OPERATION_LPN_POLL_TIMEOUT_GET 21
+#define CONFIG_OPERATION_DF_CONTROL_SET     22
+#define CONFIG_OPERATION_PRIVATE_BEACON_SET 23
+#define CONFIG_OPERATION_PRIVATE_PROXY_SET  24
+#define CONFIG_OPERATION_ON_DEMAND_PROXY_SET 25
 
 #define DEVICE_TYPE_LIGHT_HSL_HUE           13
 #define DEVICE_TYPE_LIGHT_HSL_SATURATION    14
@@ -155,6 +165,14 @@ typedef struct t_pending_operation
         wiced_bt_mesh_default_transition_time_data_t default_trans_time;
         wiced_bt_mesh_config_key_refresh_phase_set_data_t kr_phase_set;
         wiced_bt_mesh_sensor_get_t sensor_get;
+#ifdef DIRECTED_FORWARDING_SERVER_SUPPORTED
+        wiced_bt_mesh_df_state_control_t df_control;
+#endif
+#ifdef PRIVATE_PROXY_SUPPORTED
+        wiced_bt_mesh_config_private_beacon_set_data_t private_beacon_set;
+        wiced_bt_mesh_config_private_gatt_proxy_set_data_t private_proxy_set;
+        wiced_bt_mesh_config_on_demand_private_proxy_set_data_t on_demand_proxy_set;
+#endif
     } uu;
     wiced_bt_mesh_event_t *p_event;
 } pending_operation_t;
@@ -349,6 +367,13 @@ typedef struct
     uint8_t     default_ttl;
     uint8_t     net_xmit_count;
     uint16_t    net_xmit_interval;
+#ifdef DIRECTED_FORWARDING_SERVER_SUPPORTED
+    uint8_t     df_forwarding;
+    uint8_t     df_proxy;
+    uint8_t     df_proxy_use_directed_default;
+    uint8_t     df_relay;
+    uint8_t     df_friend;
+#endif
     uint8_t     publish_ttl;                   ///< Default TTL value for the outgoing messages
     uint8_t     publish_retransmit_count;      ///< Number of retransmissions for each published message
     uint16_t    publish_retransmit_interval;   ///< Interval in milliseconds between retransmissions
@@ -375,6 +400,9 @@ typedef struct
     mesh_client_vendor_specific_data_t p_vendor_specific_data;
     pending_operation_t *p_first;
     wiced_timer_t op_timer;
+#ifdef PRIVATE_PROXY_SUPPORTED
+    wiced_timer_t ps_timer;
+#endif
 } mesh_provision_cb_t;
 
 mesh_provision_cb_t provision_cb = { 0 };
@@ -442,6 +470,14 @@ static void mesh_configure_relay_status(mesh_provision_cb_t *p_cb, wiced_bt_mesh
 static void mesh_configure_friend_status(mesh_provision_cb_t *p_cb, wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_config_friend_status_data_t *p_data);
 static void mesh_configure_gatt_proxy_status(mesh_provision_cb_t *p_cb, wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_config_gatt_proxy_status_data_t *p_data);
 static void mesh_configure_beacon_status(mesh_provision_cb_t *p_cb, wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_config_beacon_status_data_t *p_data);
+#ifdef DIRECTED_FORWARDING_SERVER_SUPPORTED
+static void mesh_df_control_status(mesh_provision_cb_t* p_cb, wiced_bt_mesh_event_t* p_event, wiced_bt_mesh_df_directed_control_status_data_t* p_data);
+#endif
+#ifdef PRIVATE_PROXY_SUPPORTED
+static void mesh_configure_private_beacon_status(mesh_provision_cb_t* p_cb, wiced_bt_mesh_event_t* p_event, wiced_bt_mesh_config_private_beacon_status_data_t* p_data);
+static void mesh_configure_private_gatt_proxy_status(mesh_provision_cb_t* p_cb, wiced_bt_mesh_event_t* p_event, wiced_bt_mesh_config_private_gatt_proxy_status_data_t* p_data);
+static void mesh_configure_on_demand_private_proxy_status(mesh_provision_cb_t* p_cb, wiced_bt_mesh_event_t* p_event, wiced_bt_mesh_config_on_demand_private_proxy_status_data_t* p_data);
+#endif
 static void mesh_configure_filter_status(mesh_provision_cb_t *p_cb, wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_proxy_filter_status_data_t *p_data);
 static void mesh_configure_lpn_poll_timeout_status(mesh_provision_cb_t* p_cb, wiced_bt_mesh_event_t* p_event, wiced_bt_mesh_lpn_poll_timeout_status_data_t* p_data);
 
@@ -501,6 +537,7 @@ static wiced_bool_t model_needs_sub(uint16_t model_id, wiced_bt_mesh_db_model_id
 wiced_bt_mesh_event_t *mesh_create_control_event(wiced_bt_mesh_db_mesh_t *p_mesh_db, uint16_t company_id, uint16_t model_id, uint16_t dst, uint16_t app_key_idx);
 static void scan_timer_cb(TIMER_PARAM_TYPE arg);
 static void provision_timer_cb(TIMER_PARAM_TYPE arg);
+static void proxy_solicitation_timer_cb(TIMER_PARAM_TYPE arg);
 static wiced_bool_t add_filter(mesh_provision_cb_t *p_cb, uint16_t addr);
 wiced_bool_t get_control_method(const char *method_name, uint16_t *company_id, uint16_t *model_id);
 wiced_bool_t get_target_method(const char *method_name, uint16_t *company_id, uint16_t *model_id);
@@ -512,6 +549,10 @@ static wiced_bt_mesh_event_t* mesh_client_configure_create_event(uint16_t dst);
 static mesh_lpn_key_refresh_block_t* lpn_kr_poll_timeout_get(mesh_provision_cb_t* p_cb, uint16_t lpn_addr, uint16_t friend_addr);
 extern wiced_bt_mesh_event_t *mesh_configure_create_event(uint16_t dst, wiced_bool_t retransmit);
 void wiced_bt_mesh_gatt_client_connection_state_changed(uint16_t conn_id, uint16_t mtu);
+extern uint8_t mesh_core_create_proxy_solicitation_service_data(uint8_t net_key_idx, uint32_t sseq, uint16_t ssrc, uint16_t dst, uint8_t *svcdata);
+extern wiced_bool_t mesh_advertising_start(uint16_t company_id, uint16_t service_id, uint8_t *data, int data_len);
+extern void mesh_advertising_stop(void);
+extern wiced_bool_t mesh_adv_publish_start(void);
 
 wiced_bt_mesh_db_mesh_t *p_mesh_db = NULL;
 
@@ -736,6 +777,9 @@ int mesh_client_network_open(const char *provisioner_name, const char *provision
     mesh_application_init();
 
     wiced_init_timer(&provision_cb.op_timer, provision_timer_cb, &provision_cb, WICED_MILLI_SECONDS_TIMER);
+#ifdef PRIVATE_PROXY_SUPPORTED
+    wiced_init_timer(&provision_cb.ps_timer, proxy_solicitation_timer_cb, NULL, WICED_SECONDS_TIMER);
+#endif
 
     p_net_key = wiced_bt_mesh_db_net_key_get(p_mesh_db, 0);
     if (p_net_key == NULL)
@@ -916,6 +960,10 @@ void mesh_client_network_close(void)
 
         wiced_stop_timer(&provision_cb.op_timer);
         wiced_deinit_timer(&provision_cb.op_timer);
+#ifdef PRIVATE_PROXY_SUPPORTED
+        wiced_stop_timer(&provision_cb.ps_timer);
+        wiced_deinit_timer(&provision_cb.ps_timer);
+#endif
 
         wiced_bt_mesh_core_init(NULL);
 
@@ -987,7 +1035,9 @@ int mesh_client_group_create(char *group_name, char *parent_group_name)
              (p_node->element[0].model[i].model.id == WICED_BT_MESH_CORE_MODEL_ID_REMOTE_PROVISION_SRV) ||
              (p_node->element[0].model[i].model.id == WICED_BT_MESH_CORE_MODEL_ID_REMOTE_PROVISION_CLNT) ||
              (p_node->element[0].model[i].model.id == WICED_BT_MESH_CORE_MODEL_ID_DIRECTED_FORWARDING_SRV) ||
-             (p_node->element[0].model[i].model.id == WICED_BT_MESH_CORE_MODEL_ID_DIRECTED_FORWARDING_CLNT)))
+             (p_node->element[0].model[i].model.id == WICED_BT_MESH_CORE_MODEL_ID_DIRECTED_FORWARDING_CLNT) ||
+             (p_node->element[0].model[i].model.id == WICED_BT_MESH_CORE_MODEL_ID_NETWORK_FILTER_SRV) ||
+             (p_node->element[0].model[i].model.id == WICED_BT_MESH_CORE_MODEL_ID_NETWORK_FILTER_CLNT)))
             continue;
 
         if ((p_op = (pending_operation_t *)wiced_bt_get_buffer(sizeof(pending_operation_t))) != NULL)
@@ -1940,6 +1990,31 @@ char *mesh_client_get_device_components(uint8_t *p_uuid)
     return p_component_names;
 }
 
+uint8_t mesh_client_get_node_proxy_state(wiced_bt_mesh_db_node_t* node)
+{
+    if (node->feature.gatt_proxy == MESH_FEATURE_ENABLED
+#ifdef PRIVATE_PROXY_SUPPORTED
+        || node->feature.private_gatt_proxy == MESH_FEATURE_ENABLED
+#endif
+        )
+        return MESH_FEATURE_ENABLED;
+    return node->feature.gatt_proxy;
+}
+
+wiced_bt_mesh_db_model_t *mesh_client_find_node_model(wiced_bt_mesh_db_node_t* node, uint16_t company_id, uint16_t model_id)
+{
+    for (uint8_t i = 0; i < node->num_elements; i++)
+    {
+        for (uint8_t j = 0; j < node->element[i].num_models; j++)
+        {
+            if (node->element[i].model[j].model.company_id == company_id &&
+                node->element[i].model[j].model.id == model_id)
+                return &node->element[i].model[j];
+        }
+    }
+    return NULL;
+}
+
 /*
  * Set Device Configuration.
  * The function sets up configuration for the new devices, or reconfigures existing device
@@ -1955,6 +2030,14 @@ int mesh_client_set_device_config(const char *device_name, int is_gatt_proxy, in
     uint8_t     ttl;
     uint16_t    count;
     uint32_t    interval;
+#ifdef DIRECTED_FORWARDING_SERVER_SUPPORTED
+    wiced_bt_mesh_df_state_control_t    df_control;
+    uint8_t df_proxy = (uint8_t)is_gatt_proxy;
+    uint8_t df_relay = (uint8_t)is_relay;
+    uint8_t df_friend = (uint8_t)is_friend;
+    uint8_t df_proxy_use_directed_default = df_proxy;
+    uint8_t df_forwarding = (df_proxy || is_relay || is_friend) ? 1 : 0;
+#endif
 
     if (device_name == NULL)
     {
@@ -1967,6 +2050,13 @@ int mesh_client_set_device_config(const char *device_name, int is_gatt_proxy, in
         p_cb->default_ttl = (uint8_t)default_ttl;
         p_cb->net_xmit_count = (uint8_t)net_xmit_count;
         p_cb->net_xmit_interval = (uint32_t)net_xmit_interval;
+#ifdef DIRECTED_FORWARDING_SERVER_SUPPORTED
+        p_cb->df_forwarding = df_forwarding;
+        p_cb->df_proxy = df_proxy;
+        p_cb->df_proxy_use_directed_default = df_proxy_use_directed_default;
+        p_cb->df_relay = df_relay;
+        p_cb->df_friend = df_friend;
+#endif
         return MESH_CLIENT_SUCCESS;
     }
     if (p_mesh_db == NULL)
@@ -2037,17 +2127,50 @@ int mesh_client_set_device_config(const char *device_name, int is_gatt_proxy, in
             configure_pending_operation_queue(p_cb, p_op);
         }
     }
-    if (!wiced_bt_mesh_db_gatt_proxy_get(p_mesh_db, dst, &state) ||
+    if (((state = mesh_client_get_node_proxy_state(node)) == MESH_FEATURE_SUPPORTED_UNKNOWN) ||
         (state != is_gatt_proxy))
     {
         if ((state != MESH_FEATURE_UNSUPPORTED) &&
             ((p_op = (pending_operation_t *)wiced_bt_get_buffer(sizeof(pending_operation_t))) != NULL))
         {
-            //wiced_bt_mesh_config_gatt_proxy_set_data_t
-            p_op->operation = CONFIG_OPERATION_PROXY_SET;
-            p_op->p_event = mesh_client_configure_create_event(dst);
-            p_op->uu.proxy_set.state = is_gatt_proxy;
-            configure_pending_operation_queue(p_cb, p_op);
+#ifdef PRIVATE_PROXY_SUPPORTED
+            if (mesh_client_find_node_model(node, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_MESH_PRIVATE_BEACON_SRV))  // set private GATT proxy
+            {
+                // disable GATT proxy
+                p_op->operation = CONFIG_OPERATION_PROXY_SET;
+                p_op->p_event = mesh_configure_create_event(dst, (dst != p_cb->unicast_addr));
+                p_op->uu.proxy_set.state = MESH_FEATURE_DISABLED;
+                configure_pending_operation_queue(p_cb, p_op);
+
+                // set private GATT proxy
+                if ((p_op = (pending_operation_t*)wiced_bt_get_buffer(sizeof(pending_operation_t))) != NULL)
+                {
+                    p_op->operation = CONFIG_OPERATION_PRIVATE_PROXY_SET;
+                    p_op->p_event = mesh_configure_create_event(dst, (dst != p_cb->unicast_addr));
+                    p_op->uu.proxy_set.state = is_gatt_proxy;
+                    configure_pending_operation_queue(p_cb, p_op);
+                }
+
+                // set on-demand private proxy if private GATT proxy is enabled
+                if (is_gatt_proxy == MESH_FEATURE_ENABLED &&
+                    mesh_client_find_node_model(node, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_ON_DEMAND_PRIVATE_PROXY_SRV) &&
+                    (p_op = (pending_operation_t*)wiced_bt_get_buffer(sizeof(pending_operation_t))) != NULL)
+                {
+                    p_op->operation = CONFIG_OPERATION_ON_DEMAND_PROXY_SET;
+                    p_op->p_event = mesh_configure_create_event(dst, (dst != p_cb->unicast_addr));
+                    p_op->uu.on_demand_proxy_set.state = WICED_BT_MESH_ON_DEMAND_PROXY_DEFAULT;
+                    configure_pending_operation_queue(p_cb, p_op);
+                }
+            }
+            else  // set GATT proxy
+#endif
+            {
+                //wiced_bt_mesh_config_gatt_proxy_set_data_t
+                p_op->operation = CONFIG_OPERATION_PROXY_SET;
+                p_op->p_event = mesh_client_configure_create_event(dst);
+                p_op->uu.proxy_set.state = is_gatt_proxy;
+                configure_pending_operation_queue(p_cb, p_op);
+            }
         }
     }
     if (!wiced_bt_mesh_db_friend_get(p_mesh_db, dst, &state) ||
@@ -2063,6 +2186,30 @@ int mesh_client_set_device_config(const char *device_name, int is_gatt_proxy, in
             configure_pending_operation_queue(p_cb, p_op);
         }
     }
+#ifdef DIRECTED_FORWARDING_SERVER_SUPPORTED
+    df_control.netkey_idx = 0;
+    if (!wiced_bt_mesh_db_df_control_get(p_mesh_db, dst, &df_control) ||
+        (df_control.forwarding != df_forwarding) ||
+        (df_control.proxy != df_proxy) ||
+        (df_control.proxy_use_directed_default != df_proxy_use_directed_default) ||
+        (df_control.relay != df_relay) ||
+        (df_control.friend != df_friend))
+    {
+        if ((df_forwarding != WICED_BT_MESH_DF_STATE_CONTROL_NOT_SUPPORTED) &&
+            ((p_op = (pending_operation_t*)wiced_bt_get_buffer(sizeof(pending_operation_t))) != NULL))
+        {
+            //wiced_bt_mesh_df_state_control_t
+            p_op->operation = CONFIG_OPERATION_DF_CONTROL_SET;
+            p_op->p_event = mesh_configure_create_event(dst, (dst != p_cb->unicast_addr));
+            p_op->uu.df_control.forwarding = df_forwarding;
+            p_op->uu.df_control.proxy = df_proxy;
+            p_op->uu.df_control.proxy_use_directed_default = df_proxy_use_directed_default;
+            p_op->uu.df_control.relay = df_relay;
+            p_op->uu.df_control.friend = df_friend;
+            configure_pending_operation_queue(p_cb, p_op);
+        }
+    }
+#endif
     if (p_cb->p_first != NULL)
     {
         p_cb->state = PROVISION_STATE_RECONFIGURATION;
@@ -3090,7 +3237,24 @@ uint8_t mesh_client_connect_network(uint8_t use_proxy, uint8_t scan_duration)
     p_cb->state = PROVISION_STATE_NETWORK_CONNECT;
     p_cb->scan_duration = scan_duration;
     if (use_proxy)
+    {
+#ifdef PRIVATE_PROXY_SUPPORTED
+        // Send proxy solicitation advertisement if there are private proxy nodes
+        for (int i = 0; i < p_mesh_db->num_nodes; i++)
+        {
+            if (p_mesh_db->node[i].feature.private_gatt_proxy == MESH_FEATURE_ENABLED)
+            {
+                uint8_t svcdata[31];
+                uint8_t svcdata_len = mesh_core_create_proxy_solicitation_service_data(0, ++p_mesh_db->solicitation_seq_num, p_cb->unicast_addr, p_mesh_db->node[i].unicast_address, svcdata);
+                mesh_advertising_start(MESH_COMPANY_ID_CYPRESS, WICED_BT_MESH_CORE_UUID_SERVICE_PROXY_SOLICITATION, svcdata, svcdata_len);
+                wiced_bt_mesh_db_store(p_mesh_db);
+                wiced_start_timer(&p_cb->ps_timer, 2);
+                break;
+            }
+        }
+#endif
         mesh_client_connect_proxy(p_cb, CONNECT_TYPE_NET_ID, scan_duration);
+    }
     return MESH_CLIENT_SUCCESS;
 }
 
@@ -3573,6 +3737,26 @@ void mesh_provision_state_idle(mesh_provision_cb_t *p_cb, uint16_t event, wiced_
         mesh_configure_beacon_status(p_cb, p_event, (wiced_bt_mesh_config_beacon_status_data_t *)p_data);
         break;
 
+#ifdef PRIVATE_PROXY_SUPPORTED
+    case WICED_BT_MESH_CONFIG_PRIVATE_BEACON_STATUS:
+        mesh_configure_private_beacon_status(p_cb, p_event, (wiced_bt_mesh_config_private_beacon_status_data_t*)p_data);
+        break;
+
+    case WICED_BT_MESH_CONFIG_PRIVATE_GATT_PROXY_STATUS:
+        mesh_configure_private_gatt_proxy_status(p_cb, p_event, (wiced_bt_mesh_config_private_gatt_proxy_status_data_t*)p_data);
+        break;
+
+    case WICED_BT_MESH_CONFIG_ON_DEMAND_PRIVATE_PROXY_STATUS:
+        mesh_configure_on_demand_private_proxy_status(p_cb, p_event, (wiced_bt_mesh_config_on_demand_private_proxy_status_data_t*)p_data);
+        break;
+#endif
+
+#ifdef DIRECTED_FORWARDING_SERVER_SUPPORTED
+    case WICED_BT_MESH_DF_DIRECTED_CONTROL_STATUS:
+        mesh_df_control_status(p_cb, p_event, (wiced_bt_mesh_df_directed_control_status_data_t*)p_data);
+        break;
+#endif
+
     default:
         Log("Event:%d ignored\n", event);
         break;
@@ -3800,6 +3984,26 @@ void mesh_configure_state_configuration(mesh_provision_cb_t *p_cb, uint16_t even
     case WICED_BT_MESH_CONFIG_BEACON_STATUS:
         mesh_configure_beacon_status(p_cb, p_event, (wiced_bt_mesh_config_beacon_status_data_t *)p_data);
         break;
+
+#ifdef PRIVATE_PROXY_SUPPORTED
+    case WICED_BT_MESH_CONFIG_PRIVATE_BEACON_STATUS:
+        mesh_configure_private_beacon_status(p_cb, p_event, (wiced_bt_mesh_config_private_beacon_status_data_t*)p_data);
+        break;
+
+    case WICED_BT_MESH_CONFIG_PRIVATE_GATT_PROXY_STATUS:
+        mesh_configure_private_gatt_proxy_status(p_cb, p_event, (wiced_bt_mesh_config_private_gatt_proxy_status_data_t*)p_data);
+        break;
+
+    case WICED_BT_MESH_CONFIG_ON_DEMAND_PRIVATE_PROXY_STATUS:
+        mesh_configure_on_demand_private_proxy_status(p_cb, p_event, (wiced_bt_mesh_config_on_demand_private_proxy_status_data_t*)p_data);
+        break;
+#endif
+
+#ifdef DIRECTED_FORWARDING_SERVER_SUPPORTED
+    case WICED_BT_MESH_DF_DIRECTED_CONTROL_STATUS:
+        mesh_df_control_status(p_cb, p_event, (wiced_bt_mesh_df_directed_control_status_data_t*)p_data);
+        break;
+#endif
 
     case WICED_BT_MESH_PROXY_FILTER_STATUS:
         mesh_configure_filter_status(p_cb, p_event, (wiced_bt_mesh_proxy_filter_status_data_t *)p_data);
@@ -4114,6 +4318,11 @@ void mesh_configure_state_key_refresh1(mesh_provision_cb_t *p_cb, uint16_t event
         if (p_cb->p_first->operation == CONFIG_OPERATION_FILTER_ADD)
             start_next_op(p_cb);
         configure_execute_pending_operation(p_cb);
+        if (p_cb->p_first == NULL)
+        {
+            for (net_key_idx = 0; net_key_idx < p_mesh_db->num_net_keys; net_key_idx++)
+                mesh_key_refresh_phase1_completed(p_cb, &p_mesh_db->net_key[net_key_idx]);
+        }
         break;
 
     case WICED_BT_MESH_CONFIG_APPKEY_STATUS:
@@ -4359,7 +4568,7 @@ void mesh_provision_process_device_caps(mesh_provision_cb_t *p_cb, wiced_bt_mesh
     wiced_bt_mesh_provision_start_data_t start;
     start.addr = p_cb->addr;
     start.net_key_idx = 0;      //ToDo: select somehow desired netkey. For now use primary net key (0)
-    start.algorithm = 0;
+    start.algorithm = (p_data->algorithms & WICED_BT_MESH_PROVISION_ALG_ECDH_P256_HMAC_SHA256_AES_CCM) != 0 ? WICED_BT_MESH_PROVISION_START_ALG_P256_HMAC_SHA256_AES_CCM : WICED_BT_MESH_PROVISION_START_ALG_FIPS_P256;
     start.public_key_type = 0; // Don't use OOB Pub Key p_data->pub_key_type;    // use value passed in the capabilities
     start.auth_method = ((p_cb->oob_data_len == 0) || (p_data->static_oob_type == 0)) ? 0 : WICED_BT_MESH_PROVISION_START_AUTH_METHOD_STATIC;
     start.auth_action = 0;
@@ -4844,7 +5053,14 @@ void start_next_op(mesh_provision_cb_t *p_cb)
             // is not enabled, we need to disconnect.
             wiced_bt_mesh_db_node_t *node = mesh_find_node(p_mesh_db, p_cb->addr);
             ods("configuration done node:%04x proxy_addr:%04x proxy_conn_id:%d\n", p_cb->addr, p_cb->proxy_addr, p_cb->proxy_conn_id);
-            if ((p_cb->proxy_conn_id != 0) && p_cb->over_gatt && (node != NULL) && (node->feature.gatt_proxy != MESH_FEATURE_ENABLED))
+            if ((p_cb->proxy_conn_id != 0)
+                && p_cb->over_gatt
+                && (node != NULL)
+                && (node->feature.gatt_proxy != MESH_FEATURE_ENABLED)
+#ifdef PRIVATE_PROXY_SUPPORTED
+                && (node->feature.private_gatt_proxy != MESH_FEATURE_ENABLED)
+#endif
+                )
             {
                 p_cb->state = PROVISION_STATE_CONFIGURE_DISCONNECTING;
                 wiced_bt_mesh_client_proxy_disconnect();
@@ -5835,6 +6051,117 @@ void mesh_configure_beacon_status(mesh_provision_cb_t *p_cb, wiced_bt_mesh_event
     start_next_op(p_cb);
 }
 
+#ifdef PRIVATE_PROXY_SUPPORTED
+void mesh_configure_private_beacon_status(mesh_provision_cb_t* p_cb, wiced_bt_mesh_event_t* p_event, wiced_bt_mesh_config_private_beacon_status_data_t* p_data)
+{
+    // Check that this is not reply to a retransmission
+    pending_operation_t* p_op = p_cb->p_first;
+    if ((p_op == NULL) || (p_op->p_event == NULL) || (p_op->p_event->dst != p_event->src) ||
+        (p_op->operation != CONFIG_OPERATION_PRIVATE_BEACON_SET))
+    {
+        Log("Ignored Private Beacon Status from:%x state:%d", p_event->src, p_data->state);
+        return;
+    }
+    Log("Private Beacon Status from:%x state:%d", p_event->src, p_data->state);
+
+    if (p_cb->store_config)
+    {
+        wiced_bt_mesh_db_private_beacon_set(p_mesh_db, p_event->src, p_data->state, p_data->random_update_interval);
+        wiced_bt_mesh_db_store(p_mesh_db);
+        p_cb->db_changed = WICED_TRUE;
+    }
+    start_next_op(p_cb);
+}
+
+void mesh_configure_private_gatt_proxy_status(mesh_provision_cb_t* p_cb, wiced_bt_mesh_event_t* p_event, wiced_bt_mesh_config_private_gatt_proxy_status_data_t* p_data)
+{
+    // Check that this is not reply to a retransmission
+    pending_operation_t* p_op = p_cb->p_first;
+    if ((p_op == NULL) || (p_op->p_event == NULL) || (p_op->p_event->dst != p_event->src) ||
+        (p_op->operation != CONFIG_OPERATION_PRIVATE_PROXY_SET))
+    {
+        Log("Ignored Private GATT Proxy Status from:%x state:%d", p_event->src, p_data->state);
+        return;
+    }
+    Log("Private GATT Proxy Status from:%x state:%d", p_event->src, p_data->state);
+
+    if (p_cb->store_config)
+    {
+        wiced_bt_mesh_db_private_gatt_proxy_set(p_mesh_db, p_event->src, p_data->state);
+        wiced_bt_mesh_db_store(p_mesh_db);
+        p_cb->db_changed = WICED_TRUE;
+    }
+    start_next_op(p_cb);
+}
+
+void mesh_configure_on_demand_private_proxy_status(mesh_provision_cb_t* p_cb, wiced_bt_mesh_event_t* p_event, wiced_bt_mesh_config_on_demand_private_proxy_status_data_t* p_data)
+{
+    // Check that this is not reply to a retransmission
+    pending_operation_t* p_op = p_cb->p_first;
+    if ((p_op == NULL) || (p_op->p_event == NULL) || (p_op->p_event->dst != p_event->src) ||
+        (p_op->operation != CONFIG_OPERATION_ON_DEMAND_PROXY_SET))
+    {
+        Log("Ignored On-Demand Private Proxy Status from:%x state:%d", p_event->src, p_data->state);
+        return;
+    }
+    Log("On-Demand Private Proxy Status from:%x state:%d", p_event->src, p_data->state);
+
+    if (p_cb->store_config)
+    {
+        wiced_bt_mesh_db_on_demand_private_proxy_set(p_mesh_db, p_event->src, p_data->state);
+        wiced_bt_mesh_db_store(p_mesh_db);
+        p_cb->db_changed = WICED_TRUE;
+    }
+    start_next_op(p_cb);
+}
+#endif
+
+#ifdef DIRECTED_FORWARDING_SERVER_SUPPORTED
+void mesh_df_control_status(mesh_provision_cb_t* p_cb, wiced_bt_mesh_event_t* p_event, wiced_bt_mesh_df_directed_control_status_data_t* p_data)
+{
+    // Check that this is not reply to a retransmission
+    pending_operation_t* p_op = p_cb->p_first;
+    if ((p_op == NULL) || (p_op->p_event == NULL) || (p_op->p_event->dst != p_event->src) ||
+        (p_op->operation != CONFIG_OPERATION_DF_CONTROL_SET) ||
+        (p_op->uu.df_control.netkey_idx != p_data->control.netkey_idx) ||
+        (p_op->uu.df_control.forwarding != p_data->control.forwarding) ||
+        (p_op->uu.df_control.relay != p_data->control.relay) ||
+        (p_op->uu.df_control.proxy != p_data->control.proxy) ||
+        (p_op->uu.df_control.proxy_use_directed_default != p_data->control.proxy_use_directed_default) ||
+        (p_op->uu.df_control.friend != p_data->control.friend))
+    {
+        Log("Ignored DF Control Status from:%x status:%d netkey_idx:%x forwarding:%x relay:%x proxy:%x proxy_default:%x friend:%x", p_event->src,
+            p_data->status, p_data->control.netkey_idx, p_data->control.forwarding, p_data->control.relay, p_data->control.proxy,
+            p_data->control.proxy_use_directed_default, p_data->control.friend);
+        return;
+    }
+
+    Log("DF Control Status from:%x status:%d netkey_idx:%x forwarding:%x relay:%x proxy:%x proxy_default:%x friend:%x", p_event->src,
+        p_data->status, p_data->control.netkey_idx, p_data->control.forwarding, p_data->control.relay, p_data->control.proxy,
+        p_data->control.proxy_use_directed_default, p_data->control.friend);
+
+    // If operation failed during initial configuration, bad device, reset.
+    if ((p_data->status != 0) && (p_cb->state == PROVISION_STATE_CONFIGURATION))
+    {
+        wiced_bt_mesh_db_node_t* p_node;
+
+        p_cb->state = PROVISION_STATE_IDLE;
+        clean_pending_op_queue(p_event->src);
+        if ((p_node = mesh_find_node(p_mesh_db, p_event->src)) != NULL)
+            mesh_reset_node(p_cb, p_node);
+        return;
+    }
+    if (p_cb->store_config)
+    {
+        // Set df control from p_op->uu.df_control because p_data->control can contain
+        wiced_bt_mesh_db_df_control_set(p_mesh_db, p_event->src, &p_data->control);
+        wiced_bt_mesh_db_store(p_mesh_db);
+        p_cb->db_changed = WICED_TRUE;
+    }
+    start_next_op(p_cb);
+}
+#endif
+
 void mesh_configure_filter_status(mesh_provision_cb_t* p_cb, wiced_bt_mesh_event_t* p_event, wiced_bt_mesh_proxy_filter_status_data_t* p_data)
 {
     // Check that this is not reply to a retransmission
@@ -6718,6 +7045,10 @@ void configure_queue_remote_device_operations(mesh_provision_cb_t *p_cb)
     wiced_bt_mesh_db_net_key_t *net_key;
     wiced_bt_mesh_db_app_key_t *app_key = NULL, *app_key_setup, *p_app_key;
     wiced_bool_t default_trans_time_model_present;
+#ifdef PRIVATE_PROXY_SUPPORTED
+    wiced_bool_t private_beacon_model_present;
+    wiced_bool_t on_demand_proxy_model_present;
+#endif
     uint16_t features;
 //    uint8_t component_type = get_component_type(p_mesh_db, p_cb->addr);
 
@@ -6789,6 +7120,10 @@ void configure_queue_remote_device_operations(mesh_provision_cb_t *p_cb)
         p_models_array[j].id = 0xFFFF;
 
         default_trans_time_model_present = WICED_FALSE;
+#ifdef PRIVATE_PROXY_SUPPORTED
+        private_beacon_model_present = WICED_FALSE;
+        on_demand_proxy_model_present = WICED_FALSE;
+#endif
 
         for (j = 0; j < num_models; j++)
         {
@@ -6797,6 +7132,12 @@ void configure_queue_remote_device_operations(mesh_provision_cb_t *p_cb)
 
             if (model_id == WICED_BT_MESH_CORE_MODEL_ID_GENERIC_DEFTT_SRV)
                 default_trans_time_model_present = WICED_TRUE;
+#ifdef PRIVATE_PROXY_SUPPORTED
+            else if (model_id == WICED_BT_MESH_CORE_MODEL_ID_MESH_PRIVATE_BEACON_SRV)
+                private_beacon_model_present = WICED_TRUE;
+            else if (model_id == WICED_BT_MESH_CORE_MODEL_ID_ON_DEMAND_PRIVATE_PROXY_SRV)
+                on_demand_proxy_model_present = WICED_TRUE;
+#endif
 
             if ((model_id == WICED_BT_MESH_CORE_MODEL_ID_HEALTH_SRV) ||
 #ifdef MESH_DFU_ENABLED
@@ -7053,10 +7394,44 @@ void configure_queue_remote_device_operations(mesh_provision_cb_t *p_cb)
     if (((features & FOUNDATION_FEATURE_BIT_PROXY) == FOUNDATION_FEATURE_BIT_PROXY) &&
         ((p_op = (pending_operation_t *)wiced_bt_get_buffer(sizeof(pending_operation_t))) != NULL))
     {
-        p_op->operation = CONFIG_OPERATION_PROXY_SET;
-        p_op->p_event = mesh_client_configure_create_event(p_cb->addr);
-        p_op->uu.proxy_set.state = ((features & FOUNDATION_FEATURE_BIT_LOW_POWER) == FOUNDATION_FEATURE_BIT_LOW_POWER) ? 0 : p_cb->is_gatt_proxy;
-        configure_pending_operation_queue(p_cb, p_op);
+        uint8_t proxy_set_state = ((features & FOUNDATION_FEATURE_BIT_LOW_POWER) == FOUNDATION_FEATURE_BIT_LOW_POWER) ? 0 : p_cb->is_gatt_proxy;
+#ifdef PRIVATE_PROXY_SUPPORTED
+        if (private_beacon_model_present)  // set private GATT proxy
+        {
+            // disable GATT proxy
+            p_op->operation = CONFIG_OPERATION_PROXY_SET;
+            p_op->p_event = mesh_configure_create_event(p_cb->addr, (p_cb->addr != p_cb->unicast_addr));
+            p_op->uu.proxy_set.state = MESH_FEATURE_DISABLED;
+            configure_pending_operation_queue(p_cb, p_op);
+
+            // set private GATT proxy
+            if ((p_op = (pending_operation_t*)wiced_bt_get_buffer(sizeof(pending_operation_t))) != NULL)
+            {
+                p_op->operation = CONFIG_OPERATION_PRIVATE_PROXY_SET;
+                p_op->p_event = mesh_configure_create_event(p_cb->addr, (p_cb->addr != p_cb->unicast_addr));
+                p_op->uu.proxy_set.state = proxy_set_state;
+                configure_pending_operation_queue(p_cb, p_op);
+            }
+
+            // set on-demand private proxy if private GATT proxy is enabled
+            if (proxy_set_state == MESH_FEATURE_ENABLED &&
+                on_demand_proxy_model_present &&
+                (p_op = (pending_operation_t*)wiced_bt_get_buffer(sizeof(pending_operation_t))) != NULL)
+            {
+                p_op->operation = CONFIG_OPERATION_ON_DEMAND_PROXY_SET;
+                p_op->p_event = mesh_configure_create_event(p_cb->addr, (p_cb->addr != p_cb->unicast_addr));
+                p_op->uu.on_demand_proxy_set.state = WICED_BT_MESH_ON_DEMAND_PROXY_DEFAULT;
+                configure_pending_operation_queue(p_cb, p_op);
+            }
+        }
+        else  // set GATT proxy
+#endif
+        {
+            p_op->operation = CONFIG_OPERATION_PROXY_SET;
+            p_op->p_event = mesh_client_configure_create_event(p_cb->addr);
+            p_op->uu.proxy_set.state = proxy_set_state;
+            configure_pending_operation_queue(p_cb, p_op);
+        }
     }
     if (((features & FOUNDATION_FEATURE_BIT_FRIEND) == FOUNDATION_FEATURE_BIT_FRIEND) &&
         ((p_op = (pending_operation_t *)wiced_bt_get_buffer(sizeof(pending_operation_t))) != NULL))
@@ -7068,11 +7443,39 @@ void configure_queue_remote_device_operations(mesh_provision_cb_t *p_cb)
     }
     if ((p_op = (pending_operation_t *)wiced_bt_get_buffer(sizeof(pending_operation_t))) != NULL)
     {
-        p_op->operation = CONFIG_OPERATION_NET_BEACON_SET;
-        p_op->p_event = mesh_client_configure_create_event(p_cb->addr);
-        p_op->uu.beacon_set.state = ((features & FOUNDATION_FEATURE_BIT_LOW_POWER) == FOUNDATION_FEATURE_BIT_LOW_POWER) ? 0 : p_cb->beacon;
+#ifdef PRIVATE_PROXY_SUPPORTED
+        if (private_beacon_model_present)
+        {
+            p_op->operation = CONFIG_OPERATION_PRIVATE_BEACON_SET;
+            p_op->p_event = mesh_client_configure_create_event(p_cb->addr);
+            p_op->uu.private_beacon_set.state = ((features & FOUNDATION_FEATURE_BIT_LOW_POWER) == FOUNDATION_FEATURE_BIT_LOW_POWER) ? 0 : p_cb->beacon;
+            p_op->uu.private_beacon_set.random_update_interval = WICED_BT_MESH_RANDOM_UPDATE_INTERVAL_STEPS_DEFAULT;
+        }
+        else
+#endif
+        {
+            p_op->operation = CONFIG_OPERATION_NET_BEACON_SET;
+            p_op->p_event = mesh_client_configure_create_event(p_cb->addr);
+            p_op->uu.beacon_set.state = ((features & FOUNDATION_FEATURE_BIT_LOW_POWER) == FOUNDATION_FEATURE_BIT_LOW_POWER) ? 0 : p_cb->beacon;
+        }
         configure_pending_operation_queue(p_cb, p_op);
     }
+#ifdef DIRECTED_FORWARDING_SERVER_SUPPORTED
+    if ((p_cb->df_forwarding != WICED_BT_MESH_DF_STATE_CONTROL_NOT_SUPPORTED) &&
+        ((p_op = (pending_operation_t*)wiced_bt_get_buffer(sizeof(pending_operation_t))) != NULL))
+    {
+        //wiced_bt_mesh_df_state_control_t
+        p_op->operation = CONFIG_OPERATION_DF_CONTROL_SET;
+        p_op->p_event = mesh_configure_create_event(p_cb->addr, (p_cb->addr != p_cb->unicast_addr));
+        p_op->uu.df_control.netkey_idx = net_key->index;
+        p_op->uu.df_control.forwarding = p_cb->df_forwarding;
+        p_op->uu.df_control.proxy = p_cb->df_proxy;
+        p_op->uu.df_control.proxy_use_directed_default = p_cb->df_proxy_use_directed_default;
+        p_op->uu.df_control.relay = p_cb->df_relay;
+        p_op->uu.df_control.friend = p_cb->df_friend;
+        configure_pending_operation_queue(p_cb, p_op);
+    }
+#endif
     if ((p_cb->proxy_addr != p_cb->addr) && p_cb->over_gatt && (p_op = (pending_operation_t *)wiced_bt_get_buffer(sizeof(pending_operation_t))) != NULL)
     {
         p_op->operation = CONFIG_OPERATION_FILTER_ADD;
@@ -7255,6 +7658,14 @@ void provision_timer_cb(TIMER_PARAM_TYPE arg)
         Log("GATT Proxy set addr:%04x state:%d", p_op->p_event->dst, p_op->uu.proxy_set.state);
         wiced_bt_mesh_config_gatt_proxy_set(p_op->p_event, &p_op->uu.proxy_set);
         break;
+#ifdef DIRECTED_FORWARDING_SERVER_SUPPORTED
+    case CONFIG_OPERATION_DF_CONTROL_SET:
+        Log("DF control set addr:%04x netkey:%x forwarding:%x relay:%x proxy:%x proxy default:%x friend:%x", p_op->p_event->dst,
+            p_op->uu.df_control.netkey_idx, p_op->uu.df_control.forwarding, p_op->uu.df_control.relay, p_op->uu.df_control.proxy,
+            p_op->uu.df_control.proxy_use_directed_default, p_op->uu.df_control.friend);
+        wiced_bt_mesh_df_send_directed_control_set(p_op->p_event, &p_op->uu.df_control);
+        break;
+#endif
     case CONFIG_OPERATION_FRIEND_SET:
         Log("Friend set addr:%04x state:%d", p_op->p_event->dst, p_op->uu.friend_set.state);
         wiced_bt_mesh_config_friend_set(p_op->p_event, &p_op->uu.friend_set);
@@ -7263,6 +7674,20 @@ void provision_timer_cb(TIMER_PARAM_TYPE arg)
         Log("Beacon set addr:%04x state:%d", p_op->p_event->dst, p_op->uu.beacon_set.state);
         wiced_bt_mesh_config_beacon_set(p_op->p_event, &p_op->uu.beacon_set);
         break;
+#ifdef PRIVATE_PROXY_SUPPORTED
+    case CONFIG_OPERATION_PRIVATE_BEACON_SET:
+        Log("Private beacon set addr:%04x state:%d", p_op->p_event->dst, p_op->uu.private_beacon_set.state);
+        wiced_bt_mesh_config_private_beacon_set(p_op->p_event, &p_op->uu.private_beacon_set);
+        break;
+    case CONFIG_OPERATION_PRIVATE_PROXY_SET:
+        Log("Private GATT proxy set addr:%04x state:%d", p_op->p_event->dst, p_op->uu.private_proxy_set.state);
+        wiced_bt_mesh_config_private_gatt_proxy_set(p_op->p_event, &p_op->uu.private_proxy_set);
+        break;
+    case CONFIG_OPERATION_ON_DEMAND_PROXY_SET:
+        Log("On-demand private proxy set addr:%04x state:%d", p_op->p_event->dst, p_op->uu.on_demand_proxy_set.state);
+        wiced_bt_mesh_config_on_demand_private_proxy_set(p_op->p_event, &p_op->uu.on_demand_proxy_set);
+        break;
+#endif
     case CONFIG_OPERATION_FILTER_ADD:
         Log("Filter add addr:%04x num:%d first addr:%04x", p_op->p_event->dst, p_op->uu.filter_add.addr_num, p_op->uu.filter_add.addr[0]);
         wiced_bt_mesh_proxy_filter_change_addr(p_op->p_event, 1, &p_op->uu.filter_add);
@@ -7297,6 +7722,13 @@ void provision_timer_cb(TIMER_PARAM_TYPE arg)
         break;
     }
 }
+
+#ifdef PRIVATE_PROXY_SUPPORTED
+void proxy_solicitation_timer_cb(TIMER_PARAM_TYPE arg)
+{
+    mesh_advertising_stop();
+}
+#endif
 
 uint16_t *get_group_list(uint16_t group_addr)
 {
@@ -9762,8 +10194,14 @@ wiced_bool_t is_core_model(uint16_t company_id, uint16_t model_id)
     case WICED_BT_MESH_CORE_MODEL_ID_HEALTH_CLNT:
     case WICED_BT_MESH_CORE_MODEL_ID_REMOTE_PROVISION_SRV:
     case WICED_BT_MESH_CORE_MODEL_ID_REMOTE_PROVISION_CLNT:
+#ifdef DIRECTED_FORWARDING_SERVER_SUPPORTED
     case WICED_BT_MESH_CORE_MODEL_ID_DIRECTED_FORWARDING_SRV:
     case WICED_BT_MESH_CORE_MODEL_ID_DIRECTED_FORWARDING_CLNT:
+#endif
+#ifdef NETWORK_FILTER_SERVER_SUPPORTED
+    case WICED_BT_MESH_CORE_MODEL_ID_NETWORK_FILTER_SRV:
+    case WICED_BT_MESH_CORE_MODEL_ID_NETWORK_FILTER_CLNT:
+#endif
 #ifdef MESH_DFU_ENABLED
     case WICED_BT_MESH_CORE_MODEL_ID_FW_UPDATE_SRV:
     case WICED_BT_MESH_CORE_MODEL_ID_FW_UPDATE_CLNT:
@@ -10457,6 +10895,12 @@ void wiced_hal_rand_gen_num_array(uint32_t* randNumberArrayPtr, uint32_t length)
     }
 }
 
+uint32_t wiced_hal_get_pseudo_rand_number(void)
+{
+    return wiced_hal_rand_gen_num();
+}
+
+
 uint16_t mesh_client_get_unicast_addr()
 {
     return provision_cb.unicast_addr;
@@ -10465,4 +10909,30 @@ uint16_t mesh_client_get_unicast_addr()
 uint16_t mesh_client_get_proxy_addr()
 {
     return provision_cb.proxy_addr;
+}
+
+// Sets unprovisioned device as if it has been scanned.
+uint8_t mesh_client_set_unprovisioned(uint8_t* p_uuid)
+{
+    mesh_provision_cb_t* p_cb = &provision_cb;
+    unprovisioned_report_t* p_report;
+
+    // clean up results of the previous scan
+    while (p_cb->p_first_unprovisioned != NULL)
+    {
+        p_report = p_cb->p_first_unprovisioned;
+        p_cb->p_first_unprovisioned = p_report->p_next;
+        wiced_stop_timer(&p_report->scan_timer);
+        wiced_bt_free_buffer(p_report);
+    }
+
+    p_report = (unprovisioned_report_t*)wiced_bt_get_buffer(sizeof(unprovisioned_report_t));
+    if (p_report == NULL)
+        return MESH_CLIENT_ERR_NO_MEMORY;
+    memset(p_report, 0, sizeof(unprovisioned_report_t));
+    memcpy(p_report->uuid, p_uuid, sizeof(p_report->uuid));
+    p_report->provisioner_addr = p_cb->unicast_addr;
+    p_cb->p_first_unprovisioned = p_report;
+    wiced_init_timer(&p_report->scan_timer, scan_timer_cb, p_report, WICED_SECONDS_TIMER);
+    return MESH_CLIENT_SUCCESS;
 }
