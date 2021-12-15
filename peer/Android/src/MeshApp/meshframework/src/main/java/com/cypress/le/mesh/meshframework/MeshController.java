@@ -30,6 +30,9 @@ import android.content.ServiceConnection;
 import android.os.IBinder;
 import android.util.Log;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -555,12 +558,28 @@ public class MeshController {
      * @param inGroup Group name whose subgroups has to be returned. Network name, to get all the parent groups of the network.
      * @return String[] list of mesh groups, null otherwise
      */
-    public String[] getAllGroups(String inGroup) {
-        Log.d(TAG,"getAllGroups");
+    public String[] getSubGroups(String inGroup) {
+        Log.d(TAG,"getSubGroups");
         if (isServiceConnected()) {
             return service.getAllGroups(inGroup);
         }
         return null;
+    }
+
+    /**
+     * Return all subgroups of a group down the tree.
+     *
+     * @param inGroup Group name whose subgroups has to be returned. Network name, to get all the groups of the network.
+     * @return String[] list of mesh groups, null otherwise
+     */
+    public ArrayList<String> getAllGroups(String inGroup) {
+        Log.d(TAG,"getAllGroups");
+        ArrayList<String> groups = new ArrayList<String>(Arrays.asList(getSubGroups(inGroup)));
+        ArrayList<String> temp = new ArrayList<String>();;
+        for (String group : groups)
+            temp.addAll(getAllGroups(group));
+        groups.addAll(temp);
+        return groups;
     }
 
     /**

@@ -47,15 +47,18 @@
 #include "wiced_bt_mesh_db.h"
 
 /*
- * read mesh object from the file stream
+ * Read Mesh Object from the file stream
  */
 wiced_bt_mesh_db_mesh_t *mesh_json_read_file(FILE *fp);
 
 /*
- * Add net key to the node
- */
+* Write Mesh Object to the file stream
+*/
 void mesh_json_write_file(FILE *fp, wiced_bt_mesh_db_mesh_t *p_mesh);
 
+/*
+ * Add net key to the node
+ */
 wiced_bool_t mesh_db_add_node_net_key(wiced_bt_mesh_db_node_t *node, wiced_bt_mesh_db_key_idx_phase *net_key_idx);
 
 /*
@@ -71,9 +74,24 @@ wiced_bool_t mesh_db_add_model_app_bind(wiced_bt_mesh_db_model_t *model, uint16_
 /*
  * Add model subscription address
  */
-wiced_bool_t mesh_db_add_model_sub(wiced_bt_mesh_db_model_t *model, uint16_t addr);
+wiced_bool_t mesh_db_add_model_sub(wiced_bt_mesh_db_model_t *model, wiced_bt_mesh_db_address_t *addr);
 
 /*
  * Delete address from model subscription
  */
 wiced_bool_t mesh_db_delete_model_sub(wiced_bt_mesh_db_model_t *model, uint16_t addr);
+
+/*
+* Add scene address
+*/
+wiced_bool_t mesh_db_add_scene_address(wiced_bt_mesh_db_scene_t* scene, uint16_t addr);
+
+/*
+* Read mesh proprietary parameters from the file stream
+*/
+void mesh_extra_params_read_file(FILE *fp, wiced_bt_mesh_db_mesh_t *p_mesh);
+
+/*
+* Write mesh proprietary parameters to the file stream
+*/
+void mesh_extra_params_write_file(FILE *fp, wiced_bt_mesh_db_mesh_t *p_mesh);

@@ -45,7 +45,6 @@
 #include <wiced_bt_mesh_models.h>
 #include <wiced_bt_mesh_provision.h>
 #include <hci_control_api.h>
-#include "trace.h"
 #include <wiced_bt_ble.h>
 #include "wiced_bt_mesh_app.h"
 
@@ -61,7 +60,7 @@ static void mesh_app_init(wiced_bool_t is_provisioned);
 static void mesh_provision_message_handler(uint16_t event, wiced_bt_mesh_event_t *p_event, void *p_data);
 static void mesh_config_message_handler(uint16_t event, wiced_bt_mesh_event_t *p_event, void *p_data);
 static void mesh_control_message_handler(uint16_t event, wiced_bt_mesh_event_t *p_event, void *p_data);
-static void mesh_sensor_message_handler(uint8_t element_idx, uint16_t addr, uint16_t event, void *p_data);
+static void mesh_sensor_message_handler(uint16_t event, wiced_bt_mesh_event_t* p_event, void* p_data);
 static void mesh_core_state_changed(wiced_bt_mesh_core_state_type_t type, wiced_bt_mesh_core_state_t *p_state);
 extern void mesh_provision_process_event(uint16_t event, wiced_bt_mesh_event_t *p_event, void *p_data);
 extern void mesh_sensor_process_event(uint16_t addr, uint16_t event, void *p_data);
@@ -194,6 +193,47 @@ wiced_bt_mesh_core_config_t  mesh_config =
     .elements      = mesh_elements                                  // Array of elements for this device
 };
 
+static uint16_t write_reg(char name[80], uint8_t* value, uint16_t len, uint32_t* pInt);
+static uint16_t read_reg(char name[80], uint8_t* value, uint16_t len, uint32_t* pInt);
+
+void wiced_hal_rand_gen_num_array(uint32_t* randNumberArrayPtr, uint32_t length);
+uint32_t wiced_hal_get_pseudo_rand_number(void);
+uint32_t wiced_hal_rand_gen_num(void);
+void wiced_hal_wdog_reset_system(void);
+void wiced_hal_delete_nvram(uint16_t vs_id, wiced_result_t* p_status)
+{
+    if (p_status) *p_status = 0;
+}
+uint16_t wiced_hal_write_nvram(uint16_t vs_id, uint16_t data_length, uint8_t* p_data, wiced_result_t* p_status)
+{
+    char        name[80];
+    uint32_t    res;
+    Log(name, sizeof(name), "NVRAM_%d", vs_id);
+    data_length = (uint16_t)write_reg(name, p_data, data_length, &res);
+    if (p_status) *p_status = res;
+    return data_length;
+}
+uint16_t wiced_hal_read_nvram(uint16_t vs_id, uint16_t data_length, uint8_t* p_data, wiced_result_t* p_status)
+{
+    char        name[80];
+    uint32_t    res;
+    Log(name, sizeof(name), "NVRAM_%d", vs_id);
+    data_length = (uint16_t)read_reg(name, p_data, data_length, &res);
+    if (p_status) *p_status = res;
+    return data_length;
+}
+
+wiced_bt_mesh_core_hal_api_t mesh_app_hal_api =
+{
+    .rand_gen_num_array = wiced_hal_rand_gen_num_array,
+    .get_pseudo_rand_number = wiced_hal_get_pseudo_rand_number,
+    .rand_gen_num = wiced_hal_rand_gen_num,
+    .wdog_reset_system = wiced_hal_wdog_reset_system,
+    .delete_nvram = wiced_hal_delete_nvram,
+    .write_nvram = wiced_hal_write_nvram,
+    .read_nvram = wiced_hal_read_nvram
+};
+
 /******************************************************
  *          Structures
  ******************************************************/
@@ -220,6 +260,8 @@ wiced_bool_t wiced_bt_mesh_config_client_message_handler(wiced_bt_mesh_event_t *
 void mesh_application_init(void)
 {
     static int core_initialized = 0;
+
+    wiced_bt_mesh_core_set_hal_api(&mesh_app_hal_api);
 
     extern uint8_t mesh_model_trace_level;
     mesh_model_trace_level = TRACE_INFO;
@@ -371,10 +413,10 @@ void mesh_control_message_handler(uint16_t event, wiced_bt_mesh_event_t *p_event
     mesh_provision_process_event(event, p_event, p_data);
 }
 
-void mesh_sensor_message_handler(uint8_t element_idx, uint16_t addr, uint16_t event, void *p_data)
+void mesh_sensor_message_handler(uint16_t event, wiced_bt_mesh_event_t* p_event, void* p_data)
 {
     Log("sensor message:%d\n", event);
-    mesh_sensor_process_event(addr, event, p_data);
+    mesh_sensor_process_event(p_event->src, event, p_data);
 }
 
 uint8_t mesh_provisioner_process_proxy_connected(uint8_t* p_data, uint16_t length) {

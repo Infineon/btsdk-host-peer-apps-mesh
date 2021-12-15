@@ -212,6 +212,11 @@ class SelectNetworkPopoverViewController: UIViewController {
 
         meshLog("SelectNetworkPopoverViewController, onConfirmButtonClick, meshClientNetworkExport, name=\(networkName), success")
         let error = MeshFrameworkManager.shared.writeExportedMeshNetwork(networkName: networkName, jsonContent: exportedJsonString)
+        guard let exportedIfxJsonString = MeshFrameworkManager.shared.meshClientNetworkExport(networkName: networkName + ".ifx") else {
+            indicatorView.stopAnimating()
+            return
+        }
+        MeshFrameworkManager.shared.writeExportedMeshNetwork(networkName: networkName + ".ifx", jsonContent: exportedIfxJsonString)
         indicatorView.stopAnimating()
         if error == MeshErrorCode.MESH_SUCCESS {
             meshLog("SelectNetworkPopoverViewController, writeExportedMeshNetwork success")

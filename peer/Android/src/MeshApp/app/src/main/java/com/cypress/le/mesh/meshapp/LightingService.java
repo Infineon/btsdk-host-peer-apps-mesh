@@ -141,7 +141,7 @@ public class LightingService extends Service implements IMeshControllerCallback 
     public List<String> getallRooms() {
         Log.d(TAG, "getallRooms currentNetwork  =" + currentNetwork);
         if(currentNetwork!=null){
-            groups = new ArrayList<String>(Arrays.asList(mMesh.getAllGroups(currentNetwork)));
+            groups = mMesh.getAllGroups(currentNetwork);
             return groups;
         } else {
             return null;
@@ -150,7 +150,7 @@ public class LightingService extends Service implements IMeshControllerCallback 
 
     public ArrayList<String> getTopLevelGroups(String groupName) {
         if(currentNetwork!=null){
-            ArrayList<String> group = new ArrayList<String>(Arrays.asList(mMesh.getAllGroups(groupName)));
+            ArrayList<String> group = new ArrayList<String>(Arrays.asList(mMesh.getSubGroups(groupName)));
             if(group!=null)
             {
                 for(int i=0;i<group.size();i++) {

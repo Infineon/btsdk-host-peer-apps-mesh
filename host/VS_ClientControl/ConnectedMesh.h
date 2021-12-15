@@ -61,6 +61,18 @@ public:
     void SendData();
 
     CListBox* m_trace;
+#define AUTO_STATE_IDLE                 0
+#define AUTO_STATE_PROVISIONING         1
+#define AUTO_STATE_SWITCHING_OPERATING  2
+#define AUTO_STATE_WAITING_CONN_UP      3
+#define AUTO_STATE_WAITING_SEND_DATA    4
+#define AUTO_STATE_SEND_DATA            5
+#define AUTO_STATE_STOPPING_SEND_DATA   6
+#define AUTO_STATE_RESETTING            7
+#define AUTO_STATE_WAIT_RESTART         8
+    int m_autoState;
+    int m_numNodes;
+    int m_numPendingNodes;
     BOOL m_sendingData;
     // std::list<ProvisionedNode> m_provisioned_nodes;
 #define MAX_NODES   24
@@ -91,7 +103,6 @@ public:
     afx_msg void OnCbnSelchangeComPort();
     afx_msg void OnBnClickedBecomeProvisioner();
     afx_msg void OnBnClickedGetNodeList();
-    afx_msg void OnBnClickedSendData();
     afx_msg void OnBnClickedGetConnStatus1();
     afx_msg void OnBnClickedRunPingTest();
     afx_msg void OnBnClickedEndProvisioning();
@@ -105,6 +116,7 @@ public:
     afx_msg void OnBnClickedConnMeshReset();
     afx_msg void OnBnClickedConnMeshGetDataStats();
     afx_msg void OnBnClickedConnMeshIdentify();
+    afx_msg void OnBnClickedConnMeshGetRssi ();
 };
 
 extern CClientControlApp theApp;

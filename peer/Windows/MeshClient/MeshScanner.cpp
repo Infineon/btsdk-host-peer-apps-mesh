@@ -88,6 +88,8 @@ HRESULT CMeshScanner::OnAdvertisementReceived(IBluetoothLEAdvertisementWatcher* 
     static HString sName;
     static BYTE raw_advert[62];
     static BYTE raw_advert_len = 0;
+    static BYTE raw_nonconn_adv_len = 0;
+
     char name[31];
     if (m_bStop)
     {
@@ -97,7 +99,9 @@ HRESULT CMeshScanner::OnAdvertisementReceived(IBluetoothLEAdvertisementWatcher* 
     hr = args->get_AdvertisementType(&type);
     ods("nAdvertisementReceived type:%x", type);
 
-    if ((type != BluetoothLEAdvertisementType_ConnectableUndirected) && (type != BluetoothLEAdvertisementType_ScanResponse))
+    if ((type != BluetoothLEAdvertisementType_ConnectableUndirected) &&
+        (type != BluetoothLEAdvertisementType_ScanResponse) &&
+        (type != BluetoothLEAdvertisementType_NonConnectableUndirected))
     {
         return S_OK;
     }
@@ -116,7 +120,111 @@ HRESULT CMeshScanner::OnAdvertisementReceived(IBluetoothLEAdvertisementWatcher* 
         ods("get_Advertisement failed. hr:%x", hr);
         return S_OK;
     }
-    if ((type == BluetoothLEAdvertisementType_ScanResponse) && (raw_advert_len != 0))
+
+
+    if (type == BluetoothLEAdvertisementType_NonConnectableUndirected)
+    {
+        // Get Advertisement Data
+        ComPtr <ABI::Windows::Foundation::Collections::IVector<ABI::Windows::Devices::Bluetooth::Advertisement::BluetoothLEAdvertisementDataSection*>> vecData;
+        hr = bleAdvert->get_DataSections(&vecData);
+        if (FAILED(hr))
+        {
+            ods("get_DataSections failed. hr:%x", hr);
+            return S_OK;
+        }
+        UINT count = 0;
+        hr = vecData->get_Size(&count);
+        if (FAILED(hr))
+        {
+            ods("vecData->get_Size failed. hr:%x", hr);
+            return S_OK;
+        }
+
+        BOOL bUriTypeFound = FALSE;
+        raw_nonconn_adv_len = 0;
+
+        for (UINT i = 0; i < count; ++i)
+        {
+            ComPtr<ABI::Windows::Devices::Bluetooth::Advertisement::IBluetoothLEAdvertisementDataSection> ds;
+
+            hr = vecData->GetAt(i, &ds);
+            if (FAILED(hr))
+            {
+                ods("vecData->GetAt(%d) failed. hr:%x", i, hr);
+                continue;
+            }
+
+            ComPtr<ABI::Windows::Storage::Streams::IBuffer> ibuf;
+            datatype = 0;
+            hr = ds->get_DataType(&datatype);
+            if (FAILED(hr))
+            {
+                ods("ds->get_DataType failed. i:%d hr:%x", i, hr);
+                continue;
+            }
+            // ods("Data Type:%d", datatype);
+
+            if (datatype == BTM_BLE_ADVERT_TYPE_URI)
+                bUriTypeFound = TRUE;
+
+            hr = ds->get_Data(&ibuf);
+            if (FAILED(hr))
+            {
+                ods("ds->get_Data failed. i:%d hr:%x", i, hr);
+                continue;
+            }
+
+            Microsoft::WRL::ComPtr<Windows::Storage::Streams::IBufferByteAccess> pBufferByteAccess;
+            ibuf.As(&pBufferByteAccess);
+
+            // Get pointer to pixel bytes
+            byte* pdatabuf = nullptr;
+            pBufferByteAccess->Buffer(&pdatabuf);
+
+            length = 0;
+            hr = ibuf->get_Length(&length);
+            if (FAILED(hr))
+            {
+                ods("ibuf->get_Length failed. i:%d hr:%x", i, hr);
+                continue;
+            }
+
+            BthAddrToBDA(bda, &address);
+
+            raw_advert[raw_nonconn_adv_len++] = length + 1;
+            raw_advert[raw_nonconn_adv_len++] = datatype;
+
+            for (UINT32 i = 0; i < length; ++i)
+                raw_advert[raw_nonconn_adv_len++] = *(pdatabuf + i);
+
+        }
+
+        // Found non-connectable adv with URI data-type, send it to the mesh core for processing
+        if (bUriTypeFound)
+        {
+            raw_advert[raw_nonconn_adv_len++] = 0;
+            char buff[256] = { 0 };
+            for (UINT32 i = 0; i < raw_nonconn_adv_len; ++i)
+                sprintf_s(buff + 3 * i, sizeof(buff) - 3 * i, "%02x ", raw_advert[i]);
+
+            ods("Adv:%s from bda:%02x%02x%02x%02x%02x%02x", buff, bda[0], bda[1], bda[2], bda[3], bda[4], bda[5]);
+
+            mesh_client_app_adv_report_t* p_adv_report = (mesh_client_app_adv_report_t*)malloc(sizeof(mesh_client_app_adv_report_t));
+            if (p_adv_report)
+            {
+                CMeshClientDlg* pDlg = (CMeshClientDlg*)theApp.m_pMainWnd;
+                memset(p_adv_report, 0, sizeof(mesh_client_app_adv_report_t));
+                p_adv_report->addr_type = 0;
+                p_adv_report->rssi = (int8_t)rssi;
+                memcpy(p_adv_report->bda, bda, BD_ADDR_LEN);
+                memcpy(p_adv_report->adv_data, raw_advert, sizeof(raw_advert));
+                pDlg->PostMessage(WM_MESH_DEVICE_ADV_REPORT, (WPARAM)0, (LPARAM)p_adv_report);
+            }
+
+            raw_nonconn_adv_len = 0;
+        }
+    }
+    else if ((type == BluetoothLEAdvertisementType_ScanResponse) && (raw_advert_len != 0))
     {
         // Get Name of the device
         hr = bleAdvert->get_LocalName(sName.GetAddressOf());

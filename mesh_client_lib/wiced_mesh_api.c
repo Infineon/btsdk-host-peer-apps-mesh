@@ -160,7 +160,7 @@ void wiced_hci_process_data(uint16_t opcode, uint8_t *p_buffer, uint16_t len)
     case HCI_CONTROL_MESH_EVENT_PROVISION_LINK_REPORT:
         process_provision_link_report(p_buffer, len);
         break;
-    case HCI_CONTROL_MESH_EVENT_PROVISION_DEVICE_CAPABITIES:
+    case HCI_CONTROL_MESH_EVENT_PROVISION_DEVICE_CAPABILITIES:
         process_provision_device_capabilities(p_buffer, len);
         break;
     case HCI_CONTROL_MESH_EVENT_PROVISION_OOB_DATA:
@@ -2880,7 +2880,8 @@ wiced_result_t wiced_bt_mesh_model_sensor_client_descriptor_send_get(wiced_bt_me
     uint8_t buffer[128];
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
 
-    wiced_bt_mesh_release_event(p_event);
+    // cannot release buffer here, because it may be  a part of pending operation
+    // wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
@@ -2996,7 +2997,8 @@ wiced_result_t wiced_bt_mesh_model_sensor_client_sensor_settings_send_get(wiced_
     uint8_t buffer[128];
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
 
-    wiced_bt_mesh_release_event(p_event);
+    // cannot release buffer here, because it may be  a part of pending operation
+    // wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;
@@ -3012,7 +3014,8 @@ wiced_result_t wiced_bt_mesh_model_sensor_client_sensor_cadence_send_get(wiced_b
     uint8_t buffer[128];
     uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
 
-    wiced_bt_mesh_release_event(p_event);
+    // cannot release buffer here, because it may be  a part of pending operation
+    // wiced_bt_mesh_release_event(p_event);
 
     if (p == NULL)
         return WICED_BT_BADARG;

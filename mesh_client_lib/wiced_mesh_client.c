@@ -598,6 +598,7 @@ int mesh_client_network_create(const char *provisioner_name, const char *provisi
         rand128(net_key.key);
         net_key.name = mesh_new_string("Net Key");
         net_key.phase = 0;
+        net_key.timestamp = time(NULL);
 
         wiced_bt_mesh_db_net_key_add(p_mesh_db, &net_key);
 
@@ -658,7 +659,13 @@ static int parse_file_ext(const struct dirent *dir, char *ext)
         else
         {
             if (strcasecmp(ext_start, ext) == 0)
+            {
+                // Ignore propriatrary json files (.ifx.json)
+                size_t len = strlen(dir->d_name);
+                if (len > 9 && !strcasecmp(&dir->d_name[len - 9], ".ifx.json"))
+                    return 0;
                 return 1;
+            }
         }
     }
     return 0;
@@ -677,6 +684,7 @@ static int parse_bin_ext(const struct dirent *dir)
 
 int mesh_client_network_delete(const char *provisioner_name, const char *provisioner_uuid, char *mesh_name)
 {
+    size_t len;
     // we might need to init mesh to get UUID to delete RPL file.
     if (p_mesh_db == NULL)
     {
@@ -708,6 +716,10 @@ int mesh_client_network_delete(const char *provisioner_name, const char *provisi
         {
             do
             {
+                // Ignore propriatrary json files (.ifx.json)
+                len = strlen(find_file.name);
+                if (len > 9 && !_stricmp(&find_file.name[len - 9], ".ifx.json"))
+                    continue;
                 json_num++;
             } while (_findnext(hFile, &find_file) == 0);
             _findclose(hFile);
@@ -788,6 +800,7 @@ int mesh_client_network_open(const char *provisioner_name, const char *provision
         rand128(net_key.key);
         net_key.name = mesh_new_string("Net Key");
         net_key.phase = 0;
+        net_key.timestamp = time(NULL);
 
         p_net_key = &net_key;
 
@@ -1830,7 +1843,6 @@ const char *get_component_name(uint16_t addr)
         return p_name;
 
     strncpy(buffer,  p_device_type_name[get_component_type(p_mesh_db, addr)], sizeof(buffer) - 7);
-    sprintf(&buffer[strlen(buffer)], " (%04x)", addr);
     wiced_bt_mesh_db_set_element_name(p_mesh_db, addr, buffer);
     wiced_bt_mesh_db_store(p_mesh_db);
     provision_cb.db_changed = WICED_TRUE;
@@ -2261,7 +2273,11 @@ int mesh_client_sensor_setting_set(const char *device_name, int property_id, int
         return MESH_CLIENT_ERR_NETWORK_CLOSED;
     }
 
+#ifdef USE_SETUP_APPKEY
     app_key = wiced_bt_mesh_db_app_key_get_by_name(p_mesh_db, "Setup");
+#else
+    app_key = wiced_bt_mesh_db_app_key_get_by_name(p_mesh_db, "Generic");
+#endif
 
     if (app_key == NULL)
     {
@@ -2463,7 +2479,11 @@ int mesh_client_sensor_cadence_set(const char *p_name, int property_id,
         return MESH_CLIENT_ERR_NETWORK_CLOSED;
     }
 
+#ifdef USE_SETUP_APPKEY
     app_key = wiced_bt_mesh_db_app_key_get_by_name(p_mesh_db, "Setup");
+#else
+    app_key = wiced_bt_mesh_db_app_key_get_by_name(p_mesh_db, "Generic");
+#endif
 
     if (app_key == NULL)
     {
@@ -2595,7 +2615,11 @@ int mesh_client_light_lc_mode_get(const char* p_name, mesh_client_light_lc_mode_
         Log("Network closed\n");
         return MESH_CLIENT_ERR_NETWORK_CLOSED;
     }
+#ifdef USE_SETUP_APPKEY
     app_key = wiced_bt_mesh_db_app_key_get_by_name(p_mesh_db, "Setup");
+#else
+    app_key = wiced_bt_mesh_db_app_key_get_by_name(p_mesh_db, "Generic");
+#endif
     if (app_key == NULL)
     {
         Log("Key not configured\n");
@@ -2644,7 +2668,11 @@ int mesh_client_light_lc_mode_set(const char* p_name, int mode, mesh_client_ligh
         Log("Network closed\n");
         return MESH_CLIENT_ERR_NETWORK_CLOSED;
     }
+#ifdef USE_SETUP_APPKEY
     app_key = wiced_bt_mesh_db_app_key_get_by_name(p_mesh_db, "Setup");
+#else
+    app_key = wiced_bt_mesh_db_app_key_get_by_name(p_mesh_db, "Generic");
+#endif
     if (app_key == NULL)
     {
         Log("Key not configured\n");
@@ -2690,7 +2718,11 @@ int mesh_client_light_lc_occupancy_mode_get(const char* p_name, mesh_client_ligh
         Log("Network closed\n");
         return MESH_CLIENT_ERR_NETWORK_CLOSED;
     }
+#ifdef USE_SETUP_APPKEY
     app_key = wiced_bt_mesh_db_app_key_get_by_name(p_mesh_db, "Setup");
+#else
+    app_key = wiced_bt_mesh_db_app_key_get_by_name(p_mesh_db, "Generic");
+#endif
     if (app_key == NULL)
     {
         Log("Key not configured\n");
@@ -2739,7 +2771,11 @@ int mesh_client_light_lc_occupancy_mode_set(const char* p_name, int mode, mesh_c
         Log("Network closed\n");
         return MESH_CLIENT_ERR_NETWORK_CLOSED;
     }
+#ifdef USE_SETUP_APPKEY
     app_key = wiced_bt_mesh_db_app_key_get_by_name(p_mesh_db, "Setup");
+#else
+    app_key = wiced_bt_mesh_db_app_key_get_by_name(p_mesh_db, "Generic");
+#endif
     if (app_key == NULL)
     {
         Log("Key not configured\n");
@@ -2790,7 +2826,11 @@ int mesh_client_light_lc_property_get(const char* p_name, int property_id, mesh_
         Log("Network closed\n");
         return MESH_CLIENT_ERR_NETWORK_CLOSED;
     }
+#ifdef USE_SETUP_APPKEY
     app_key = wiced_bt_mesh_db_app_key_get_by_name(p_mesh_db, "Setup");
+#else
+    app_key = wiced_bt_mesh_db_app_key_get_by_name(p_mesh_db, "Generic");
+#endif
     if (app_key == NULL)
     {
         Log("Key not configured\n");
@@ -2848,7 +2888,11 @@ int mesh_client_light_lc_property_set(const char* p_name, int property_id, int v
         Log("Network closed\n");
         return MESH_CLIENT_ERR_NETWORK_CLOSED;
     }
+#ifdef USE_SETUP_APPKEY
     app_key = wiced_bt_mesh_db_app_key_get_by_name(p_mesh_db, "Setup");
+#else
+    app_key = wiced_bt_mesh_db_app_key_get_by_name(p_mesh_db, "Generic");
+#endif
     if (app_key == NULL)
     {
         Log("Key not configured\n");
@@ -5521,6 +5565,7 @@ void mesh_key_refresh_phase3_completed(mesh_provision_cb_t *p_cb, wiced_bt_mesh_
 
     // Update Net/App Keys to reflect that the key refresh has been completed.
     net_key->phase = WICED_BT_MESH_KEY_REFRESH_PHASE_NORMAL;
+    net_key->timestamp = time(NULL);
 
     for (node_idx = 0; node_idx < p_mesh_db->num_nodes; node_idx++)
     {
@@ -6241,7 +6286,11 @@ void mesh_process_sensor_descriptor_status(uint16_t addr, wiced_bt_mesh_sensor_d
     {
         if ((p_op = (pending_operation_t *)wiced_bt_get_buffer(sizeof(pending_operation_t))) != NULL)
         {
+#ifdef USE_SETUP_APPKEY
             app_setup_key = wiced_bt_mesh_db_app_key_get_by_name(p_mesh_db, "Setup");
+#else
+            app_setup_key = wiced_bt_mesh_db_app_key_get_by_name(p_mesh_db, "Generic");
+#endif
             memset(p_op, 0, sizeof(pending_operation_t));
             p_op->operation = CONFIG_OPERATION_SENSOR_SETTINGS_GET;
             p_op->p_event = mesh_create_control_event(p_mesh_db, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_SENSOR_CLNT, addr, app_setup_key->index);
@@ -6252,7 +6301,11 @@ void mesh_process_sensor_descriptor_status(uint16_t addr, wiced_bt_mesh_sensor_d
         }
         if ((p_op = (pending_operation_t *)wiced_bt_get_buffer(sizeof(pending_operation_t))) != NULL)
         {
+#ifdef USE_SETUP_APPKEY
             app_setup_key = wiced_bt_mesh_db_app_key_get_by_name(p_mesh_db, "Setup");
+#else
+            app_setup_key = wiced_bt_mesh_db_app_key_get_by_name(p_mesh_db, "Generic");
+#endif
             memset(p_op, 0, sizeof(pending_operation_t));
             p_op->operation = CONFIG_OPERATION_SENSOR_CADENCE_GET;
             p_op->p_event = mesh_create_control_event(p_mesh_db, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_SENSOR_CLNT, addr, app_setup_key->index);
@@ -6444,6 +6497,7 @@ void mesh_key_refresh_update_keys(mesh_provision_cb_t *p_cb, wiced_bt_mesh_db_ne
     int app_key_idx;
 
     net_key->phase = WICED_BT_MESH_KEY_REFRESH_PHASE_FIRST;
+    net_key->timestamp = time(NULL);
     memcpy(net_key->old_key, net_key->key, WICED_MESH_DB_KEY_SIZE);
     rand128(net_key->key);
 
@@ -6476,6 +6530,7 @@ void mesh_key_refresh_continue(mesh_provision_cb_t *p_cb, wiced_bt_mesh_db_net_k
 
             // phase1 is completed. Transition to phase2
             net_key->phase = WICED_BT_MESH_KEY_REFRESH_PHASE_SECOND;
+            net_key->timestamp = time(NULL);
         }
     }
     if (net_key->phase == WICED_BT_MESH_KEY_REFRESH_PHASE_SECOND)
@@ -6486,6 +6541,7 @@ void mesh_key_refresh_continue(mesh_provision_cb_t *p_cb, wiced_bt_mesh_db_net_k
 
             // phase2 is completed. Transition to phase3
             net_key->phase = WICED_BT_MESH_KEY_REFRESH_PHASE_THIRD;
+            net_key->timestamp = time(NULL);
         }
     }
     if (net_key->phase == WICED_BT_MESH_KEY_REFRESH_PHASE_THIRD)
@@ -6605,6 +6661,7 @@ int mesh_client_transition_next_key_refresh_phase(mesh_provision_cb_t *p_cb, wic
     //    return - 1;
     //}
     net_key->phase = transition;
+    net_key->timestamp = time(NULL);
     wiced_bt_mesh_db_store(p_mesh_db);
     p_cb->db_changed = WICED_TRUE;
 
@@ -7172,12 +7229,14 @@ void configure_queue_remote_device_operations(mesh_provision_cb_t *p_cb)
                         app_key = wiced_bt_mesh_db_app_key_get_by_name(p_mesh_db, "Generic");
                         app_key_add(p_cb, p_cb->addr, net_key, app_key);
                     }
+#ifdef USE_SETUP_APPKEY
                     if ((i == 1) && !app_key_setup_added)
                     {
                         app_key_setup_added = WICED_TRUE;
                         app_key_setup = wiced_bt_mesh_db_app_key_get_by_name(p_mesh_db, "Setup");
                         app_key_add(p_cb, p_cb->addr, net_key, app_key_setup);
                     }
+#endif
                 }
                 // If it is a setup model it needs to be bound to setup app key.
                 // For a normal model, it should be bound to generic and setup app key.
@@ -7356,8 +7415,11 @@ void configure_queue_remote_device_operations(mesh_provision_cb_t *p_cb)
         {
             if ((p_op = (pending_operation_t *)wiced_bt_get_buffer(sizeof(pending_operation_t))) != NULL)
             {
+#ifdef USE_SETUP_APPKEY
                 app_key_setup = wiced_bt_mesh_db_app_key_get_by_name(p_mesh_db, "Setup");
-
+#else
+                app_key_setup = wiced_bt_mesh_db_app_key_get_by_name(p_mesh_db, "Generic");
+#endif
                 p_op->operation = CONFIG_OPERATION_DEF_TRANS_TIME;
                 p_op->uu.default_trans_time.time = 0;
                 p_op->p_event = mesh_create_control_event(p_mesh_db, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_GENERIC_DEFTT_CLNT, p_cb->addr + element_idx, app_key_setup->index);
@@ -7497,7 +7559,7 @@ void configure_queue_remote_device_operations(mesh_provision_cb_t *p_cb)
 
             for (i = 0; i < p_op->uu.filter_add.addr_num; i++)
             {
-                p_fiter_addr[i] = p_mesh_db->group[i].addr;
+                p_fiter_addr[i] = p_mesh_db->group[i].addr.u.address;
             }
         }
         configure_pending_operation_queue(p_cb, p_op);
@@ -7740,10 +7802,10 @@ uint16_t *get_group_list(uint16_t group_addr)
     if (group == NULL)
         return NULL;
 
-    while (group->parent_addr != 0)
+    while (group->parent_addr.u.address != 0)
     {
         num_groups++;
-        group = wiced_bt_mesh_db_group_get_by_addr(p_mesh_db, group->parent_addr);
+        group = wiced_bt_mesh_db_group_get_by_addr(p_mesh_db, group->parent_addr.u.address);
         if (group == NULL)
             break;
     }
@@ -7761,13 +7823,13 @@ uint16_t *get_group_list(uint16_t group_addr)
     }
     group_list[i++] = group_addr;
 
-    while (group->parent_addr != 0)
+    while (group->parent_addr.u.address != 0)
     {
-        group = wiced_bt_mesh_db_group_get_by_addr(p_mesh_db, group->parent_addr);
+        group = wiced_bt_mesh_db_group_get_by_addr(p_mesh_db, group->parent_addr.u.address);
         if (group == NULL)
             break;
 
-        group_list[i++] = group->addr;
+        group_list[i++] = group->addr.u.address;
     }
     return group_list;
 }
@@ -7959,7 +8021,7 @@ int mesh_client_remove_component_from_group(const char *component_name, const ch
             // If model was subscribed to the group address, delete the subscription
             for (sub_idx = 0; sub_idx < p_node->element[element_idx].model[model_idx].num_subs; sub_idx++)
             {
-                if (p_node->element[element_idx].model[model_idx].sub[sub_idx] == p_group->addr)
+                if (p_node->element[element_idx].model[model_idx].sub[sub_idx].u.address == p_group->addr.u.address)
                 {
                     if ((p_op = (pending_operation_t *)wiced_bt_get_buffer(sizeof(pending_operation_t))) != NULL)
                     {
@@ -7970,16 +8032,16 @@ int mesh_client_remove_component_from_group(const char *component_name, const ch
                         p_op->uu.model_sub.element_addr = p_node->unicast_address + element_idx;
                         p_op->uu.model_sub.company_id = p_node->element[element_idx].model[model_idx].model.company_id;
                         p_op->uu.model_sub.model_id = p_node->element[element_idx].model[model_idx].model.id;
-                        p_op->uu.model_sub.addr[0] = p_group->addr & 0xff;
-                        p_op->uu.model_sub.addr[1] = (p_group->addr >> 8) & 0xff;
+                        p_op->uu.model_sub.addr[0] = p_group->addr.u.address & 0xff;
+                        p_op->uu.model_sub.addr[1] = (p_group->addr.u.address >> 8) & 0xff;
                         configure_pending_operation_queue(p_cb, p_op);
                     }
                 }
             }
             // If model was configured to publish to the group, change publication to publish to the parent group or to unassigned address to disable publications
-            if (p_node->element[element_idx].model[model_idx].pub.address == p_group->addr)
+            if (p_node->element[element_idx].model[model_idx].pub.address.u.address == p_group->addr.u.address)
             {
-                pub_addr = p_group->parent_addr != 0 ? p_group->parent_addr : 0xFFFF;
+                pub_addr = p_group->parent_addr.u.address != 0 ? p_group->parent_addr.u.address : 0xFFFF;
 
                 // We always configure Vendor models for publications
                 // For BT_SIG models we only configure models that are set int the models_configured_for_pub array
@@ -8066,12 +8128,12 @@ int mesh_client_move_component_to_group(const char *component_name, const char *
         Log("group %s doesnot exist", from_group_name);
         return MESH_CLIENT_ERR_INVALID_ARGS;
     }
-    if (p_group_to->parent_addr != p_group_from->parent_addr)
+    if (p_group_to->parent_addr.u.address != p_group_from->parent_addr.u.address)
     {
         Log("groups should be of the same parent");
         return MESH_CLIENT_ERR_INVALID_ARGS;
     }
-    if (p_group_to->addr == p_group_from->addr)
+    if (p_group_to->addr.u.address == p_group_from->addr.u.address)
     {
         Log("groups should be different");
         return MESH_CLIENT_ERR_INVALID_ARGS;
@@ -8112,9 +8174,9 @@ int mesh_client_move_component_to_group(const char *component_name, const char *
 
                 if ((p_models_array[j].company_id != MESH_COMPANY_ID_BT_SIG) || model_needs_sub(p_models_array[j].id, p_models_array))
                 {
-                    if (!wiced_bt_mesh_db_is_model_subscribed_to_group(p_mesh_db, p_node->unicast_address + i, p_models_array[j].company_id, p_models_array[j].id, p_group_to->addr))
+                    if (!wiced_bt_mesh_db_is_model_subscribed_to_group(p_mesh_db, p_node->unicast_address + i, p_models_array[j].company_id, p_models_array[j].id, p_group_to->addr.u.address))
                     {
-                        Log("Model:%4x is not subscribed to the group adding subscription:%4x\n", p_models_array[j].id, p_group_to->addr);
+                        Log("Model:%4x is not subscribed to the group adding subscription:%4x\n", p_models_array[j].id, p_group_to->addr.u.address);
                         if ((p_op = (pending_operation_t *)wiced_bt_get_buffer(sizeof(pending_operation_t))) != NULL)
                         {
                             memset(p_op, 0, sizeof(pending_operation_t));
@@ -8124,14 +8186,14 @@ int mesh_client_move_component_to_group(const char *component_name, const char *
                             p_op->uu.model_sub.element_addr = p_node->unicast_address + i;
                             p_op->uu.model_sub.company_id = p_models_array[j].company_id;
                             p_op->uu.model_sub.model_id = p_models_array[j].id;
-                            p_op->uu.model_sub.addr[0] = p_group_to->addr & 0xff;
-                            p_op->uu.model_sub.addr[1] = (p_group_to->addr >> 8) & 0xff;
+                            p_op->uu.model_sub.addr[0] = p_group_to->addr.u.address & 0xff;
+                            p_op->uu.model_sub.addr[1] = (p_group_to->addr.u.address >> 8) & 0xff;
                             configure_pending_operation_queue(p_cb, p_op);
                         }
                     }
                     else
                     {
-                        Log("Model:%4x is subscribed to the group:%4x\n", p_models_array[j].id, p_group_to->addr);
+                        Log("Model:%4x is subscribed to the group:%4x\n", p_models_array[j].id, p_group_to->addr.u.address);
                     }
                 }
 
@@ -8146,9 +8208,9 @@ int mesh_client_move_component_to_group(const char *component_name, const char *
                 uint8_t  credentials;
 
                 if (wiced_bt_mesh_db_node_model_pub_get(p_mesh_db, p_node->unicast_address + i, p_models_array[j].company_id, p_models_array[j].id, &pub_addr, &app_key_idx, &publish_ttl, &publish_period, &publish_retransmit_count, &publish_retransmit_interval, &credentials)
-                 && ((pub_addr == 0xFFFF) || (pub_addr == p_group_from->addr)))
+                 && ((pub_addr == 0xFFFF) || (pub_addr == p_group_from->addr.u.address)))
                 {
-                    Log("Model:%4x reconfigure publication to:%4x\n", p_models_array[j].id, p_group_to->addr);
+                    Log("Model:%4x reconfigure publication to:%4x\n", p_models_array[j].id, p_group_to->addr.u.address);
 
                     if ((p_op = (pending_operation_t*)wiced_bt_get_buffer(sizeof(pending_operation_t))) != NULL)
                     {
@@ -8158,16 +8220,16 @@ int mesh_client_move_component_to_group(const char *component_name, const char *
                         p_op->uu.model_pub.element_addr = p_node->unicast_address + i;
                         p_op->uu.model_pub.company_id = p_models_array[j].company_id;
                         p_op->uu.model_pub.model_id = p_models_array[j].id;
-                        p_op->uu.model_pub.publish_addr[0] = p_group_to->addr & 0xff;
-                        p_op->uu.model_pub.publish_addr[1] = (p_group_to->addr >> 8) & 0xff;
+                        p_op->uu.model_pub.publish_addr[0] = p_group_to->addr.u.address & 0xff;
+                        p_op->uu.model_pub.publish_addr[1] = (p_group_to->addr.u.address >> 8) & 0xff;
                         p_op->uu.model_pub.app_key_idx = app_key_idx;
 
                         // if we are changing the group, use configured pub parameters, otherwise use defaults.
-                        p_op->uu.model_pub.publish_period = (pub_addr == p_group_from->addr) ? (uint32_t)publish_period : 0;
-                        p_op->uu.model_pub.publish_ttl = (pub_addr == p_group_from->addr) ? publish_ttl : p_cb->publish_ttl;
-                        p_op->uu.model_pub.publish_retransmit_count = (pub_addr == p_group_from->addr) ? publish_retransmit_count : p_cb->publish_retransmit_count;
-                        p_op->uu.model_pub.publish_retransmit_interval = (pub_addr == p_group_from->addr) ? publish_retransmit_interval : p_cb->publish_retransmit_interval;
-                        p_op->uu.model_pub.credential_flag = (pub_addr == p_group_from->addr) ? credentials : p_cb->publish_credential_flag;
+                        p_op->uu.model_pub.publish_period = (pub_addr == p_group_from->addr.u.address) ? (uint32_t)publish_period : 0;
+                        p_op->uu.model_pub.publish_ttl = (pub_addr == p_group_from->addr.u.address) ? publish_ttl : p_cb->publish_ttl;
+                        p_op->uu.model_pub.publish_retransmit_count = (pub_addr == p_group_from->addr.u.address) ? publish_retransmit_count : p_cb->publish_retransmit_count;
+                        p_op->uu.model_pub.publish_retransmit_interval = (pub_addr == p_group_from->addr.u.address) ? publish_retransmit_interval : p_cb->publish_retransmit_interval;
+                        p_op->uu.model_pub.credential_flag = (pub_addr == p_group_from->addr.u.address) ? credentials : p_cb->publish_credential_flag;
                         configure_pending_operation_queue(p_cb, p_op);
                     }
                 }
@@ -8202,7 +8264,7 @@ int mesh_client_move_component_to_group(const char *component_name, const char *
             break;
 
         // If we are here, this is the primary or secondary element of the component
-        if ((p_models_array = wiced_bt_mesh_db_get_all_models_of_element(p_mesh_db, p_node->unicast_address + i, p_group_from->addr)) != NULL)
+        if ((p_models_array = wiced_bt_mesh_db_get_all_models_of_element(p_mesh_db, p_node->unicast_address + i, p_group_from->addr.u.address)) != NULL)
         {
             for (j = 0; p_models_array[j].company_id != MESH_COMPANY_ID_UNUSED; j++)
             {
@@ -8218,8 +8280,8 @@ int mesh_client_move_component_to_group(const char *component_name, const char *
                     p_op->uu.model_sub.element_addr = p_node->unicast_address + i;
                     p_op->uu.model_sub.company_id = p_models_array[j].company_id;
                     p_op->uu.model_sub.model_id = p_models_array[j].id;
-                    p_op->uu.model_sub.addr[0] = p_group_from->addr & 0xff;
-                    p_op->uu.model_sub.addr[1] = (p_group_from->addr >> 8) & 0xff;
+                    p_op->uu.model_sub.addr[0] = p_group_from->addr.u.address & 0xff;
+                    p_op->uu.model_sub.addr[1] = (p_group_from->addr.u.address >> 8) & 0xff;
                     configure_pending_operation_queue(p_cb, p_op);
                 }
             }
@@ -8701,7 +8763,7 @@ uint16_t *mesh_get_group_list(uint16_t group_addr, uint16_t company_id, uint16_t
                 {
                     for (sub_idx = 0; sub_idx < p_mesh_db->node[node_idx].element[element_idx].model[model_idx].num_subs; sub_idx++)
                     {
-                        if (p_mesh_db->node[node_idx].element[element_idx].model[model_idx].sub[sub_idx] == group_addr)
+                        if (p_mesh_db->node[node_idx].element[element_idx].model[model_idx].sub[sub_idx].u.address == group_addr)
                         {
                             num_nodes++;
                             is_subscribed = WICED_TRUE;
@@ -8751,7 +8813,7 @@ uint16_t *mesh_get_group_list(uint16_t group_addr, uint16_t company_id, uint16_t
                 {
                     for (sub_idx = 0; sub_idx < p_mesh_db->node[node_idx].element[element_idx].model[model_idx].num_subs; sub_idx++)
                     {
-                        if (p_mesh_db->node[node_idx].element[element_idx].model[model_idx].sub[sub_idx] == group_addr)
+                        if (p_mesh_db->node[node_idx].element[element_idx].model[model_idx].sub[sub_idx].u.address == group_addr)
                         {
                             group_list[num_nodes++] = p_mesh_db->node[node_idx].unicast_address + element_idx;
                             is_subscribed = WICED_TRUE;
@@ -8969,7 +9031,12 @@ int mesh_client_level_get(const char *p_name)
         Log("Network closed\n");
         return MESH_CLIENT_ERR_NETWORK_CLOSED;
     }
+    // app_key = wiced_bt_mesh_db_app_key_get_by_name(p_mesh_db, "Generic");
+#ifdef USE_SETUP_APPKEY
+    app_key = wiced_bt_mesh_db_app_key_get_by_name(p_mesh_db, "Setup");
+#else
     app_key = wiced_bt_mesh_db_app_key_get_by_name(p_mesh_db, "Generic");
+#endif
     if (app_key == NULL)
     {
         Log("Key not configured\n");
@@ -10318,13 +10385,21 @@ wiced_bt_mesh_event_t* mesh_create_control_event(wiced_bt_mesh_db_mesh_t* p_mesh
 void mesh_client_advert_report(uint8_t *bd_addr, uint8_t addr_type, int8_t rssi, uint8_t *adv_data)
 {
     wiced_bt_ble_scan_results_t scan_result;
+    uint8_t* p = NULL;
 
     memcpy(scan_result.remote_bd_addr, bd_addr, 6);
     scan_result.ble_addr_type = addr_type;
     scan_result.ble_evt_type = BTM_BLE_EVT_CONNECTABLE_ADVERTISEMENT;
     scan_result.rssi = rssi;
 
-    if (!wiced_bt_mesh_remote_provisioning_connectable_adv_packet(&scan_result, adv_data))
+    p = adv_data;
+    if ((p[0] != 0) && (p[1] == BTM_BLE_ADVERT_TYPE_URI))
+    {
+        // processing non-connectable advertisement
+        scan_result.ble_evt_type = BTM_BLE_EVT_NON_CONNECTABLE_ADVERTISEMENT;
+        wiced_bt_mesh_remote_provisioning_nonconnectable_adv_packet(&scan_result, adv_data);
+    }
+    else if (!wiced_bt_mesh_remote_provisioning_connectable_adv_packet(&scan_result, adv_data))
         wiced_bt_mesh_gatt_client_process_connectable_adv(bd_addr, addr_type, rssi, adv_data);
 }
 
@@ -10420,7 +10495,7 @@ wiced_bool_t add_filter(mesh_provision_cb_t *p_cb, uint16_t addr)
 
         for (i = 0; i < p_op->uu.filter_add.addr_num; i++)
         {
-            p_fiter_addr[i] = p_mesh_db->group[i].addr;
+            p_fiter_addr[i] = p_mesh_db->group[i].addr.u.address;
         }
     }
     configure_pending_operation_queue(p_cb, p_op);
@@ -10709,42 +10784,50 @@ wiced_bool_t get_target_method(const char *method_name, uint16_t *company_id, ui
  */
 char *mesh_client_get_control_methods(const char *component_name)
 {
+    wiced_bt_mesh_db_element_t *p_element = wiced_bt_mesh_db_element_get_by_element_name(p_mesh_db, component_name);
     wiced_bt_mesh_db_node_t *p_node = wiced_bt_mesh_db_node_get_by_element_name(p_mesh_db, component_name);
+    uint16_t element_addr;
+
     char *control_list;
     size_t control_list_size = 1;
 
-    if (p_node == NULL)
+    if ((p_node == NULL) || (p_element == NULL))
         return NULL;
 
-    if (is_model_present(p_node->unicast_address, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_GENERIC_ONOFF_CLNT))
+    element_addr = p_node->unicast_address + p_element->index;
+
+    if (is_model_present(element_addr, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_GENERIC_ONOFF_CLNT))
         control_list_size += strlen(MESH_CONTROL_METHOD_ONOFF) + 1;
 
-    if (is_model_present(p_node->unicast_address, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_GENERIC_LEVEL_CLNT))
+    if (is_model_present(element_addr, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_GENERIC_LEVEL_CLNT))
         control_list_size += strlen(MESH_CONTROL_METHOD_LEVEL) + 1;
 
-    if (is_model_present(p_node->unicast_address, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_LIGHT_LIGHTNESS_CLNT))
+    if (is_model_present(element_addr, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_LIGHT_LIGHTNESS_CLNT))
         control_list_size += strlen(MESH_CONTROL_METHOD_LIGHTNESS) + 1;
 
-    if (is_model_present(p_node->unicast_address, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_LIGHT_HSL_CLNT))
+    if (is_model_present(element_addr, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_LIGHT_HSL_CLNT))
         control_list_size += strlen(MESH_CONTROL_METHOD_HSL) + 1;
 
-    if (is_model_present(p_node->unicast_address, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_LIGHT_CTL_CLNT))
+    if (is_model_present(element_addr, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_LIGHT_CTL_CLNT))
         control_list_size += strlen(MESH_CONTROL_METHOD_CTL) + 1;
 
-    if (is_model_present(p_node->unicast_address, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_LIGHT_XYL_CLNT))
+    if (is_model_present(element_addr, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_LIGHT_XYL_CLNT))
         control_list_size += strlen(MESH_CONTROL_METHOD_XYL) + 1;
 
-    if (is_model_present(p_node->unicast_address, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_GENERIC_POWER_LEVEL_CLNT))
+    if (is_model_present(element_addr, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_GENERIC_POWER_LEVEL_CLNT))
         control_list_size += strlen(MESH_CONTROL_METHOD_POWER) + 1;
 
-    if (is_model_present(p_node->unicast_address, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_GENERIC_LOCATION_CLNT))
+    if (is_model_present(element_addr, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_GENERIC_LOCATION_CLNT))
         control_list_size += strlen(MESH_CONTROL_METHOD_LOCATION) + 1;
 
-    if (is_model_present(p_node->unicast_address, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_GENERIC_BATTERY_CLNT))
+    if (is_model_present(element_addr, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_GENERIC_BATTERY_CLNT))
         control_list_size += strlen(MESH_CONTROL_METHOD_BATTERY) + 1;
 
-    if (is_model_present(p_node->unicast_address, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_SENSOR_CLNT))
+    if (is_model_present(element_addr, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_SENSOR_CLNT))
         control_list_size += strlen(MESH_CONTROL_METHOD_SENSOR) + 1;
+
+    if (is_model_present(element_addr, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_SCENE_CLNT))
+        control_list_size += strlen(MESH_CONTROL_METHOD_SCENE) + 1;
 
     control_list = (char *)wiced_bt_get_buffer(control_list_size + 1);
     if (control_list == NULL)
@@ -10752,57 +10835,62 @@ char *mesh_client_get_control_methods(const char *component_name)
     memset(control_list, 0, control_list_size);
 
     control_list_size = 0;
-    if (is_model_present(p_node->unicast_address, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_GENERIC_ONOFF_CLNT))
+    if (is_model_present(element_addr, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_GENERIC_ONOFF_CLNT))
     {
         strcpy(&control_list[control_list_size], MESH_CONTROL_METHOD_ONOFF);
         control_list_size += strlen(MESH_CONTROL_METHOD_ONOFF) + 1;
     }
-    if (is_model_present(p_node->unicast_address, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_GENERIC_LEVEL_CLNT))
+    if (is_model_present(element_addr, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_GENERIC_LEVEL_CLNT))
     {
         strcpy(&control_list[control_list_size], MESH_CONTROL_METHOD_LEVEL);
         control_list_size += strlen(MESH_CONTROL_METHOD_LEVEL) + 1;
     }
-    if (is_model_present(p_node->unicast_address, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_LIGHT_LIGHTNESS_CLNT))
+    if (is_model_present(element_addr, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_LIGHT_LIGHTNESS_CLNT))
     {
         strcpy(&control_list[control_list_size], MESH_CONTROL_METHOD_LIGHTNESS);
         control_list_size += strlen(MESH_CONTROL_METHOD_LIGHTNESS) + 1;
     }
-    if (is_model_present(p_node->unicast_address, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_LIGHT_HSL_CLNT))
+    if (is_model_present(element_addr, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_LIGHT_HSL_CLNT))
     {
         strcpy(&control_list[control_list_size], MESH_CONTROL_METHOD_HSL);
         control_list_size += strlen(MESH_CONTROL_METHOD_HSL) + 1;
     }
-    if (is_model_present(p_node->unicast_address, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_LIGHT_CTL_CLNT))
+    if (is_model_present(element_addr, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_LIGHT_CTL_CLNT))
     {
         strcpy(&control_list[control_list_size], MESH_CONTROL_METHOD_CTL);
         control_list_size += strlen(MESH_CONTROL_METHOD_CTL) + 1;
     }
-    if (is_model_present(p_node->unicast_address, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_LIGHT_XYL_CLNT))
+    if (is_model_present(element_addr, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_LIGHT_XYL_CLNT))
     {
         strcpy(&control_list[control_list_size], MESH_CONTROL_METHOD_XYL);
         control_list_size += strlen(MESH_CONTROL_METHOD_XYL) + 1;
     }
-    if (is_model_present(p_node->unicast_address, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_GENERIC_POWER_LEVEL_CLNT))
+    if (is_model_present(element_addr, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_GENERIC_POWER_LEVEL_CLNT))
     {
         strcpy(&control_list[control_list_size], MESH_CONTROL_METHOD_POWER);
         control_list_size += strlen(MESH_CONTROL_METHOD_POWER) + 1;
     }
-    if (is_model_present(p_node->unicast_address, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_GENERIC_LOCATION_CLNT))
+    if (is_model_present(element_addr, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_GENERIC_LOCATION_CLNT))
     {
         strcpy(&control_list[control_list_size], MESH_CONTROL_METHOD_LOCATION);
         control_list_size += strlen(MESH_CONTROL_METHOD_LOCATION) + 1;
     }
-    if (is_model_present(p_node->unicast_address, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_GENERIC_BATTERY_CLNT))
+    if (is_model_present(element_addr, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_GENERIC_BATTERY_CLNT))
     {
         strcpy(&control_list[control_list_size], MESH_CONTROL_METHOD_BATTERY);
         control_list_size += strlen(MESH_CONTROL_METHOD_BATTERY) + 1;
     }
-    if (is_model_present(p_node->unicast_address, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_SENSOR_CLNT))
+    if (is_model_present(element_addr, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_SENSOR_CLNT))
     {
         strcpy(&control_list[control_list_size], MESH_CONTROL_METHOD_SENSOR);
         control_list_size += strlen(MESH_CONTROL_METHOD_SENSOR) + 1;
     }
-    control_list[control_list_size++] = 0;
+    if (is_model_present(element_addr, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_SCENE_CLNT))
+    {
+        strcpy(&control_list[control_list_size], MESH_CONTROL_METHOD_SCENE);
+        control_list_size += strlen(MESH_CONTROL_METHOD_SCENE) + 1;
+    }
+    control_list[control_list_size] = 0;
     return control_list;
 }
 
@@ -10842,6 +10930,8 @@ wiced_bool_t get_control_method(const char *method_name, uint16_t *company_id, u
             *model_id = WICED_BT_MESH_CORE_MODEL_ID_GENERIC_POWER_LEVEL_CLNT;
         else if (strcmp(method_name, MESH_CONTROL_METHOD_SENSOR) == 0)
             *model_id = WICED_BT_MESH_CORE_MODEL_ID_SENSOR_CLNT;
+        else if (strcmp(method_name, MESH_CONTROL_METHOD_SCENE) == 0)
+            *model_id = WICED_BT_MESH_CORE_MODEL_ID_SCENE_CLNT;
         else if (strcmp(method_name, MESH_CONTROL_METHOD_LOCATION) == 0)
             *model_id = WICED_BT_MESH_CORE_MODEL_ID_GENERIC_LOCATION_CLNT;
         else if (strcmp(method_name, MESH_CONTROL_METHOD_BATTERY) == 0)

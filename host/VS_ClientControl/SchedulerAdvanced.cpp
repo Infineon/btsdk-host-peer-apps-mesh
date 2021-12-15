@@ -89,11 +89,13 @@ END_MESSAGE_MAP()
 
 void CSchedulerAdvanced::OnBnClickedOk()
 {
+    m_day_of_week_selection = 0;
     for (int i = 0; i < 7; i++)
     {
         if (((CButton *)GetDlgItem(IDC_MONDAY + i))->GetCheck())
             m_day_of_week_selection |= (1 << i);
     }
+    m_month_selection = 0;
     for (int i = 0; i < 12; i++)
     {
         if (((CButton *)GetDlgItem(IDC_JANUARY + i))->GetCheck())

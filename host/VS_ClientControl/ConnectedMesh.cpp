@@ -61,7 +61,7 @@ MMRESULT timerid = 0;
 
 static int data_len_down = 25;
 static int battery_len_up = 50;
-
+static int data_down_interval = 100;
 
 // ConnectedMesh dialog
 IMPLEMENT_DYNAMIC(ConnectedMesh, CPropertyPage)
@@ -94,7 +94,6 @@ BEGIN_MESSAGE_MAP(ConnectedMesh, CPropertyPage)
     ON_BN_CLICKED(IDC_CONN_MESH_BECOME_PROVISIONER, &ConnectedMesh::OnBnClickedBecomeProvisioner)
     ON_BN_CLICKED(IDC_CONN_MESH_END_PROVISIONING, &ConnectedMesh::OnBnClickedEndProvisioning)
     ON_BN_CLICKED(IDC_CONN_MESH_GET_NODE_LIST, &ConnectedMesh::OnBnClickedGetNodeList)
-    ON_BN_CLICKED(IDC_CONN_MESH_SEND_DATA, &ConnectedMesh::OnBnClickedSendData)
     ON_BN_CLICKED(IDC_CONN_MESH_GET_CONN_STATUS1, &ConnectedMesh::OnBnClickedGetConnStatus1)
     ON_BN_CLICKED(IDC_CONN_MESH_RUN_PING_TEST, &ConnectedMesh::OnBnClickedRunPingTest)
     ON_BN_CLICKED(IDC_CONN_MESH_START_DATA, &ConnectedMesh::OnBnClickedConnMeshStartData)
@@ -103,6 +102,7 @@ BEGIN_MESSAGE_MAP(ConnectedMesh, CPropertyPage)
     ON_BN_CLICKED(IDC_CONN_MESH_RESET, &ConnectedMesh::OnBnClickedConnMeshReset)
     ON_BN_CLICKED(IDC_CONN_MESH_GET_DATA_STATS, &ConnectedMesh::OnBnClickedConnMeshGetDataStats)
     ON_BN_CLICKED(IDC_CONN_MESH_IDENTIFY, &ConnectedMesh::OnBnClickedConnMeshIdentify)
+    ON_BN_CLICKED (IDC_CONN_MESH_GET_RSSI, &ConnectedMesh::OnBnClickedConnMeshGetRssi)
 END_MESSAGE_MAP()
 
 BOOL ConnectedMesh::OnSetActive()
@@ -119,7 +119,10 @@ BOOL ConnectedMesh::OnSetActive()
         for (int i = 0; i < 128 && aComPorts[i] != 0; i++)
         {
             wsprintf(buf, L"COM%d", aComPorts[i]);
-            m_cbCom->SetItemData(m_cbCom->AddString(buf), aComPorts[i]);
+            int sel = m_cbCom->AddString(buf);
+            m_cbCom->SetItemData(sel, aComPorts[i]);
+            if (ComPort == aComPorts[i])
+                ComPortSelected = sel;
         }
 
         wsprintf(buf, L"Host Mode");
@@ -131,9 +134,13 @@ BOOL ConnectedMesh::OnSetActive()
             WCHAR acBaud[10];
             wsprintf(acBaud, L"%d", as32BaudRate[i]);
 
-            m_cbBaud->SetItemData(m_cbBaud->AddString(acBaud), i);
+            int sel = m_cbBaud->AddString(acBaud);
+            m_cbBaud->SetItemData(sel, i);
+            if (BaudRate == as32BaudRate[i])
+                BaudRateSelected = sel;
         }
-        m_cbBaud->SetCurSel(FindBaudRateIndex(3000000));
+        if (BaudRateSelected < 0)
+            BaudRateSelected = FindBaudRateIndex(3000000);
 
         if (m_ComHelper == NULL)
         {
@@ -150,10 +157,10 @@ BOOL ConnectedMesh::OnSetActive()
         }
     }
 
-    if (ComPortSelected > 0)
+    if (ComPortSelected >= 0)
         ((CComboBox*)GetDlgItem(IDC_COM_PORT))->SetCurSel(ComPortSelected);
 
-    if (BaudRateSelected > 0)
+    if (BaudRateSelected >= 0)
         ((CComboBox*)GetDlgItem(IDC_COM_BAUD))->SetCurSel(BaudRateSelected);
 
     SetDlgItemText(IDC_CONN_MESH_APP_DATA, L"123456");
@@ -161,14 +168,29 @@ BOOL ConnectedMesh::OnSetActive()
     SetDlgItemText(IDC_CONN_MESH_START_DATA, m_sendingData ? L"Stop Sending Data" : L"Start Sending Data");
 
     SetDlgItemInt (IDC_CONN_MESH_HOST_DATA_LEN, data_len_down);
+    SetDlgItemInt (IDC_CONN_MESH_HOST_DATA_INTERVAL, data_down_interval);
     SetDlgItemInt (IDC_CONN_MESH_BATTERY_DATA_LEN, battery_len_up);
 
     CComboBox* cbNodeAddr = (CComboBox*)GetDlgItem(IDC_CONN_MESH_NODE_ADDR);
     cbNodeAddr->ResetContent();
     cbNodeAddr->SetItemData(cbNodeAddr->AddString(L"0x0001"), 1);
     cbNodeAddr->SetCurSel(0);
-    return TRUE; // return TRUE unless you set the focus to a control
 
+    if ((ComPortSelected >= 0) && (BaudRateSelected >= 0))
+        OnCbnSelchangeComPort();
+
+    if (bAuto && m_ComHelper->IsOpened())
+    {
+        m_numNodes = 0;
+        SetTimer(2, 20000, NULL);
+        m_autoState = AUTO_STATE_PROVISIONING;
+        OnBnClickedBecomeProvisioner();
+    }
+    else
+    {
+        bAuto = FALSE;
+    }
+    return TRUE; // return TRUE unless you set the focus to a control
 }
 
 void ConnectedMesh::OnClose()
@@ -193,6 +215,10 @@ void ConnectedMesh::OnCbnSelchangeComPort()
 
     if (ComPort >= 0)
     {
+        // If sending data, stop it.
+        if (m_sendingData)
+            OnBnClickedConnMeshStartData ();
+
         m_ComHelper->ClosePort();
         Sleep(1000);
 
@@ -319,8 +345,8 @@ void ConnectedMesh::SendData()
             {
                 if (m_provisioned_nodes[i].addr == 0)
                     continue;
-                m_provisioned_nodes[i].bpsRx = (timePassed != 0) ? (((m_provisioned_nodes[i].bytesRx * 1000) + (timePassed / 2)) / timePassed) : 0;
-                m_provisioned_nodes[i].bpsTx = (timePassed != 0) ? (((m_provisioned_nodes[i].bytesTx * 1000) + (timePassed / 2)) / timePassed) : 0;
+                m_provisioned_nodes[i].bpsRx = (timePassed != 0) ? ((((ULONGLONG)m_provisioned_nodes[i].bytesRx * 1000) + (timePassed / 2)) / timePassed) : 0;
+                m_provisioned_nodes[i].bpsTx = (timePassed != 0) ? ((((ULONGLONG)m_provisioned_nodes[i].bytesTx * 1000) + (timePassed / 2)) / timePassed) : 0;
                 wsprintf(buff, L"0x%04x\n%d/%d\n%d/%d\n%d/%d", m_provisioned_nodes[i].addr, m_provisioned_nodes[i].packetsTx, m_provisioned_nodes[i].packetsRx, m_provisioned_nodes[i].bytesTx, m_provisioned_nodes[i].bytesRx, m_provisioned_nodes[i].bpsTx, m_provisioned_nodes[i].bpsRx);
                 SetDlgItemText(IDC_CONN_MESH_TX_RX_DATA_1 + i, buff);
             }
@@ -339,6 +365,7 @@ void ConnectedMesh::OnBnClickedConnMeshStartData()
 
         data_len_down = GetDlgItemInt (IDC_CONN_MESH_HOST_DATA_LEN);
         battery_len_up = GetDlgItemInt (IDC_CONN_MESH_BATTERY_DATA_LEN);
+        data_down_interval = GetDlgItemInt (IDC_CONN_MESH_HOST_DATA_INTERVAL);
 
         buffer[0] = (uint8_t)battery_len_up;
 
@@ -347,7 +374,6 @@ void ConnectedMesh::OnBnClickedConnMeshStartData()
             if (m_provisioned_nodes[i].addr == 0)
                 continue;
 
-            Log(L"%04x\n", m_provisioned_nodes[i].addr);
             m_provisioned_nodes[i].packetsTx = 0;
             m_provisioned_nodes[i].packetsRx = 0;
             m_provisioned_nodes[i].bytesTx = 0;
@@ -357,7 +383,7 @@ void ConnectedMesh::OnBnClickedConnMeshStartData()
         }
         m_ComHelper->SendWicedCommand(HCI_CONTROL_CONN_MESH_COMMAND_START_STOP_DATA, buffer, 1);
         timeBeginPeriod(1);     // request 1ms accuracy
-        timerid = timeSetEvent(100, 0, _TimerProc, (DWORD_PTR)this, TIME_PERIODIC);
+        timerid = timeSetEvent(data_down_interval, 0, _TimerProc, (DWORD_PTR)this, TIME_PERIODIC);
 
         // SetTimer(1, 100, NULL);
         m_bStarting = TRUE;
@@ -388,6 +414,10 @@ void ConnectedMesh::OnBnClickedConnMeshStartData()
 
 void ConnectedMesh::OnBnClickedConnMeshFactoryReset()
 {
+    // If sending data, stop it.
+    if (m_sendingData)
+        OnBnClickedConnMeshStartData ();
+
     memset(m_provisioned_nodes, 0, sizeof(m_provisioned_nodes));
     CComboBox* cbNodeAddr = (CComboBox*)GetDlgItem(IDC_CONN_MESH_NODE_ADDR);
     ((CComboBox*)GetDlgItem(IDC_CONN_MESH_NODE_ADDR))->ResetContent();
@@ -399,6 +429,10 @@ void ConnectedMesh::OnBnClickedConnMeshFactoryReset()
 
 void ConnectedMesh::OnBnClickedConnMeshReset()
 {
+    // If sending data, stop it.
+    if (m_sendingData)
+        OnBnClickedConnMeshStartData ();
+
     Log(L"\n[1]  *********  Reset  *********\n");
     m_ComHelper->SendWicedCommand(HCI_CONTROL_CONN_MESH_COMMAND_RESET, NULL, 0);
 }
@@ -413,21 +447,6 @@ BOOL ConnectedMesh::OnInitDialog()
 
     return TRUE; // return TRUE unless you set the focus to a control
     // EXCEPTION: OCX Property Pages should return FALSE
-}
-
-void ConnectedMesh::OnBnClickedSendData()
-{
-    BYTE buffer[400];
-    DWORD len = GetHexValue(IDC_CONN_MESH_APP_DATA, buffer, sizeof(buffer));
-
-    if (m_ComHelper2 != NULL)
-    {
-        Log(L"\n[2]  *********  Sending Data  *********\n");
-
-        m_ComHelper2->SendWicedCommand(HCI_CONTROL_CONN_MESH_COMMAND_SEND_APP_DATA, buffer, len);
-    }
-    else
-        Log(L"\n*********  ERROR - no connection on [2] *********\n");
 }
 
 DWORD ConnectedMesh::GetHexValue(DWORD id, LPBYTE buf, DWORD buf_size)
@@ -474,7 +493,6 @@ void ConnectedMesh::ProcessData(int port_num, DWORD opcode, LPBYTE p_data, DWORD
     UINT16  src, node;
     int     xx, yy, num_nodes;
     WCHAR   buff[1000];
-    uint32_t tx_delay[MAX_RCVD_PACKET_DELAY];
     uint32_t rx_delay[MAX_RCVD_PACKET_DELAY];
     UINT8   connected;
     UINT32  ping_rtt;
@@ -496,6 +514,21 @@ void ConnectedMesh::ProcessData(int port_num, DWORD opcode, LPBYTE p_data, DWORD
                 if (m_provisioned_nodes[i].addr == 0)
                 {
                     m_provisioned_nodes[i].addr = node;
+                    if (m_autoState == AUTO_STATE_PROVISIONING)
+                    {
+                        if (++m_numNodes == AutoNodes)
+                        {
+                            m_autoState = AUTO_STATE_SWITCHING_OPERATING;
+                            m_numPendingNodes = m_numNodes;
+                            SetTimer(2, 5000, NULL);
+                            OnBnClickedEndProvisioning();
+                        }
+                        else
+                        {
+                            // wait for other nodes to complete
+                            SetTimer(2, 15000, NULL);
+                        }
+                    }
                     break;
                 }
             }
@@ -505,21 +538,72 @@ void ConnectedMesh::ProcessData(int port_num, DWORD opcode, LPBYTE p_data, DWORD
     case HCI_CONTROL_CONN_MESH_EVENT_OP_STATE_CHANGED:
         STREAM_TO_UINT16(node, p);
         Log(L"Operating state changed, Address: 0x%04x", node);
+        if (m_autoState == AUTO_STATE_SWITCHING_OPERATING)
+        {
+            if (node != 1) // excluding provisioner itself
+            {
+                if (--m_numPendingNodes == 0)
+                {
+                    m_autoState = AUTO_STATE_WAITING_CONN_UP;
+                    m_numPendingNodes = m_numNodes;
+                    SetTimer(2, 5000, NULL);
+                }
+                else
+                {
+                    // wait for other nodes to complete
+                    SetTimer(2, 5000, NULL);
+                }
+            }
+        }
         break;
 
     case HCI_CONTROL_CONN_MESH_EVENT_RESET_COMPLETE:
         STREAM_TO_UINT16(node, p);
         Log(L"Reset complete, Address: 0x%04x", node);
+        if (m_autoState == AUTO_STATE_RESETTING)
+        {
+            if (--m_numPendingNodes == 0)
+            {
+                SetTimer(2, 3000, NULL);
+                m_autoState = AUTO_STATE_WAIT_RESTART;
+            }
+            else
+            {
+                // wait for other nodes to complete
+                SetTimer(2, 5000, NULL);
+            }
+        }
         break;
 
     case HCI_CONTROL_CONN_MESH_EVENT_CONN_UP:
         STREAM_TO_UINT16(node, p);
         Log(L"Connection up, Address: 0x%04x", node);
+        if (m_autoState == AUTO_STATE_WAITING_CONN_UP)
+        {
+            if (--m_numPendingNodes == 0)
+            {
+                m_autoState = AUTO_STATE_WAITING_SEND_DATA;
+                // m_numPendingNodes = m_numNodes;
+                SetTimer(2, 2000, NULL);
+            }
+            else
+            {
+                SetTimer(2, 5000, NULL);
+            }
+        }
         break;
 
     case HCI_CONTROL_CONN_MESH_EVENT_CONN_DOWN:
         STREAM_TO_UINT16(node, p);
         Log(L"Connection down, Address: 0x%04x reason:%d", node, p[0]);
+        // if connection goes down while sending data, stop
+        if (m_autoState == AUTO_STATE_SEND_DATA)
+        {
+            PlaySound(L"SystemHand", NULL, SND_SYNC);
+            PlaySound(L"SystemExclamation", NULL, SND_SYNC);
+            PlaySound(L"SystemHand", NULL, SND_SYNC);
+            m_autoState = AUTO_STATE_IDLE;
+        }
         break;
 
     case HCI_CONTROL_CONN_MESH_EVENT_APP_DATA:
@@ -641,12 +725,35 @@ void ConnectedMesh::ProcessData(int port_num, DWORD opcode, LPBYTE p_data, DWORD
     case HCI_CONTROL_CONN_MESH_EVENT_DATA_STATS:
         STREAM_TO_UINT16(node, p);
         for (int i = 0; i < MAX_RCVD_PACKET_DELAY; i++)
-            STREAM_TO_UINT32(tx_delay[i], p);
-        for (int i = 0; i < MAX_RCVD_PACKET_DELAY; i++)
             STREAM_TO_UINT32(rx_delay[i], p);
 
-        Log (L"Node: 0x%04x      Rcvd at node:      %10u        %10u        %10u                Rcvd at central:      %10u        %10u        %10u\n", node,
-            tx_delay[0], tx_delay[1], tx_delay[2], rx_delay[0], rx_delay[1], rx_delay[2]);
+        Log (L"From Node: 0x%04x             %10u          %10u          %10u\n", node,
+                rx_delay[0], rx_delay[1], rx_delay[2]);
+        break;
+
+    case HCI_CONTROL_CONN_MESH_EVENT_RSSI_VALUES:
+        STREAM_TO_UINT16 (node, p);
+        len -= 2;
+        num_nodes = len / 3;
+
+        Log (L"RSSI Values from Node: 0x%04x", node);
+        yy = wsprintf (buff, L"                ");
+
+        for (xx = 0; xx < num_nodes; xx++)
+        {
+            char   rssi;
+
+            STREAM_TO_UINT16 (node, p);
+            STREAM_TO_UINT8 (rssi, p);
+
+            yy += wsprintf (&buff[yy], L"Node 0x%04x: %d   ", node, rssi);
+            if (yy > 80)
+            {
+                Log (buff);
+                yy = wsprintf (buff, L"                ");
+            }
+        }
+        Log (buff);
         break;
 
     case HCI_CONTROL_EVENT_WICED_TRACE:
@@ -677,24 +784,57 @@ void ConnectedMesh::ProcessData(int port_num, DWORD opcode, LPBYTE p_data, DWORD
 void ConnectedMesh::OnTimer(UINT_PTR nIDEvent)
 {
     static USHORT seq = 0;
-    if (!m_sendingData)
-        KillTimer(1);
-    else
+    if (nIDEvent == 1)
     {
-        uint8_t buffer[100];
-
-        memset(buffer, seq, sizeof(buffer));
-        for (int i = 0; i < MAX_NODES; i++)
+        if (!m_sendingData)
+            KillTimer(1);
+        else
         {
-            if (m_provisioned_nodes[i].addr != 0)
+            uint8_t buffer[100];
+
+            memset(buffer, seq, sizeof(buffer));
+            for (int i = 0; i < MAX_NODES; i++)
             {
-                uint8_t* p = buffer;
-                UINT16_TO_STREAM(p, m_provisioned_nodes[i].addr);
-                Log(L"Send  App Data   Dst: 0x%04x  Data Len: %d  Data: %02x %02x %02x %02x %02x %02x %02x", m_provisioned_nodes[i].addr, data_len_down, p[0], p[1], p[2], p[3], p[4], p[5], p[6]);
-                m_ComHelper->SendWicedCommand(HCI_CONTROL_CONN_MESH_COMMAND_SEND_APP_DATA, buffer, data_len_down);
+                if (m_provisioned_nodes[i].addr != 0)
+                {
+                    uint8_t* p = buffer;
+                    UINT16_TO_STREAM(p, m_provisioned_nodes[i].addr);
+                    Log(L"Send  App Data   Dst: 0x%04x  Data Len: %d  Data: %02x %02x %02x %02x %02x %02x %02x", m_provisioned_nodes[i].addr, data_len_down, p[0], p[1], p[2], p[3], p[4], p[5], p[6]);
+                    m_ComHelper->SendWicedCommand(HCI_CONTROL_CONN_MESH_COMMAND_SEND_APP_DATA, buffer, data_len_down);
+                }
             }
+            seq++;
         }
-        seq++;
+    }
+    else if (nIDEvent == 2)
+    {
+        KillTimer(2);
+        if (m_autoState == AUTO_STATE_WAITING_SEND_DATA)
+        {
+            m_autoState = AUTO_STATE_SEND_DATA;
+            OnBnClickedConnMeshStartData();
+            SetTimer(2, SendDataTime * 1000, NULL);
+        }
+        else if (m_autoState == AUTO_STATE_SEND_DATA)
+        {
+            m_autoState = AUTO_STATE_STOPPING_SEND_DATA;
+            OnBnClickedConnMeshStartData();
+            SetTimer(2, 3000, NULL);
+        }
+        else if (m_autoState == AUTO_STATE_STOPPING_SEND_DATA)
+        {
+            SetTimer(2, 5000, NULL);
+            m_autoState = AUTO_STATE_RESETTING;
+            m_numPendingNodes = m_numNodes + 1; // all nodes plus provisioner itself
+            OnBnClickedConnMeshFactoryReset();
+        }
+        else if (m_autoState == AUTO_STATE_WAIT_RESTART)
+        {
+            m_numNodes = 0;
+            SetTimer(2, 20000, NULL);
+            m_autoState = AUTO_STATE_PROVISIONING;
+            OnBnClickedBecomeProvisioner();
+        }
     }
     CPropertyPage::OnTimer(nIDEvent);
 }
@@ -702,7 +842,7 @@ void ConnectedMesh::OnTimer(UINT_PTR nIDEvent)
 void ConnectedMesh::OnBnClickedConnMeshGetDataStats()
 {
     Log(L" ");
-    Log(L"     Transmission delays                 < 100ms       < 200ms        > 200ms                                             < 100ms       < 200ms        > 200ms\n");
+    Log (L"     Battery Readings            On Time        1 slot late     2+ Slots late\n");
     m_ComHelper->SendWicedCommand(HCI_CONTROL_CONN_MESH_COMMAND_GET_STATS, NULL, 0);
 }
 
@@ -719,4 +859,10 @@ void ConnectedMesh::OnBnClickedConnMeshIdentify()
         Log(L"\n[1]  *********  Sending Identify Node 0x%04x  *********\n", node);
         m_ComHelper->SendWicedCommand(HCI_CONTROL_CONN_MESH_COMMAND_IDENTIFY, buffer, (uint16_t)(p - buffer));
     }
+}
+
+
+void ConnectedMesh::OnBnClickedConnMeshGetRssi ()
+{
+    m_ComHelper->SendWicedCommand (HCI_CONTROL_CONN_MESH_COMMAND_GET_RSSI, NULL, 0);
 }

@@ -309,7 +309,7 @@ class HciConstants {
     public static final short HCI_CONTROL_MESH_EVENT_UNPROVISIONED_DEVICE                         = (short) ( ( HCI_CONTROL_GROUP_MESH << 8 ) | 0xd0 );  /* Unprovisioned device event */
     public static final short HCI_CONTROL_MESH_EVENT_PROVISION_LINK_STATUS                        = (short) ( ( HCI_CONTROL_GROUP_MESH << 8 ) | 0xd1 );  /* Provision link established or dropped */
     public static final short HCI_CONTROL_MESH_EVENT_PROVISION_END                                = (short) ( ( HCI_CONTROL_GROUP_MESH << 8 ) | 0xd2 );  /* Provision end event */
-    public static final short HCI_CONTROL_MESH_EVENT_PROVISION_DEVICE_CAPABITIES                  = (short) ( ( HCI_CONTROL_GROUP_MESH << 8 ) | 0xd3 );  /* Provisioning device capabilities */
+    public static final short HCI_CONTROL_MESH_EVENT_PROVISION_DEVICE_CAPABILITIES                = (short) ( ( HCI_CONTROL_GROUP_MESH << 8 ) | 0xd3 );  /* Provisioning device capabilities */
     public static final short HCI_CONTROL_MESH_EVENT_PROVISION_OOB_DATA                           = (short) ( ( HCI_CONTROL_GROUP_MESH << 8 ) | 0xd4 );  /* Provisioning OOB data request */
     public static final short HCI_CONTROL_MESH_EVENT_PROXY_DEVICE_NETWORK_DATA                    = (short) ( ( HCI_CONTROL_GROUP_MESH << 8 ) | 0xd5 );  /* Proxy device network data event */
 

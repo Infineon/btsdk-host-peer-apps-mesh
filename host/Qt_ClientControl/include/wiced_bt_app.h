@@ -33,7 +33,7 @@
 
  /** @file
  *
- *  Defines functions for using the WICED MPAF Framework
+ *  Defines functions for using the AIROC MPAF Framework
  */
 #ifndef WICED_BT_APP_H
 #define WICED_BT_APP_H

@@ -43,13 +43,12 @@
 #include "mesh_main.h"
 #include <wiced_bt_ble.h>
 #include <wiced_timer.h>
-#include <android/Log.h>
+#include <android/log.h>
 #include <wiced_bt_mesh_core.h>
 #include <linux/time.h>
 #include "wiced_bt_gatt.h"
 #include "wiced_bt_mesh_provision.h"
 #include <pthread.h>
-#include <android/log.h>
 
 
 typedef void (TIMER_CBACK)(void *p_tle);

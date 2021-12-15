@@ -33,6 +33,10 @@
 #include "stdafx.h"
 #include "ControlComm.h"
 #include "hci_control_api.h"
+#include <initguid.h>
+#include <setupapi.h>
+#include <windows.h>
+#include <winioctl.h>
 
 extern void Log(WCHAR* _Format, ...);
 extern void HandleWicedEvent(int com_port, DWORD identifier, DWORD len, BYTE* p_data);
@@ -68,6 +72,96 @@ DWORD WINAPI ReadThread(LPVOID lpdwThreadParam)
 {
     ComHelper* pComHelper = (ComHelper*)lpdwThreadParam;
     return pComHelper->ReadWorker();
+}
+
+//
+// Obtains the information about Serial (Com port) device from the system using SetupAPI windows
+// API, This information includes the OS driver name for the serial device. Workaround for
+// 1. https://jira.cypress.com/browse/BTSDK-4891
+// KP3_RTS (BT_UART_CTS) stays high when Clientcontrol com port is enabled
+// 2. https://jira.cypress.com/browse/CYBLUETOOL-369
+// KP3_RTS (BT_UART_CTS) stays high when Bluetool com port is enabled
+//
+bool IsKp3Device(const char* portNameToFind)
+{
+    // Create a "device information set" for the specified GUID
+    const HDEVINFO hDevInfoSet = SetupDiGetClassDevs(&GUID_DEVINTERFACE_SERENUM_BUS_ENUMERATOR,
+        nullptr, nullptr, DIGCF_PRESENT);
+    if (hDevInfoSet == INVALID_HANDLE_VALUE)
+    {
+        Log(L"Failed to get com port device details");
+        return false;
+    }
+
+    // do the enumeration
+    bool bMoreItems = true;
+    bool portFound = false;
+    int nIndex = 0;
+    SP_DEVINFO_DATA devInfo{ };
+
+    while (bMoreItems)
+    {
+        // Enumerate the current device
+        devInfo.cbSize = sizeof(SP_DEVINFO_DATA);
+        bMoreItems = SetupDiEnumDeviceInfo(hDevInfoSet, nIndex, &devInfo);
+        if (bMoreItems)
+        {
+            const HKEY hKey = SetupDiOpenDevRegKey(hDevInfoSet, &devInfo, DICS_FLAG_GLOBAL, 0,
+                DIREG_DEV, KEY_QUERY_VALUE);
+            CHAR szBufferHkeyPort[512];
+            DWORD dwBufferSize = sizeof(szBufferHkeyPort);
+            ULONG nError;
+            nError
+                = RegQueryValueExA(hKey, "PortName", 0, NULL,
+                    reinterpret_cast<LPBYTE>(szBufferHkeyPort), &dwBufferSize);
+            if (nError == ERROR_SUCCESS)
+            {
+                if (!strcmp(szBufferHkeyPort, portNameToFind))
+                {
+                    portFound = true;
+                    break;  // the dev info for the given port found
+                }
+            }
+        }
+
+        ++nIndex;
+    }
+
+    if (!portFound)
+    {
+        Log(L"COM port's [%s] properties were not found using SetupAPI",
+            portNameToFind);
+    }
+
+    if (portFound)
+    {
+        char szDesc[2048] = "\0";
+        DWORD dwSize, dwPropertyRegDataType;
+
+        portFound = false;
+
+        // Get the serial driver name, e.g. "usbser"
+        if (SetupDiGetDeviceRegistryPropertyA(hDevInfoSet, &devInfo, SPDRP_SERVICE,
+            &dwPropertyRegDataType,
+            reinterpret_cast<BYTE*>(szDesc),
+            sizeof(szDesc),  // The size, in bytes
+            &dwSize))
+        {
+            if (!strcmp(szDesc, "usbser"))
+            {
+                portFound = true;
+            }
+        }
+        else
+        {
+            Log(L"Failed to get serial driver name using SetupAPI");
+        }
+    }
+
+    // Free up the "device information set" now that we are finished with it
+    SetupDiDestroyDeviceInfoList(hDevInfoSet);
+
+    return portFound;
 }
 
 //
@@ -131,10 +225,17 @@ BOOL ComHelper::OpenPort(int port, int baudRate)
         serial_config.StopBits = ONESTOPBIT;
         serial_config.fBinary = TRUE;
         serial_config.fOutxCtsFlow = TRUE;
-        serial_config.fRtsControl = RTS_CONTROL_HANDSHAKE;
         serial_config.fOutxDsrFlow = FALSE;
-        serial_config.fDtrControl = FALSE;
-
+        if (IsKp3Device(lpStr + 4))
+        {
+            serial_config.fRtsControl = RTS_CONTROL_ENABLE;
+            serial_config.fDtrControl = DTR_CONTROL_ENABLE;
+        }
+        else
+        {
+            serial_config.fRtsControl = RTS_CONTROL_HANDSHAKE;
+            serial_config.fDtrControl = FALSE;
+        }
         serial_config.fOutX = FALSE;
         serial_config.fInX = FALSE;
         serial_config.fErrorChar = FALSE;

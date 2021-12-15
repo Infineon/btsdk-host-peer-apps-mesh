@@ -1169,7 +1169,7 @@ void CMeshClientDlg::OnBnClickedNetworkOpen()
     if (mesh_client_network_open(provisioner_name, provisioner_uuid, mesh_name, network_opened) != MESH_CLIENT_SUCCESS)
     {
         LeaveCriticalSection(&cs);
-        MessageBoxA(m_hWnd, mesh_name, "Network Does Not Exists", MB_ICONERROR);
+        MessageBoxA(m_hWnd, mesh_name, "Failed to open network", MB_ICONERROR);
         return;
     }
     LeaveCriticalSection(&cs);
@@ -2243,7 +2243,7 @@ BOOL read_dfu_image_info(CString sFilePath, mesh_dfu_fw_id_t* fwID, mesh_dfu_met
     FILE* pFile;
     if (_wfopen_s(&pFile, sFilePath, L"r"))
     {
-        Log(L"Failed to open image info file!");
+        Log(L"Failed to open image info file!\n");
         return FALSE;
     }
 
@@ -2289,7 +2289,7 @@ extern "C"
 {
     char skip_space(FILE* fp);
     int mesh_json_read_tag_name(FILE* fp, char* tagname, int len);
-    int mesh_json_read_string(FILE* fp, char* buffer, int len);
+    int mesh_json_read_string(FILE* fp, char prefix, char* buffer, int len);
 }
 
 int mesh_json_read_next_level_tag(FILE* fp, char* tagname, int len)
@@ -2341,7 +2341,7 @@ BOOL CMeshClientDlg::ReadDfuManifestFile(CString sFilePath)
         c1 = skip_space(fp);
         if (strcmp(tagname, "firmware_file") == 0)
         {
-            if (!mesh_json_read_string(fp, filename, MAX_FILE_NAME))
+            if (!mesh_json_read_string(fp, c1, filename, MAX_FILE_NAME))
                 goto return_false;
 
             m_sDfuImageFilePath = sPath;
@@ -2349,7 +2349,7 @@ BOOL CMeshClientDlg::ReadDfuManifestFile(CString sFilePath)
         }
         else if (strcmp(tagname, "metadata_file") == 0)
         {
-            if (!mesh_json_read_string(fp, filename, MAX_FILE_NAME))
+            if (!mesh_json_read_string(fp, c1, filename, MAX_FILE_NAME))
                 goto return_false;
 
             CString sMetaFilePath = sPath;
@@ -2369,7 +2369,7 @@ BOOL CMeshClientDlg::ReadDfuManifestFile(CString sFilePath)
         }
         else if (strcmp(tagname, "firmware_id") == 0)
         {
-            if (!mesh_json_read_string(fp, filename, MAX_FILE_NAME))
+            if (!mesh_json_read_string(fp, c1, filename, MAX_FILE_NAME))
                 goto return_false;
             char* p = filename;
             int i = 0;
@@ -2405,7 +2405,7 @@ void CMeshClientDlg::OnBnClickedOtaUpgradeStart()
 #ifdef MESH_DFU_ENABLED
     if (m_dfuState != WICED_BT_MESH_DFU_STATE_INIT && m_dfuState != WICED_BT_MESH_DFU_STATE_COMPLETE && m_dfuState != WICED_BT_MESH_DFU_STATE_FAILED)
     {
-        Log(L"DFU already started");
+        Log(L"DFU already started\n");
         return;
     }
 #endif
@@ -2491,7 +2491,7 @@ BOOL CMeshClientDlg::IsOtaSupported()
     BOOL ota_supported = pWin10BtInterface->CheckForOTAServices(&GUID_OTA_FW_UPGRADE_SERVICE, &GUID_OTA_SEC_FW_UPGRADE_SERVICE);
     if (ota_supported)
     {
-        Log(L"Found OTA service");
+        Log(L"Found OTA service\n");
         guidSvcWSUpgrade = m_btInterface->m_bSecure ? GUID_OTA_SEC_FW_UPGRADE_SERVICE : GUID_OTA_FW_UPGRADE_SERVICE;
         guidCharWSUpgradeControlPoint = GUID_OTA_FW_UPGRADE_CHARACTERISTIC_CONTROL_POINT;
         guidCharWSUpgradeData = GUID_OTA_FW_UPGRADE_CHARACTERISTIC_DATA;
@@ -2513,7 +2513,7 @@ void CMeshClientDlg::StartOta()
     CBtWin10Interface* pWin10BtInterface = dynamic_cast<CBtWin10Interface*>(m_btInterface);
 
     // Start OTA
-    Log(L"Firmware OTA start");
+    Log(L"Firmware OTA start\n");
 
     // Load OTA FW file into memory
     FILE* fPatch;
@@ -2568,7 +2568,7 @@ void CMeshClientDlg::OnBnClickedOtaUpgradeStop()
         OnBnClickedOtaUpgradeStatus();
 
     m_dfuState = WICED_BT_MESH_DFU_STATE_INIT;
-    Log(L"DFU stopped");
+    Log(L"DFU stopped\n");
 #endif
 }
 
@@ -2615,21 +2615,21 @@ void CMeshClientDlg::OnDfuStatusCallback(uint8_t state, uint8_t* p_data, uint32_
     switch (state)
     {
     case WICED_BT_MESH_DFU_STATE_VALIDATE_NODES:
-        Log(L"DFU finding nodes");
+        Log(L"DFU finding nodes\n");
         break;
     case WICED_BT_MESH_DFU_STATE_GET_DISTRIBUTOR:
-        Log(L"DFU choosing Distributor");
+        Log(L"DFU choosing Distributor\n");
         break;
     case WICED_BT_MESH_DFU_STATE_UPLOAD:
         if (p_data && data_length)
         {
             progress = (int)p_data[0];
-            Log(L"DFU upload progress %d%%", progress);
+            Log(L"DFU upload progress %d%%\n", progress);
             m_Progress.SetPos(progress / 2);
         }
         else
         {
-            Log(L"DFU uploading firmware to the Distributor");
+            Log(L"DFU uploading firmware to the Distributor\n");
         }
         break;
     case WICED_BT_MESH_DFU_STATE_DISTRIBUTE:
@@ -2638,14 +2638,14 @@ void CMeshClientDlg::OnDfuStatusCallback(uint8_t state, uint8_t* p_data, uint32_
             number_nodes = (uint16_t)p_data[0] + ((uint16_t)p_data[1] << 8);
             if (number_nodes * 4 != data_length - 2)
             {
-                Log(L"DFU bad distribution data length");
+                Log(L"DFU bad distribution data length\n");
                 break;
             }
             p = p_data + 2;
             progress = -1;
             for (i = 0; i < number_nodes; i++)
             {
-                //Log(L"DFU distribution src:%02x%02x phase:%d progress:%d", p[1], p[0], p[2], p[3]);
+                //Log(L"DFU distribution src:%02x%02x phase:%d progress:%d\n", p[1], p[0], p[2], p[3]);
 
                 // Node data: 2 bytes address, 1 byte phase, 1 byte progress
                 if (p[2] == WICED_BT_MESH_FW_UPDATE_PHASE_TRANSFER_ACTIVE)
@@ -2661,33 +2661,33 @@ void CMeshClientDlg::OnDfuStatusCallback(uint8_t state, uint8_t* p_data, uint32_
             }
             if (progress == -1)
                 progress = 0;
-            Log(L"DFU distribution progress %d%%", progress);
+            Log(L"DFU distribution progress %d%%\n", progress);
 
             m_Progress.SetPos(progress / 2 + 50);
         }
         else
         {
-            Log(L"DFU Distributor distributing firmware to nodes");
+            Log(L"DFU Distributor distributing firmware to nodes\n");
         }
         break;
     case WICED_BT_MESH_DFU_STATE_APPLY:
-        Log(L"DFU applying firmware");
+        Log(L"DFU applying firmware\n");
         break;
     case WICED_BT_MESH_DFU_STATE_COMPLETE:
-        Log(L"DFU completed");
+        Log(L"DFU completed\n");
         m_Progress.SetPos(100);
         if (p_data && data_length)
         {
             number_nodes = (uint16_t)p_data[0] + ((uint16_t)p_data[1] << 8);
             if (number_nodes * 4 != data_length - 2)
             {
-                Log(L"DFU bad complete data length");
+                Log(L"DFU bad complete data length\n");
                 break;
             }
             p = p_data + 2;
             for (i = 0; i < number_nodes; i++)
             {
-                Log(L"Node %02x%02x DFU %s", p[1], p[0], p[2] == WICED_BT_MESH_FW_UPDATE_PHASE_APPLY_SUCCESS ? L"succeeded" : L"failed");
+                Log(L"Node %02x%02x DFU %s\n", p[1], p[0], p[2] == WICED_BT_MESH_FW_UPDATE_PHASE_APPLY_SUCCESS ? L"succeeded" : L"failed");
                 p += 4;
             }
         }
@@ -2695,7 +2695,7 @@ void CMeshClientDlg::OnDfuStatusCallback(uint8_t state, uint8_t* p_data, uint32_
             OnBnClickedOtaUpgradeStatus();
         break;
     case WICED_BT_MESH_DFU_STATE_FAILED:
-        Log(L"DFU failed");
+        Log(L"DFU failed\n");
         if (m_bDfuStatus)
             OnBnClickedOtaUpgradeStatus();
         break;
@@ -2759,7 +2759,7 @@ LRESULT CMeshClientDlg::OnProgress(WPARAM state, LPARAM param)
     }
     else if (state == WSDownloader::WS_UPGRADE_STATE_VERIFIED)
     {
-        Log(L"Firmware OTA finish");
+        Log(L"Firmware OTA finish\n");
         if (ota_transfer_for_dfu)
         {
 #ifdef MESH_DFU_ENABLED
@@ -2770,7 +2770,7 @@ LRESULT CMeshClientDlg::OnProgress(WPARAM state, LPARAM param)
     }
     else if (state == WSDownloader::WS_UPGRADE_STATE_ABORTED)
     {
-        Log(L"Firmware OTA failed");
+        Log(L"Firmware OTA failed\n");
         if (ota_transfer_for_dfu)
         {
 #ifdef MESH_DFU_ENABLED

@@ -41,6 +41,7 @@
 
 #include <wiced_bt_mesh_models.h>
 #include "stdint.h"
+#include <time.h>
 #ifdef DIRECTED_FORWARDING_SERVER_SUPPORTED
 #include "wiced_bt_mesh_mdf.h"
 #endif
@@ -51,6 +52,11 @@ typedef unsigned int wiced_bool_t;
 
 #define WICED_MESH_DB_UUID_SIZE     16
 #define WICED_MESH_DB_KEY_SIZE      16
+
+#define WICED_MESH_DB_ADDR_TYPE_ADDRESS     0
+#define WICED_MESH_DB_ADDR_TYPE_LABEL_UUID  1
+
+#define WICED_MESH_DB_TIMESTAMP_SIZE        26
 
 typedef struct
 {
@@ -72,9 +78,10 @@ typedef struct
     uint8_t  key[WICED_MESH_DB_KEY_SIZE];
     uint8_t  old_key[WICED_MESH_DB_KEY_SIZE];
     uint8_t  phase;
-#define MIN_SECURITY_HIGH   0
-#define MIN_SECURITY_LOW    1
+#define MIN_SECURITY_HIGH   1
+#define MIN_SECURITY_LOW    0
     uint8_t  min_security;
+    time_t   timestamp;
 } wiced_bt_mesh_db_net_key_t;
 
 typedef struct
@@ -88,9 +95,18 @@ typedef struct
 
 typedef struct
 {
+    uint8_t type;
+    union {
+        uint16_t address;
+        uint8_t  label_uuid[16];
+    } u;
+} wiced_bt_mesh_db_address_t;
+
+typedef struct
+{
     char *name;
-    uint16_t addr;
-    uint16_t parent_addr;
+    wiced_bt_mesh_db_address_t addr;
+    wiced_bt_mesh_db_address_t parent_addr;
 } wiced_bt_mesh_db_group_t;
 
 typedef struct
@@ -119,7 +135,7 @@ typedef struct
 
 typedef struct
 {
-    uint16_t address;
+    wiced_bt_mesh_db_address_t address;
     uint16_t index;
     uint8_t  ttl;
     uint32_t period;
@@ -177,7 +193,7 @@ typedef struct
 {
     wiced_bt_mesh_db_model_id_t model;
     uint8_t  num_subs;
-    uint16_t *sub;
+    wiced_bt_mesh_db_address_t *sub;
     uint8_t  num_bound_keys;
     uint16_t *bound_key;
     wiced_bt_mesh_db_publication_t pub;
@@ -259,15 +275,16 @@ typedef struct
 typedef struct
 {
     char *name;
-    uint16_t addr;
     uint16_t number;
+    uint8_t  num_addrs;
+    uint16_t *addr;
 } wiced_bt_mesh_db_scene_t;
 
 typedef struct
 {
     char *name;
     uint8_t uuid[WICED_MESH_DB_UUID_SIZE];
-    uint32_t timestamp;
+    time_t timestamp;
     uint32_t iv_index;
     uint8_t iv_update;
     uint8_t num_net_keys;
@@ -696,6 +713,11 @@ wiced_bt_mesh_db_node_t *wiced_bt_mesh_db_node_get_by_addr(wiced_bt_mesh_db_mesh
  * Get node information for the node with specified uuid.
  */
 wiced_bt_mesh_db_node_t* wiced_bt_mesh_db_node_get_by_uuid(wiced_bt_mesh_db_mesh_t* mesh_db, uint8_t *p_uuid);
+
+/*
+ * Get element information for the element using its name.
+ */
+wiced_bt_mesh_db_element_t* wiced_bt_mesh_db_element_get_by_element_name(wiced_bt_mesh_db_mesh_t* mesh_db, const char* name);
 
 /*
  * Get node information for the node using the name of one of its elements.

@@ -72,6 +72,8 @@ int as32BaudRate[4] =
 int aComPorts[128] = { 0 };
 int ComPortSelected = -1;
 int BaudRateSelected = -1;
+BOOL bAuto = FALSE;
+int autoNodes = 0;
 
 #if 0
 uint64_t TickCountInitValue;
@@ -94,24 +96,34 @@ public:
     void ParseParam(LPCTSTR lpszParam, BOOL bSwitch, BOOL bLast);
 
     // Implementation
+    BOOL        m_bIsHelp;
     BOOL        m_bIsUDPClient;
     BOOL        m_bIsUDPServer;
     BOOL        m_bConnectedMesh;
+    BOOL        m_bComPort;
+    BOOL        m_bBaudRate;
+    BOOL        m_bDataTime;
     BOOL        m_bPerfTestMode;
     BOOL        m_bLogToFile;
     BOOL        m_bInstance;
+    BOOL        m_bAuto;
     CString     sIPAddr; //IP Addr
 
 };
 
 CMeshCommandLineInfo::CMeshCommandLineInfo() : CCommandLineInfo()
 {
+    m_bIsHelp = FALSE;
     m_bIsUDPClient = FALSE;
     m_bIsUDPServer = FALSE;
     m_bConnectedMesh = FALSE;
+    m_bComPort = FALSE;
+    m_bBaudRate = FALSE;
+    m_bDataTime = FALSE;
     m_bPerfTestMode = MESH_PERFORMANCE_TESTING_ENABLED;
     m_bLogToFile = FALSE;
     m_bInstance = 0;
+    m_bAuto = FALSE;
     sIPAddr.Empty();
 }
 
@@ -125,11 +137,32 @@ void CMeshCommandLineInfo::ParseParam(LPCTSTR lpszParam, BOOL bSwitch, BOOL bLas
     CString csParam(lpszParam);
     csParam.MakeUpper();
 
+    if (csParam == L"HELP")
+    {
+        m_bIsHelp = TRUE;
+    }
     if (csParam == L"CONNECTED_MESH")
     {
         m_bConnectedMesh = TRUE;
     }
-    if (bSwitch)
+    else if (csParam == L"COM")
+    {
+        m_bComPort = TRUE;
+    }
+    else if (csParam == L"BAUDRATE")
+    {
+        m_bBaudRate = TRUE;
+    }
+    else if (csParam == L"AUTO")
+    {
+        m_bAuto = TRUE;
+        bAuto = TRUE;
+    }
+    else if (csParam == L"DATA_TIME")
+    {
+        m_bDataTime = TRUE;
+    }
+    else if (bSwitch)
     {
         switch (*csParam.Left(1).GetBuffer())
         {
@@ -139,10 +172,6 @@ void CMeshCommandLineInfo::ParseParam(LPCTSTR lpszParam, BOOL bSwitch, BOOL bLas
 
         case 'C': //UDP Client
             m_bIsUDPClient = TRUE;
-            break;
-
-        case 'O':
-            m_bConnectedMesh = TRUE;
             break;
 
         case 'P': //Mesh Performance Testing
@@ -169,9 +198,30 @@ void CMeshCommandLineInfo::ParseParam(LPCTSTR lpszParam, BOOL bSwitch, BOOL bLas
         }
         else if (m_bInstance)
         {
-            host_mode_instance = _wtoi((const WCHAR*) &lpszParam[0]);
+            m_bInstance = FALSE;
+            host_mode_instance = _wtoi((const WCHAR*)&lpszParam[0]);
             if (host_mode_instance > 9 || host_mode_instance < 0)
                 host_mode_instance = 0;
+        }
+        else if (m_bComPort)
+        {
+            m_bComPort = FALSE;
+            ComPort = _wtoi((const WCHAR*)&lpszParam[0]);
+        }
+        else if (m_bBaudRate)
+        {
+            m_bBaudRate = FALSE;
+            BaudRate = _wtoi((const WCHAR*)&lpszParam[0]);
+        }
+        else if (m_bAuto)
+        {
+            m_bAuto = FALSE;
+            AutoNodes = _wtoi((const WCHAR*)&lpszParam[0]);
+        }
+        else if (m_bDataTime)
+        {
+            m_bDataTime = FALSE;
+            SendDataTime = _wtoi((const WCHAR*)&lpszParam[0]);
         }
     }
 }
@@ -241,7 +291,12 @@ BOOL CClientControlApp::InitInstance( )
     CMeshCommandLineInfo cmdInfo;
     ParseCommandLine( cmdInfo );
 
-    if(cmdInfo.m_bIsUDPServer)
+    if (cmdInfo.m_bIsHelp)
+    {
+        MessageBox(NULL, L"Usage: ClientControl [-connected_mesh [-com <port number>] [-baudrate <baudrate>] [-auto <number of nodes> [-data_time <data test time in seconds>]]\n For example, -connected_mesh -auto 12 -data_time 600 -COM 4 -BAUDRATE 921600", L"Usage", MB_OK);
+        return FALSE;
+    }
+    if (cmdInfo.m_bIsUDPServer)
     {
         ods("We need to start the UDP Server");
         SetupUDPServer();

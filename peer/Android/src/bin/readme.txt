@@ -12,7 +12,7 @@ Create a room.
 
 Adding Light:
 -------------
-1>  Create the WICED application mesh_onoff_server/mesh_light_hsl_server (light).
+1>  Create the AIROC(TM) application mesh_onoff_server/mesh_light_hsl_server (light).
 2>  Adding Lights to the room:
     a> Add lights inside the room.
     b> The application wraps provisioning and configuration as part of adding a light.
@@ -23,7 +23,7 @@ Adding Light:
 
 Adding Temperature Sensor:
 --------------------------
-1>  Create the WICED application sensor_temperature.
+1>  Create the AIROC(TM) application sensor_temperature.
 2>  Adding a sensor to the room:
     a> Add a sensor inside the room.
     b> The application wraps provisioning and configuration as part of adding the sensor.
@@ -43,7 +43,7 @@ Adding Temperature Sensor:
 
 Adding Switch:
 --------------
-1>  Install the WICED application mesh_onoff_client (switch).
+1>  Install the AIROC(TM) application mesh_onoff_client (switch).
 2>  Adding Switches to the room:
     a>  Add switches inside the room.
     b>  The application wraps provisioning and configuration as part of adding a switch.
@@ -68,27 +68,27 @@ Added Mesh OTA support
 ----------------------
 1> On the UI if the user clicks on any of the added devices users will find an option to upgrade OTA.
 2> Store the OTA file to the phone and provide the path to the OTA file.
-3> Create a Mesh OTA file using the appropriate Mesh app using WICED SDK.
+3> Create a Mesh OTA file using the appropriate Mesh app using BTSDK.
 For example, when the user builds the mesh_onoff_server application, a binary file is located in the build directory.
 For the mesh_onoff_server app, the file in the build directory would be named "mesh_onoff_server-<name>.ota.bin"
 
 Mesh database JSON export/Import
 --------------------------------
-Cypress Mesh Controller framework stores Mesh network information in .json file format specified by SIG MESH WG.
+Infineon Mesh Controller framework stores Mesh network information in .json file format specified by SIG MESH WG.
 1> During Provisioning Android Mesh Controller stores the database in the application's internal memory.
 2> To exercise a use case such as control of Mesh devices using multiple phones follow these steps:
 	a> After creating a network and provisioning a few devices on phone P1:
        Use the option "export network" in the home screen settings to export the required Mesh database.
-    b> The Cypress Mesh Lighting app stores the exported Mesh database in "/sdcard/exports" directory.
+    b> The Infineon Mesh Lighting app stores the exported Mesh database in "/sdcard/exports" directory.
     c> A user can now move the exported file to another phone (Say phone P2).
     d> Install the Mesh Lighting app on P2. Use the "import network" option available in the settings menu of the main screen.
     e> The user can now control the Mesh devices using P2.
 
 For more information refer to the public APIs (importNetwork/exportNetwork) in MeshController.java
 
-Support added to control Mesh devices through the cloud via Cypress Mesh gateway
+Support added to control Mesh devices through the cloud via Infineon Mesh gateway
 --------------------------------------------------------------------
-Cypress Mesh solutions support the Mesh Gateway application which runs on combo chips. The current SDK consists of a Wi-Fi app named "bt_internet_gateway/mesh_network"
+Infineon Mesh solutions support the Mesh Gateway application which runs on combo chips. The current SDK consists of a Wi-Fi app named "bt_internet_gateway/mesh_network"
 Please look at the app notes to see how to set up a gateway.
 
 Note:

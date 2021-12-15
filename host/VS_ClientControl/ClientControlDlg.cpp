@@ -144,6 +144,9 @@ UINT16 setting_property_id = TEMPERATURE_SETTING_PROP_ID;
 UINT8 prop_value_len = 2;
 int ComPort = 0;
 int ComPort2 = 0;
+int BaudRate = 0;
+int SendDataTime = 10;      // by default in auto mode send data for 10 seconds
+int AutoNodes = 0;
 IMPLEMENT_DYNCREATE(CClientControlDlg, CPropertyPage)
 
 // CClientControlDlg dialog

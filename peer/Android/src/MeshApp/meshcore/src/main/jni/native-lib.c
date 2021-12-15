@@ -37,7 +37,6 @@
 #include <wiced_bt_mesh_provision.h>
 #include <stdlib.h>
 #include "malloc.h"
-#include "trace.h"
 #include "wiced_mesh_client.h"
 #include "mesh_main.h"
 #include <unistd.h>

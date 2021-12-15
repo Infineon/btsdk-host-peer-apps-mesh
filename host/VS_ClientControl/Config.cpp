@@ -489,7 +489,7 @@ void CConfig::ProcessData(DWORD opcode, LPBYTE p_data, DWORD len)
     case HCI_CONTROL_MESH_EVENT_PROVISION_LINK_REPORT:
         ProcessProvisionLinkReport(p_data, len);
         break;
-    case HCI_CONTROL_MESH_EVENT_PROVISION_DEVICE_CAPABITIES:
+    case HCI_CONTROL_MESH_EVENT_PROVISION_DEVICE_CAPABILITIES:
         ProcessProvisionDeviceCapabilities(p_data, len);
         break;
     case HCI_CONTROL_MESH_EVENT_PROVISION_OOB_DATA:

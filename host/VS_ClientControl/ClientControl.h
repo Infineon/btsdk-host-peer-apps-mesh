@@ -92,10 +92,15 @@ extern ComHelper* m_ComHelper;
 extern ComHelper* m_ComHelper2;
 extern int ComPort;
 extern int ComPort2;
+extern int BaudRate;
+extern int SendDataTime;
+extern int AutoNodes;
 extern int as32BaudRate[4];
 extern int aComPorts[];
 extern int ComPortSelected;
 extern int BaudRateSelected;
+extern BOOL bAuto;
+
 BYTE ProcNibble(char n);
 int FindBaudRateIndex(int baud);
 DWORD GetHexValue(char *szbuf, LPBYTE buf, DWORD buf_size);

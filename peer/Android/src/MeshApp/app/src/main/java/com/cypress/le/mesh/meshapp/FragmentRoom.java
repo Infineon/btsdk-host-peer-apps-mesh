@@ -791,6 +791,9 @@ public class FragmentRoom extends Fragment implements LightingService.IServiceCa
                     Log.d(TAG, "json string obtaines : "+jsonString);
                     show("Exporting to : /sdcard/exports", Toast.LENGTH_SHORT);
                     writeToSdcard(netwrk, jsonString);
+                    netwrk += ".ifx";
+                    jsonString = mApp.getMesh().exportNetwork(netwrk);
+                    writeToSdcard(netwrk, jsonString);
                 }
                 dialog.dismiss();
             }
@@ -878,7 +881,7 @@ public class FragmentRoom extends Fragment implements LightingService.IServiceCa
         else
             Log.d(TAG, "isLocationServiceEnabled : location is true");
 
-        ArrayList<String> groups = new ArrayList<String>(Arrays.asList(serviceReference.getMesh().getAllGroups(mCurrentNetwork)));
+        ArrayList<String> groups = serviceReference.getMesh().getAllGroups(mCurrentNetwork);
         Log.d(TAG,"groups"+groups);
         boolean componentFound = false;
         for(int i=0; i<groups.size(); i++)
@@ -1001,7 +1004,7 @@ public class FragmentRoom extends Fragment implements LightingService.IServiceCa
             textView.setText(serviceReference.getCurrentNetwork() + " : " + getLocation());
 //            String device = serviceReference.getCurrentNetwork().getBIGNode();
             String device = "Big Node";
-            List<String> groups = new ArrayList<String>(Arrays.asList(serviceReference.getMesh().getAllGroups(serviceReference.getCurrentNetwork())));
+            List<String> groups = serviceReference.getMesh().getAllGroups(serviceReference.getCurrentNetwork());
             Log.d(TAG,"groups size = " +groups.size());
             if(groups.size() != 0){
             //first room is all room
@@ -1546,7 +1549,7 @@ public class FragmentRoom extends Fragment implements LightingService.IServiceCa
         editor.putString(CurrentNetwork, mCurrentNetwork);
         editor.commit();
         mApp.setCurrNetwork(mCurrentNetwork);
-        List<String> groups = new ArrayList<String>(Arrays.asList(serviceReference.getMesh().getAllGroups(mCurrentNetwork)));
+        List<String> groups = serviceReference.getMesh().getAllGroups(mCurrentNetwork);
         if(groups != null && groups.size() > 0) {
             //first room is all room
 

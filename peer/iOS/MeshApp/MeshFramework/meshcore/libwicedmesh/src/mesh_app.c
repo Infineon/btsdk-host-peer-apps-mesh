@@ -65,7 +65,7 @@ static void mesh_app_init(wiced_bool_t is_provisioned);
 static void mesh_provision_message_handler(uint16_t event, wiced_bt_mesh_event_t *p_event, void *p_data);
 static void mesh_config_message_handler(uint16_t event, wiced_bt_mesh_event_t *p_event, void *p_data);
 static void mesh_control_message_handler(uint16_t event, wiced_bt_mesh_event_t *p_event, void *p_data);
-static void mesh_sensor_message_handler(uint8_t element_idx, uint16_t addr, uint16_t event, void *p_data);
+static void mesh_sensor_message_handler(uint16_t event, wiced_bt_mesh_event_t* p_event, void* p_data);
 static void mesh_core_state_changed(wiced_bt_mesh_core_state_type_t type, wiced_bt_mesh_core_state_t *p_state);
 extern void mesh_provision_process_event(uint16_t event, wiced_bt_mesh_event_t *p_event, void *p_data);
 extern void mesh_sensor_process_event(uint16_t addr, uint16_t event, void *p_data);
@@ -199,7 +199,7 @@ wiced_bt_mesh_core_config_t  mesh_config =
     .product_id         = MESH_PID,                                 // Vendor-assigned product identifier
     .vendor_id          = MESH_VID,                                 // Vendor-assigned product version identifier
     .replay_cache_size  = MESH_CACHE_REPLAY_SIZE,                   // Number of replay protection entries, i.e. maximum number of mesh devices that can send application messages to this device.
-    .features                  = 0,                                 //
+    .features           = WICED_BT_MESH_CORE_FEATURE_BIT_NO_ADV_BEARER,     // GATT client mode: advert scanning but no advert sending and receiving
     .friend_cfg         =                                           // Empty Configuration of the Friend Feature
     {
         .receive_window        = 0,                                 // Receive Window value in milliseconds supported by the Friend node.
@@ -219,10 +219,32 @@ wiced_bt_mesh_core_config_t  mesh_config =
     .elements      = mesh_elements                                  // Array of elements for this device
 };
 
+void wiced_hal_rand_gen_num_array(uint32_t* randNumberArrayPtr, uint32_t length);
+uint32_t wiced_hal_get_pseudo_rand_number(void);
+uint32_t wiced_hal_rand_gen_num(void);
+void wiced_hal_wdog_reset_system(void);
+void wiced_hal_delete_nvram(uint16_t vs_id, wiced_result_t* p_status);
+uint16_t wiced_hal_write_nvram(uint16_t vs_id, uint16_t data_length, uint8_t* p_data, wiced_result_t* p_status);
+uint16_t wiced_hal_read_nvram(uint16_t vs_id, uint16_t data_length, uint8_t* p_data, wiced_result_t* p_status);
+
+wiced_bt_mesh_core_hal_api_t mesh_app_hal_api =
+{
+    .rand_gen_num_array = wiced_hal_rand_gen_num_array,
+    .get_pseudo_rand_number = wiced_hal_get_pseudo_rand_number,
+    .rand_gen_num = wiced_hal_rand_gen_num,
+    .wdog_reset_system = wiced_hal_wdog_reset_system,
+    .delete_nvram = wiced_hal_delete_nvram,
+    .write_nvram = wiced_hal_write_nvram,
+    .read_nvram = wiced_hal_read_nvram
+};
+
 static int core_initialized = 0;
 void mesh_application_init(void)
 {
     WICED_BT_TRACE("mesh_application_init enter");
+
+    wiced_bt_mesh_core_set_hal_api(&mesh_app_hal_api);
+
     // Set Debug trace level for mesh_models_lib and mesh_provisioner_lib
     wiced_bt_mesh_models_set_trace_level(WICED_BT_MESH_CORE_TRACE_INFO);
     // Set Debug trace level for all modules but Info level for CORE_AES_CCM module
@@ -366,10 +388,10 @@ void mesh_control_message_handler(uint16_t event, wiced_bt_mesh_event_t *p_event
     mesh_provision_process_event(event, p_event, p_data);
 }
 
-void mesh_sensor_message_handler(uint8_t element_idx, uint16_t addr, uint16_t event, void *p_data)
+void mesh_sensor_message_handler(uint16_t event, wiced_bt_mesh_event_t* p_event, void* p_data)
 {
     Log("sensor message:%d\n", event);
-    mesh_sensor_process_event(addr, event, p_data);
+    mesh_sensor_process_event(p_event->src, event, p_data);
 }
 
 uint32_t mesh_app_on_received_provision_gatt_pkt(uint8_t *p_data, uint32_t length)

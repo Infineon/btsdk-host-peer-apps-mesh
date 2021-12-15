@@ -241,6 +241,7 @@ char *mesh_client_get_device_components(uint8_t *p_uuid);
 #define MESH_CONTROL_METHOD_XYL         "XYL"
 #define MESH_CONTROL_METHOD_VENDOR      "VENDOR_"
 #define MESH_CONTROL_METHOD_SENSOR      "SENSOR"
+#define MESH_CONTROL_METHOD_SCENE       "SCENE"
 #define MESH_CONTROL_METHOD_LOCATION    "LOCATION"
 #define MESH_CONTROL_METHOD_BATTERY     "BATTERY"
 

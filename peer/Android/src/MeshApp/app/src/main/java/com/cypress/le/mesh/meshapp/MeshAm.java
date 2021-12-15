@@ -467,7 +467,7 @@ public class MeshAm extends Service {
                             return;
                         }
                         inGroup = extras.getString("inGroup");
-                        String[] groups = mMeshController.getAllGroups(inGroup);
+                        String[] groups = mMeshController.getSubGroups(inGroup);
                         Log.d(TAG, "getAllGroups return : " + groups);
                         String groupArray = TextUtils.join(",",groups);
                         setResultData(groupArray);

@@ -140,11 +140,30 @@ mesh_dfu_config_t dfu_cfg = {
 };
 #endif
 
+void wiced_hal_rand_gen_num_array(uint32_t* randNumberArrayPtr, uint32_t length);
+uint32_t wiced_hal_get_pseudo_rand_number(void);
+uint32_t wiced_hal_rand_gen_num(void);
+void wiced_hal_wdog_reset_system(void);
+void wiced_hal_delete_nvram(uint16_t vs_id, wiced_result_t* p_status);
+uint16_t wiced_hal_write_nvram(uint16_t vs_id, uint16_t data_length, uint8_t* p_data, wiced_result_t* p_status);
+uint16_t wiced_hal_read_nvram(uint16_t vs_id, uint16_t data_length, uint8_t* p_data, wiced_result_t* p_status);
+
+wiced_bt_mesh_core_hal_api_t mesh_app_hal_api =
+{
+    .rand_gen_num_array = wiced_hal_rand_gen_num_array,
+    .get_pseudo_rand_number = wiced_hal_get_pseudo_rand_number,
+    .rand_gen_num = wiced_hal_rand_gen_num,
+    .wdog_reset_system = wiced_hal_wdog_reset_system,
+    .delete_nvram = wiced_hal_delete_nvram,
+    .write_nvram = wiced_hal_write_nvram,
+    .read_nvram = wiced_hal_read_nvram
+};
+
 static void mesh_app_init(wiced_bool_t is_provisioned);
 static void mesh_provision_message_handler(uint16_t event, wiced_bt_mesh_event_t *p_event, void *p_data);
 static void mesh_config_message_handler(uint16_t event, wiced_bt_mesh_event_t *p_event, void *p_data);
 static void mesh_control_message_handler(uint16_t event, wiced_bt_mesh_event_t *p_event, void *p_data);
-static void mesh_sensor_client_callback(uint8_t element_idx, uint16_t addr, uint16_t event, void *p_data);
+static void mesh_sensor_client_callback(uint16_t event, wiced_bt_mesh_event_t* p_event, void* p_data);
 
 static void mesh_core_state_changed(wiced_bt_mesh_core_state_type_t type, wiced_bt_mesh_core_state_t *p_state);
 extern void mesh_provision_process_event(uint16_t event, wiced_bt_mesh_event_t *p_event, void *p_data);
@@ -225,6 +244,7 @@ wiced_bt_mesh_core_config_model_t   mesh_element1_models[] =
     WICED_BT_MESH_MODEL_LIGHT_HSL_CLIENT,
     WICED_BT_MESH_MODEL_SENSOR_CLIENT,
     WICED_BT_MESH_MODEL_LIGHT_LC_CLIENT,
+    WICED_BT_MESH_MODEL_SCENE_CLIENT,
 #ifdef DIRECTED_FORWARDING_SERVER_SUPPORTED
     WICED_BT_MESH_DIRECTED_FORWARDING_CLIENT,
 #endif
@@ -289,6 +309,8 @@ wiced_bt_mesh_core_config_t  mesh_config =
 void mesh_application_init(void)
 {
     static int core_initialized = 0;
+
+    wiced_bt_mesh_core_set_hal_api(&mesh_app_hal_api);
 
     // Set Debug trace level for mesh_models_lib and mesh_provisioner_lib
     wiced_bt_mesh_models_set_trace_level(WICED_BT_MESH_CORE_TRACE_INFO);
@@ -441,6 +463,7 @@ void mesh_app_init(wiced_bool_t is_provisioned)
     wiced_bt_mesh_model_default_transition_time_client_init(0, mesh_control_message_handler, is_provisioned);
     wiced_bt_mesh_model_sensor_client_init(0, mesh_sensor_client_callback, is_provisioned);
     wiced_bt_mesh_model_light_lc_client_init(0, mesh_control_message_handler, is_provisioned);
+    wiced_bt_mesh_model_scene_client_init(0, mesh_control_message_handler, is_provisioned);
 }
 
 void mesh_provision_message_handler(uint16_t event, wiced_bt_mesh_event_t *p_event, void *p_data)
@@ -461,10 +484,10 @@ void mesh_control_message_handler(uint16_t event, wiced_bt_mesh_event_t *p_event
     mesh_provision_process_event(event, p_event, p_data);
 }
 
-static void mesh_sensor_client_callback(uint8_t element_idx, uint16_t addr, uint16_t event, void *p_data)
+static void mesh_sensor_client_callback(uint16_t event, wiced_bt_mesh_event_t* p_event, void* p_data)
 {
     WICED_BT_TRACE("sensor message:%d\n", event);
-    mesh_sensor_process_event(addr, event, p_data);
+    mesh_sensor_process_event(p_event->src, event, p_data);
 }
 
 
@@ -484,15 +507,7 @@ wiced_bool_t vendor_data_handler(wiced_bt_mesh_event_t *p_event, uint8_t *p_data
     // 0xffff model_id means request to check if that opcode belongs to that model
     if (p_event->model_id == 0xffff)
     {
-        switch (p_event->opcode)
-        {
-        case MESH_VENDOR_OPCODE1:
-        case MESH_VENDOR_OPCODE2:
-            break;
-        default:
-            return WICED_FALSE;
-        }
-        return WICED_TRUE;
+        return (p_event->company_id == MESH_VENDOR_COMPANY_ID);
     }
 
     WICED_BT_TRACE("Vendor Data Opcode:%d\n", p_event->opcode);

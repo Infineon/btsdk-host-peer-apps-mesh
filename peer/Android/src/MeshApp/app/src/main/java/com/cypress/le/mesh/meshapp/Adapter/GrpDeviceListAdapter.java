@@ -189,7 +189,6 @@ public class GrpDeviceListAdapter extends BaseAdapter {
                     } break;
                     case MeshController.COMPONENT_TYPE_LIGHT_HSL : {
                         imagebutton.setImageResource(R.drawable.lightbulb_on_outline);
-                        mOffBtnView.setVisibility(View.GONE);
                     } break;
                     case MeshController.COMPONENT_TYPE_LIGHT_CTL : {
                         imagebutton.setImageResource(R.drawable.lightbulb_on_outline);

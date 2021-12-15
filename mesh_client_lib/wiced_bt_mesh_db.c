@@ -192,7 +192,79 @@ uint8_t wiced_bt_mesh_property_len[WICED_BT_MESH_MAX_PROPERTY_ID + 1] =
     WICED_BT_MESH_PROPERTY_LEN_TOTAL_DEVICE_POWER_ON_TIME,
     WICED_BT_MESH_PROPERTY_LEN_TOTAL_DEVICE_RUNTIME,
     WICED_BT_MESH_PROPERTY_LEN_TOTAL_LIGHT_EXPOSURE_TIME,
-    WICED_BT_MESH_PROPERTY_LEN_TOTAL_LUMINOUS_ENERGY
+    WICED_BT_MESH_PROPERTY_LEN_TOTAL_LUMINOUS_ENERGY,
+    WICED_BT_MESH_PROPERTY_LEN_DESIRED_AMBIENT_TEMPERATURE,
+    WICED_BT_MESH_PROPERTY_LEN_PRECISE_TOTAL_DEVICE_ENERGY_USE,
+    WICED_BT_MESH_PROPERTY_LEN_POWER_FACTOR,
+    WICED_BT_MESH_PROPERTY_LEN_SENSOR_GAIN,
+    WICED_BT_MESH_PROPERTY_LEN_PRECISE_PRESENT_AMBIENT_TEMPERATURE,
+    WICED_BT_MESH_PROPERTY_LEN_PRESENT_AMBIENT_RELATIVE_HUMIDITY,
+    WICED_BT_MESH_PROPERTY_LEN_PRESENT_AMBIENT_CO2_CONCENTRAION,
+    WICED_BT_MESH_PROPERTY_LEN_PRESENT_AMBIENT_ORGRANIC_COMPOUNDS_CONCENTRATION,
+    WICED_BT_MESH_PROPERTY_LEN_PRESENT_AMBIENT_NOISE,
+    0,          // Spec does not use valued 0x7a-0x7f
+    0,
+    0,
+    0,
+    0,
+    0,
+    WICED_BT_MESH_PROPERTY_LEN_ACTIVE_ENERGY_LOADSIDE,
+    WICED_BT_MESH_PROPERTY_LEN_ACTOVE_POWER_LOADSIDE,
+    WICED_BT_MESH_PROPERTY_LEN_ACTOVE_AIR_PRESSURE,
+    WICED_BT_MESH_PROPERTY_LEN_APPARENT_ENERGY,
+    WICED_BT_MESH_PROPERTY_LEN_APPARENT_POWER,
+    WICED_BT_MESH_PROPERTY_LEN_APPARENT_WIND_DIRECTION,
+    WICED_BT_MESH_PROPERTY_LEN_APPARENT_WIND_SPEED,
+    WICED_BT_MESH_PROPERTY_LEN_DEW_POINT,
+    WICED_BT_MESH_PROPERTY_LEN_EXTERNAL_SUPPLY_VOLTAGE,
+    WICED_BT_MESH_PROPERTY_LEN_EXTERNAL_SUPPLY_VOLTAGE_FREQUENCY,
+    WICED_BT_MESH_PROPERTY_LEN_GUST_FACTOR,
+    WICED_BT_MESH_PROPERTY_LEN_HEAT_INDEX,
+    WICED_BT_MESH_PROPERTY_LEN_LIGHT_DISTRIBUTION,
+    WICED_BT_MESH_PROPERTY_LEN_LIGHT_SOURCE_CURRENT,
+    WICED_BT_MESH_PROPERTY_LEN_LIGHT_SOURCE_ON_TIME_NOT_RESETTABLE,
+    WICED_BT_MESH_PROPERTY_LEN_LIGHT_SOURCE_ON_TIME_RESETTABLE,
+    WICED_BT_MESH_PROPERTY_LEN_LIGHT_SOURCE_OPEN_CIRCUIT_STATISTICS,
+    WICED_BT_MESH_PROPERTY_LEN_LIGHT_SOURCE_OVERALL_FAILURE_STATISTICS,
+    WICED_BT_MESH_PROPERTY_LEN_LIGHT_SOURCE_SHORT_CIRCUIT_STATISTICS,
+    WICED_BT_MESH_PROPERTY_LEN_LIGHT_SOURCE_START_COUNTER_RESETTABLE,
+    WICED_BT_MESH_PROPERTY_LEN_LIGHT_SOURCE_TEMPERATURE,
+    WICED_BT_MESH_PROPERTY_LEN_LIGHT_SOURCE_THERMAL_DERATING_STATISTICS,
+    WICED_BT_MESH_PROPERTY_LEN_LIGHT_SOURCE_THERMAL_DERATING_SHUTDOWN_STATISTICS,
+    WICED_BT_MESH_PROPERTY_LEN_LIGHT_SOURCE_TOTAL_POWER_ON_CYCLES,
+    WICED_BT_MESH_PROPERTY_LEN_LIGHT_SOURCE_VOLTAGE,
+    WICED_BT_MESH_PROPERTY_LEN_LUMINAIRE_COLOR,
+    WICED_BT_MESH_PROPERTY_LEN_LUMINAIRE_IDENTIFICATION_NUMBER,
+    WICED_BT_MESH_PROPERTY_LEN_LUMINAIRE_MANUFACTURER_GTIN,
+    WICED_BT_MESH_PROPERTY_LEN_LUMINAIRE_NOMINAL_INPUT_POWER,
+    WICED_BT_MESH_PROPERTY_LEN_LUMINAIRE_NOMINAL_MAXIMUM_AC_MAINS_VOLTAGE,
+    WICED_BT_MESH_PROPERTY_LEN_LUMINAIRE_NOMINAL_MINIMUM_AC_MAINS_VOLTAGE,
+    WICED_BT_MESH_PROPERTY_LEN_LUMINAIRE_POWER_AT_MINIMUM_DIM_LEVEL,
+    WICED_BT_MESH_PROPERTY_LEN_LUMINAIRE_TIME_OF_MANUFACTURE,
+    WICED_BT_MESH_PROPERTY_LEN_MAGNETIC_DECLINATION,
+    WICED_BT_MESH_PROPERTY_LEN_MAGNETIC_FLUX_DENSITY_2D,
+    WICED_BT_MESH_PROPERTY_LEN_MAGNETIC_FLUX_DENSITY_3D,
+    WICED_BT_MESH_PROPERTY_LEN_NOMINAL_LIGHT_OUTPUT,
+    WICED_BT_MESH_PROPERTY_LEN_OVERALL_FAILURE_CONDITION,
+    WICED_BT_MESH_PROPERTY_LEN_POLLEN_CONCENTRATION,
+    WICED_BT_MESH_PROPERTY_LEN_PRESENT_INDOOR_RELATIVE_HUMIDITY,
+    WICED_BT_MESH_PROPERTY_LEN_PRESENT_OUTDOOR_RELATIVE_HUMIDITY,
+    WICED_BT_MESH_PROPERTY_LEN_PRESSURE,
+    WICED_BT_MESH_PROPERTY_LEN_RAINFALL,
+    WICED_BT_MESH_PROPERTY_LEN_RATED_MEDIAN_USEFUL_LIFE_OF_LUMINAIRE,
+    WICED_BT_MESH_PROPERTY_LEN_RATED_MEDIAN_USEFUL_LIGHT_SOURCE_STARTS,
+    WICED_BT_MESH_PROPERTY_LEN_REFERENCE_TEMPERATURE,
+    WICED_BT_MESH_PROPERTY_LEN_TOTAL_DEVICE_STARTS,
+    WICED_BT_MESH_PROPERTY_LEN_TRUE_WIND_DIRECTION,
+    WICED_BT_MESH_PROPERTY_LEN_TRUE_WIND_SPEED,
+    WICED_BT_MESH_PROPERTY_LEN_UV_INDEX,
+    WICED_BT_MESH_PROPERTY_LEN_WIND_CHILL,
+    WICED_BT_MESH_PROPERTY_LEN_LIGHT_SOURCE_TYPE,
+    WICED_BT_MESH_PROPERTY_LEN_LUMINAIRE_IDENTIFICATION_STRING,
+    WICED_BT_MESH_PROPERTY_LEN_OUTPUT_POWER_LIMITATION,
+    WICED_BT_MESH_PROPERTY_LEN_THERMAL_DERATING,
+    WICED_BT_MESH_PROPERTY_LEN_OUTPUT_CURRENT_PERCENT,
+
 };
 
 static uint8_t process_nibble(char n);
@@ -211,6 +283,14 @@ char *copy_name(const char *name)
     return p_name;
 }
 
+wiced_bool_t mesh_is_proprietary_json(const char *file_name)
+{
+    size_t name_len = strlen(file_name);
+    if (name_len <= 9)
+        return WICED_FALSE;
+    return strcmp(file_name + name_len - 9, ".ifx.json") == 0;
+}
+
 #if defined __ANDROID__ || defined __APPLE__ || defined WICEDX_LINUX || defined BSA
 #ifndef _WIN32
 static int parse_ext(const struct dirent *dir)
@@ -224,7 +304,7 @@ static int parse_ext(const struct dirent *dir)
         if((!ext) || (ext == dir->d_name))
             return 0;
         else {
-            if(strcmp(ext, ".json") == 0)
+            if(strcmp(ext, ".json") == 0 && !mesh_is_proprietary_json(dir->d_name))
                 return 1;
         }
     }
@@ -301,7 +381,8 @@ char *wiced_bt_mesh_db_get_all_networks(void)
         return NULL;
     do
     {
-        buf_size += strlen(json_file.name) - 4;
+        if (!mesh_is_proprietary_json(json_file.name))
+            buf_size += strlen(json_file.name) - 4;
     } while (_findnext(hFile, &json_file) == 0);
 
     _findclose(hFile);
@@ -317,9 +398,12 @@ char *wiced_bt_mesh_db_get_all_networks(void)
     }
     do
     {
-        strcpy(p_buf, json_file.name);
-        p_buf[strlen(json_file.name) - 5] = 0;
-        p_buf += strlen(json_file.name) - 4;
+        if (!mesh_is_proprietary_json(json_file.name))
+        {
+            strcpy(p_buf, json_file.name);
+            p_buf[strlen(json_file.name) - 5] = 0;
+            p_buf += strlen(json_file.name) - 4;
+        }
     } while (_findnext(hFile, &json_file) == 0);
     *p_buf = 0;
     return buf;
@@ -349,25 +433,29 @@ wiced_bool_t wiced_bt_mesh_db_network_exists(const char *mesh_name)
 
 wiced_bool_t wiced_bt_mesh_db_network_delete(const char *mesh_name)
 {
-    wiced_bool_t res;
+    wiced_bool_t res1, res2;
 
-    char *p_filename = (char *)wiced_bt_get_buffer((uint16_t)(strlen(mesh_name) + 6));
+    char *p_filename = (char *)wiced_bt_get_buffer((uint16_t)(strlen(mesh_name) + 10));
     if (p_filename == NULL)
         return 0;
 
     strcpy(p_filename, mesh_name);
     strcat(p_filename, ".json");
+    res1 = (remove(p_filename) == 0);
 
-    res = (remove(p_filename) == 0);
+    strcpy(p_filename, mesh_name);
+    strcat(p_filename, ".ifx.json");
+    res2 = (remove(p_filename) == 0);
+
     wiced_bt_free_buffer(p_filename);
-    return res;
+    return res1;
 }
 
 wiced_bt_mesh_db_mesh_t *wiced_bt_mesh_db_init(const char *mesh_name)
 {
     wiced_bt_mesh_db_mesh_t *mesh_db = NULL;
 
-    char *p_filename = (char *)wiced_bt_get_buffer((uint16_t)(strlen(mesh_name) + 6));
+    char *p_filename = (char *)wiced_bt_get_buffer((uint16_t)(strlen(mesh_name) + 10));
     if (p_filename == NULL)
         return 0;
 
@@ -380,9 +468,20 @@ wiced_bt_mesh_db_mesh_t *wiced_bt_mesh_db_init(const char *mesh_name)
         wiced_bt_free_buffer(p_filename);
         return NULL;
     }
-    wiced_bt_free_buffer(p_filename);
     mesh_db = mesh_json_read_file(fp);
     fclose(fp);
+
+    strcpy(p_filename, mesh_name);
+    strcat(p_filename, ".ifx.json");
+
+    fp = fopen(p_filename, "rb");
+    if (fp != NULL)
+    {
+        if (mesh_db != NULL)
+            mesh_extra_params_read_file(fp, mesh_db);
+        fclose(fp);
+    }
+    wiced_bt_free_buffer(p_filename);
     return mesh_db;
 }
 
@@ -501,7 +600,7 @@ void wiced_bt_mesh_db_deinit(wiced_bt_mesh_db_mesh_t *mesh_db)
 
 void wiced_bt_mesh_db_store(wiced_bt_mesh_db_mesh_t *mesh_db)
 {
-    char *p_filename = (char *)wiced_bt_get_buffer((uint16_t)(strlen(mesh_db->name) + 6));
+    char *p_filename = (char *)wiced_bt_get_buffer((uint16_t)(strlen(mesh_db->name) + 10));
     if (p_filename == NULL)
         return;
 
@@ -515,6 +614,18 @@ void wiced_bt_mesh_db_store(wiced_bt_mesh_db_mesh_t *mesh_db)
         return;
     }
     mesh_json_write_file(fp, mesh_db);
+    fclose(fp);
+
+    strcpy(p_filename, mesh_db->name);
+    strcat(p_filename, ".ifx.json");
+
+    fp = fopen(p_filename, "wb");
+    if (fp == NULL)
+    {
+        wiced_bt_free_buffer(p_filename);
+        return;
+    }
+    mesh_extra_params_write_file(fp, mesh_db);
     fclose(fp);
 
     wiced_bt_free_buffer(p_filename);
@@ -938,7 +1049,7 @@ wiced_bt_mesh_db_group_t *wiced_bt_mesh_db_group_get_by_addr(wiced_bt_mesh_db_me
 
     for (i = 0; i < mesh_db->num_groups; i++)
     {
-        if (mesh_db->group[i].addr == addr)
+        if (mesh_db->group[i].addr.u.address == addr)
         {
             return &mesh_db->group[i];
         }
@@ -958,7 +1069,7 @@ uint16_t wiced_bt_mesh_db_group_get_addr(wiced_bt_mesh_db_mesh_t *mesh_db, const
     {
         if (strcmp(mesh_db->group[i].name, group_name) == 0)
         {
-            return mesh_db->group[i].addr;
+            return mesh_db->group[i].addr.u.address;
         }
     }
     return 0;
@@ -1000,11 +1111,13 @@ uint16_t wiced_bt_mesh_db_group_add(wiced_bt_mesh_db_mesh_t *mesh_db, uint16_t p
     wiced_bt_mesh_db_group_t *p_parent = wiced_bt_mesh_db_group_get_by_name(mesh_db, parent_group_name);
     wiced_bt_mesh_db_group_t group;
 
-    if ((group.addr = wiced_bt_mesh_db_alloc_group_addr(mesh_db, provisioner_addr)) == 0)
+    group.addr.type = WICED_MESH_DB_ADDR_TYPE_ADDRESS;
+    if ((group.addr.u.address = wiced_bt_mesh_db_alloc_group_addr(mesh_db, provisioner_addr)) == 0)
         return 0;
 
     group.name = copy_name(group_name);
-    group.parent_addr = (p_parent != NULL) ? p_parent->addr : 0;
+    group.parent_addr.type = WICED_MESH_DB_ADDR_TYPE_ADDRESS;
+    group.parent_addr.u.address = (p_parent != NULL) ? p_parent->addr.u.address : 0;
 
     p_temp = mesh_db->group;
     mesh_db->group = (wiced_bt_mesh_db_group_t *)wiced_bt_get_buffer(sizeof(wiced_bt_mesh_db_group_t) * (mesh_db->num_groups + 1));
@@ -1018,7 +1131,7 @@ uint16_t wiced_bt_mesh_db_group_add(wiced_bt_mesh_db_mesh_t *mesh_db, uint16_t p
     }
     memcpy(&mesh_db->group[mesh_db->num_groups], &group, sizeof(wiced_bt_mesh_db_group_t));
     mesh_db->num_groups++;
-    return group.addr;
+    return group.addr.u.address;
 }
 
 void group_set_parent(wiced_bt_mesh_db_mesh_t *mesh_db, const char *group_name, uint16_t parent_addr)
@@ -1026,7 +1139,10 @@ void group_set_parent(wiced_bt_mesh_db_mesh_t *mesh_db, const char *group_name, 
     wiced_bt_mesh_db_group_t *group = wiced_bt_mesh_db_group_get_by_name(mesh_db, group_name);
 
     if (group != NULL)
-        group->parent_addr = parent_addr;
+    {
+        group->parent_addr.type = WICED_MESH_DB_ADDR_TYPE_ADDRESS;
+        group->parent_addr.u.address = parent_addr;
+    }
 }
 
 wiced_bool_t wiced_bt_mesh_db_group_delete(wiced_bt_mesh_db_mesh_t *mesh_db, uint16_t provisioner_addr, const char *group_name)
@@ -1090,11 +1206,11 @@ char *wiced_bt_mesh_db_get_all_groups(wiced_bt_mesh_db_mesh_t *mesh_db, char *in
     {
         parent = wiced_bt_mesh_db_group_get_by_name(mesh_db, in_group);
         if (parent != NULL)
-            parent_addr = parent->addr;
+            parent_addr = parent->addr.u.address;
     }
     for (i = 0; i < mesh_db->num_groups; i++)
     {
-        if (mesh_db->group[i].parent_addr == parent_addr)
+        if (mesh_db->group[i].parent_addr.u.address == parent_addr)
         {
             buf_size += (strlen(mesh_db->group[i].name) + 1);
         }
@@ -1106,7 +1222,7 @@ char *wiced_bt_mesh_db_get_all_groups(wiced_bt_mesh_db_mesh_t *mesh_db, char *in
     p_buf = buf;
     for (i = 0; i < mesh_db->num_groups; i++)
     {
-        if (mesh_db->group[i].parent_addr == parent_addr)
+        if (mesh_db->group[i].parent_addr.u.address == parent_addr)
         {
             strcpy(p_buf, mesh_db->group[i].name);
             p_buf += (strlen(mesh_db->group[i].name));
@@ -1150,11 +1266,11 @@ wiced_bool_t is_group_a_perent_group(wiced_bt_mesh_db_mesh_t *mesh_db, uint16_t 
     wiced_bt_mesh_db_group_t *group = wiced_bt_mesh_db_group_get_by_addr(mesh_db, group_addr);
     if (group == NULL)
         return WICED_FALSE;
-    if (group->parent_addr == parent_group_addr)
+    if (group->parent_addr.u.address == parent_group_addr)
         return WICED_TRUE;
-    if (group->parent_addr == 0)
+    if (group->parent_addr.u.address == 0)
         return WICED_FALSE;
-    return is_group_a_perent_group(mesh_db, parent_group_addr, group->parent_addr);
+    return is_group_a_perent_group(mesh_db, parent_group_addr, group->parent_addr.u.address);
 }
 
 wiced_bt_mesh_db_element_t *element_get_by_addr(wiced_bt_mesh_db_mesh_t *mesh_db, uint16_t element_addr)
@@ -1206,28 +1322,28 @@ uint16_t *wiced_bt_mesh_db_get_element_group_list(wiced_bt_mesh_db_mesh_t *mesh_
             // check if this sub address already present in the list
             for (i = 0; i < num_groups; i++)
             {
-                if (p_group_list[i] == element->model[model_idx].sub[sub_idx])
+                if (p_group_list[i] == element->model[model_idx].sub[sub_idx].u.address)
                     break;
             }
             if (i == num_groups)
             {
-                p_group_list[num_groups++] = element->model[model_idx].sub[sub_idx];
+                p_group_list[num_groups++] = element->model[model_idx].sub[sub_idx].u.address;
             }
         }
         // TBD add support for virtual addresses
         // skip publication to broadcast
-        if ((element->model[model_idx].pub.address != 0) && (element->model[model_idx].pub.address != 0xffff))
+        if ((element->model[model_idx].pub.address.u.address != 0) && (element->model[model_idx].pub.address.u.address != 0xffff))
         {
-            if (is_group_address(element->model[model_idx].pub.address))
+            if (is_group_address(element->model[model_idx].pub.address.u.address))
             {
                 for (i = 0; i < num_groups; i++)
                 {
-                    if (p_group_list[i] == element->model[model_idx].pub.address)
+                    if (p_group_list[i] == element->model[model_idx].pub.address.u.address)
                         break;
                 }
                 if (i == num_groups)
                 {
-                    p_group_list[num_groups++] = element->model[model_idx].pub.address;
+                    p_group_list[num_groups++] = element->model[model_idx].pub.address.u.address;
                 }
             }
             else
@@ -1281,16 +1397,16 @@ wiced_bool_t wiced_bt_mesh_db_element_is_in_group(wiced_bt_mesh_db_mesh_t *mesh_
         num_subscriptions += element->model[model_idx].num_subs;
         for (sub_idx = 0; sub_idx < element->model[model_idx].num_subs; sub_idx++)
         {
-            if (group_addr == element->model[model_idx].sub[sub_idx])
+            if (group_addr == element->model[model_idx].sub[sub_idx].u.address)
                 subscribed_to_group = WICED_TRUE;
             else
             {
                 // If we are subscribed to a child group of the group in question, no go.
-                if (is_group_a_perent_group(mesh_db, group_addr, element->model[model_idx].sub[sub_idx]))
+                if (is_group_a_perent_group(mesh_db, group_addr, element->model[model_idx].sub[sub_idx].u.address))
                     return WICED_FALSE;
             }
         }
-        if (element->model[model_idx].pub.address == group_addr)
+        if (element->model[model_idx].pub.address.u.address == group_addr)
             return WICED_TRUE;
     }
     if ((num_subscriptions == 0) && (publish_addr == 0) && (group_addr == 0))
@@ -1301,9 +1417,9 @@ wiced_bool_t wiced_bt_mesh_db_element_is_in_group(wiced_bt_mesh_db_mesh_t *mesh_
 
     for (model_idx = 0; model_idx < element->num_models; model_idx++)
     {
-        if (element->model[model_idx].pub.address != 0)
+        if (element->model[model_idx].pub.address.u.address != 0)
         {
-            if (wiced_bt_mesh_db_element_is_in_group(mesh_db, element->model[model_idx].pub.address, group_addr))
+            if (wiced_bt_mesh_db_element_is_in_group(mesh_db, element->model[model_idx].pub.address.u.address, group_addr))
                 return WICED_TRUE;
         }
     }
@@ -1356,6 +1472,25 @@ wiced_bt_mesh_db_node_t *wiced_bt_mesh_db_node_get_by_element_addr(wiced_bt_mesh
             (mesh_db->node[node_idx].unicast_address + mesh_db->node[node_idx].num_elements > node_addr))
         {
             return &mesh_db->node[node_idx];
+        }
+    }
+    return NULL;
+}
+
+wiced_bt_mesh_db_element_t* wiced_bt_mesh_db_element_get_by_element_name(wiced_bt_mesh_db_mesh_t* mesh_db, const char* name)
+{
+    int node_idx;
+    int elem_idx;
+
+    for (node_idx = 0; node_idx < mesh_db->num_nodes; node_idx++)
+    {
+        for (elem_idx = 0; elem_idx < mesh_db->node[node_idx].num_elements; elem_idx++)
+        {
+            if ((mesh_db->node[node_idx].element[elem_idx].name != NULL) &&
+                (strcmp(mesh_db->node[node_idx].element[elem_idx].name, name) == 0))
+            {
+                return &mesh_db->node[node_idx].element[elem_idx];
+            }
         }
     }
     return NULL;
@@ -1744,7 +1879,7 @@ wiced_bool_t wiced_bt_mesh_db_is_model_subscribed_to_group(wiced_bt_mesh_db_mesh
             for (index = 0; index < element->model[model_idx].num_subs; index++)
             {
                 // TBD add support for virtual addresses
-                if (element->model[model_idx].sub[index] == in_group_addr)
+                if (element->model[model_idx].sub[index].u.address == in_group_addr)
                 {
                     model_in_group = WICED_TRUE;
                     break;
@@ -1783,7 +1918,7 @@ wiced_bt_mesh_db_model_id_t *wiced_bt_mesh_db_get_all_models_of_element(wiced_bt
         }
         else
         {
-            if (element->model[model_idx].pub.address == in_group_addr)
+            if (element->model[model_idx].pub.address.u.address == in_group_addr)
             {
                 model_in_group = WICED_TRUE;
             }
@@ -1793,7 +1928,7 @@ wiced_bt_mesh_db_model_id_t *wiced_bt_mesh_db_get_all_models_of_element(wiced_bt
                 for (index = 0; index < element->model[model_idx].num_subs; index++)
                 {
                     // TBD add support for virtual addresses
-                    if (element->model[model_idx].sub[index] == in_group_addr)
+                    if (element->model[model_idx].sub[index].u.address == in_group_addr)
                     {
                         model_in_group = WICED_TRUE;
                         break;
@@ -2394,7 +2529,6 @@ wiced_bool_t mesh_db_add_sensor_cadence(wiced_bt_mesh_db_model_t *model, wiced_b
 
 wiced_bool_t wiced_bt_mesh_db_sensor_cadence_add(wiced_bt_mesh_db_mesh_t *mesh_db, uint16_t element_addr, wiced_bt_mesh_sensor_cadence_status_data_t *data)
 {
-    Log("wiced_bt_mesh_db_sensor_cadence_add\n");
     wiced_bt_mesh_db_model_t *model = find_node_model(mesh_db, element_addr, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_SENSOR_SRV);
     if (model == NULL)
     {
@@ -2508,10 +2642,10 @@ wiced_bool_t wiced_bt_mesh_db_node_config_complete(wiced_bt_mesh_db_mesh_t *mesh
 wiced_bool_t wiced_bt_mesh_db_node_model_pub_get(wiced_bt_mesh_db_mesh_t *mesh_db, uint16_t element_addr, uint16_t company_id, uint16_t model_id, uint16_t *pub_addr, uint16_t *app_key_idx, uint8_t *publish_ttl, uint32_t *publish_period, uint16_t *publish_retransmit_count, uint32_t *publish_retransmit_interval, uint8_t *credentials)
 {
     wiced_bt_mesh_db_model_t *model = find_node_model(mesh_db, element_addr, company_id, model_id);
-    if ((model == NULL) || (model->pub.address == 0))
+    if ((model == NULL) || (model->pub.address.u.address == 0))
         return WICED_FALSE;
 
-    *pub_addr = model->pub.address;
+    *pub_addr = model->pub.address.u.address;
     *app_key_idx = model->pub.index;
     *publish_ttl = model->pub.ttl;
     *publish_period = model->pub.period;
@@ -2527,7 +2661,8 @@ wiced_bool_t wiced_bt_mesh_db_node_model_pub_add(wiced_bt_mesh_db_mesh_t *mesh_d
     if (model == NULL)
         return WICED_FALSE;
 
-    model->pub.address = pub_addr;
+    model->pub.address.type = WICED_MESH_DB_ADDR_TYPE_ADDRESS;
+    model->pub.address.u.address = pub_addr;
     model->pub.index = app_key_idx;
     model->pub.ttl = publish_ttl;
     model->pub.period = publish_period;
@@ -2543,23 +2678,26 @@ wiced_bool_t wiced_bt_mesh_db_node_model_pub_delete(wiced_bt_mesh_db_mesh_t *mes
     if (model == NULL)
         return WICED_FALSE;
 
-    model->pub.address = 0;
+    model->pub.address.u.address = 0;
     return WICED_TRUE;
 }
 
 wiced_bool_t wiced_bt_mesh_db_node_model_sub_add(wiced_bt_mesh_db_mesh_t *mesh_db, uint16_t element_addr, uint16_t company_id, uint16_t model_id, uint16_t addr)
 {
     int i;
+    wiced_bt_mesh_db_address_t address;
     wiced_bt_mesh_db_model_t *model = find_node_model(mesh_db, element_addr, company_id, model_id);
     if (model == NULL)
         return WICED_FALSE;
 
     for (i = 0; i < model->num_subs; i++)
     {
-        if (model->sub[i] == addr)
+        if (model->sub[i].type == WICED_MESH_DB_ADDR_TYPE_ADDRESS && model->sub[i].u.address == addr)
             return WICED_TRUE;
     }
-    return mesh_db_add_model_sub(model, addr);
+    address.type = WICED_MESH_DB_ADDR_TYPE_ADDRESS;
+    address.u.address = addr;
+    return mesh_db_add_model_sub(model, &address);
 }
 
 wiced_bool_t wiced_bt_mesh_db_node_model_sub_delete(wiced_bt_mesh_db_mesh_t *mesh_db, uint16_t element_addr, uint16_t company_id, uint16_t model_id, uint16_t addr)
@@ -2998,20 +3136,20 @@ wiced_bool_t mesh_db_add_model_app_bind(wiced_bt_mesh_db_model_t *model, uint16_
     return WICED_TRUE;
 }
 
-wiced_bool_t mesh_db_add_model_sub(wiced_bt_mesh_db_model_t *model, uint16_t addr)
+wiced_bool_t mesh_db_add_model_sub(wiced_bt_mesh_db_model_t *model, wiced_bt_mesh_db_address_t *addr)
 {
-    uint16_t *p_temp;
+    wiced_bt_mesh_db_address_t *p_temp;
 
     p_temp = model->sub;
-    model->sub = (uint16_t *)wiced_bt_get_buffer(sizeof(uint16_t) * (model->num_subs + 1));
+    model->sub = (wiced_bt_mesh_db_address_t *)wiced_bt_get_buffer(sizeof(wiced_bt_mesh_db_address_t) * (model->num_subs + 1));
     if (model->sub == NULL)
         return 0;
     if (p_temp != 0)
     {
-        memcpy(model->sub, p_temp, sizeof(uint16_t) * model->num_subs);
+        memcpy(model->sub, p_temp, sizeof(wiced_bt_mesh_db_address_t) * model->num_subs);
         wiced_bt_free_buffer(p_temp);
     }
-    memcpy(&model->sub[model->num_subs], &addr, sizeof(uint16_t));
+    memcpy(&model->sub[model->num_subs], addr, sizeof(wiced_bt_mesh_db_address_t));
     model->num_subs++;
     return WICED_TRUE;
 }
@@ -3022,7 +3160,7 @@ wiced_bool_t mesh_db_delete_model_sub(wiced_bt_mesh_db_model_t *model, uint16_t 
 
     if (model->num_subs == 1)
     {
-        if (model->sub[0] == addr)
+        if (model->sub[0].u.address == addr)
         {
             model->num_subs = 0;
             wiced_bt_free_buffer(model->sub);
@@ -3034,7 +3172,7 @@ wiced_bool_t mesh_db_delete_model_sub(wiced_bt_mesh_db_model_t *model, uint16_t 
     {
         for (i = 0; i < model->num_subs; i++)
         {
-            if (model->sub[i] == addr)
+            if (model->sub[i].u.address == addr)
             {
                 for (; i < model->num_subs - 1; i++)
                 {
@@ -3045,6 +3183,24 @@ wiced_bool_t mesh_db_delete_model_sub(wiced_bt_mesh_db_model_t *model, uint16_t 
             }
         }
     }
+    return WICED_TRUE;
+}
+
+wiced_bool_t mesh_db_add_scene_address(wiced_bt_mesh_db_scene_t *scene, uint16_t addr)
+{
+    uint16_t *p_temp;
+
+    p_temp = scene->addr;
+    scene->addr = (uint16_t *)wiced_bt_get_buffer(sizeof(uint16_t) * (scene->num_addrs + 1));
+    if (scene->addr == NULL)
+        return 0;
+    if (p_temp != 0)
+    {
+        memcpy(scene->addr, p_temp, sizeof(uint16_t) * scene->num_addrs);
+        wiced_bt_free_buffer(p_temp);
+    }
+    memcpy(&scene->addr[scene->num_addrs], &addr, sizeof(uint16_t));
+    scene->num_addrs++;
     return WICED_TRUE;
 }
 
