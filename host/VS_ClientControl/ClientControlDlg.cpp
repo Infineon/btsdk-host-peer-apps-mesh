@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2021, Cypress Semiconductor Corporation (an Infineon company) or
+ * Copyright 2016-2022, Cypress Semiconductor Corporation (an Infineon company) or
  * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
  *
  * This software, including source code, documentation and related
@@ -844,7 +844,7 @@ void TraceHciPkt(BYTE type, BYTE *buffer, USHORT length)
     memset(&socket_addr, 0, sizeof(socket_addr));
     socket_addr.sin_family = AF_INET;
     socket_addr.sin_addr.s_addr = ntohl(0x7f000001);
-    socket_addr.sin_port = 9876 + host_mode_instance;
+    socket_addr.sin_port = htons(9876 + host_mode_instance);
 
     length = sendto(log_sock, (const char *)buf, length + 8, 0, (SOCKADDR *)&socket_addr, sizeof(SOCKADDR_IN));
 }

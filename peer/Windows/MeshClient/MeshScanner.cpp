@@ -1,5 +1,5 @@
 /*
-* Copyright 2016-2021, Cypress Semiconductor Corporation (an Infineon company) or
+* Copyright 2016-2022, Cypress Semiconductor Corporation (an Infineon company) or
 * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
 *
 * This software, including source code, documentation and related
@@ -140,7 +140,7 @@ HRESULT CMeshScanner::OnAdvertisementReceived(IBluetoothLEAdvertisementWatcher* 
             return S_OK;
         }
 
-        BOOL bUriTypeFound = FALSE;
+        BOOL bReportedTypeFound = FALSE;
         raw_nonconn_adv_len = 0;
 
         for (UINT i = 0; i < count; ++i)
@@ -164,8 +164,10 @@ HRESULT CMeshScanner::OnAdvertisementReceived(IBluetoothLEAdvertisementWatcher* 
             }
             // ods("Data Type:%d", datatype);
 
-            if (datatype == BTM_BLE_ADVERT_TYPE_URI)
-                bUriTypeFound = TRUE;
+            if ((datatype == BTM_BLE_ADVERT_TYPE_URI) || (datatype == BTM_BLE_ADVERT_TYPE_MESH_BEACON))
+            {
+                bReportedTypeFound = TRUE;
+            }
 
             hr = ds->get_Data(&ibuf);
             if (FAILED(hr))
@@ -200,7 +202,7 @@ HRESULT CMeshScanner::OnAdvertisementReceived(IBluetoothLEAdvertisementWatcher* 
         }
 
         // Found non-connectable adv with URI data-type, send it to the mesh core for processing
-        if (bUriTypeFound)
+        if (bReportedTypeFound)
         {
             raw_advert[raw_nonconn_adv_len++] = 0;
             char buff[256] = { 0 };

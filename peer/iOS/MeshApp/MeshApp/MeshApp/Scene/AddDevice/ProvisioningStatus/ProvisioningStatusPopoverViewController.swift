@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2021, Cypress Semiconductor Corporation (an Infineon company) or
+ * Copyright 2016-2022, Cypress Semiconductor Corporation (an Infineon company) or
  * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
  *
  * This software, including source code, documentation and related
@@ -68,7 +68,7 @@ class ProvisioningStatusPopoverViewController: UIViewController {
         notificationInit()
         viewInit()
         DispatchQueue.main.asyncAfter(deadline: DispatchTime.now() + .milliseconds(150)) {
-            // Note, before start provisiong, be sure the scan has been stopped and has waitted for more than 100ms.
+            // Note, before start provisioning, be sure the scan has been stopped and has waited for more than 100ms.
             self.provisioningStart()
         }
     }

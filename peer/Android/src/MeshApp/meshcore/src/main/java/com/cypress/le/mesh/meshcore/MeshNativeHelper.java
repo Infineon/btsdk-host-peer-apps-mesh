@@ -426,7 +426,7 @@ public class MeshNativeHelper {
     public static native void timerCallback(long l);
 
     //IMPORT EXPORT
-    public static native String meshClientNetworkImport(String provisionerName, String jsonString);
+    public static native String meshClientNetworkImport(String provisionerName, String jsonString, String ifxJsonString);
     public static native String meshClientNetworkExport(String meshName);
 
     public static native String[] meshClientGetComponentGroupList(String componentName);

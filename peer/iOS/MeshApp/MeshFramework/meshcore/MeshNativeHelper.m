@@ -711,13 +711,13 @@ void mesh_client_network_opened(uint8_t status) {
     return [[NSString alloc] initWithUTF8String:jsonString];
 }
 
-+(NSString *) meshClientNetworkImport:(NSString *)provisionerName jsonString:(NSString *)jsonString
++(NSString *) meshClientNetworkImport:(NSString *)provisionerName jsonString:(NSString *)jsonString ifxJsonString:(NSString *)ifxJsonString
 {
     WICED_BT_TRACE("[MeshNativeHelper meshClientNetworkImport] provisionerName: %s, provisioner_uuid: %s, jsonString: %s\n", provisionerName.UTF8String, provisioner_uuid, jsonString.UTF8String);
     char *networkName = NULL;
     EnterCriticalSection();
     [MeshNativeHelper updateProvisionerUuid:nil];
-    networkName = mesh_client_network_import(provisionerName.UTF8String, provisioner_uuid, (char *)jsonString.UTF8String, mesh_client_network_opened);
+    networkName = mesh_client_network_import(provisionerName.UTF8String, provisioner_uuid, (char *)jsonString.UTF8String, (char *)ifxJsonString.UTF8String, mesh_client_network_opened);
     LeaveCriticalSection();
 
     if (networkName == NULL) {

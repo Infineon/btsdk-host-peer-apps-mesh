@@ -1602,11 +1602,11 @@ public class MeshController {
      *                   and {@link IMeshControllerCallback#onNetworkOpenedCallback(byte)} will be called.
      * @return network name on success null otherwise
      */
-    public String importNetwork(String provisionerName, String jsonString) {
+    public String importNetwork(String provisionerName, String jsonString, String ifxJsonString) {
         Log.d(TAG,"importNetwork");
         String result = null;
         if (isServiceConnected()) {
-            result = service.importNetwork(provisionerName, jsonString);
+            result = service.importNetwork(provisionerName, jsonString, ifxJsonString);
            if(result != null)
            {
                mCurrNetwork = result;

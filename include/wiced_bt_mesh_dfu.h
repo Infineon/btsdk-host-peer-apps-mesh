@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2021, Cypress Semiconductor Corporation (an Infineon company) or
+ * Copyright 2016-2022, Cypress Semiconductor Corporation (an Infineon company) or
  * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
  *
  * This software, including source code, documentation and related
@@ -106,6 +106,7 @@ extern "C"
 /* Firmware Distribution */
 #define WICED_BT_MESH_OPCODE_FW_DISTR_GET                                       0xB724
 #define WICED_BT_MESH_OPCODE_FW_DISTR_START                                     0xB72F
+#define WICED_BT_MESH_OPCODE_FW_DISTR_SUSPEND                                   0xB73A
 #define WICED_BT_MESH_OPCODE_FW_DISTR_CANCEL                                    0xB725
 #define WICED_BT_MESH_OPCODE_FW_DISTR_APPLY                                     0xB726
 #define WICED_BT_MESH_OPCODE_FW_DISTR_STATUS                                    0xB730
@@ -190,6 +191,7 @@ extern "C"
 #define WICED_BT_MESH_FW_DISTR_PHASE_COMPLETED              0x04 /**< At least one Updating Node was updated successfully. */
 #define WICED_BT_MESH_FW_DISTR_PHASE_FAILED                 0x05 /**< No Updating Nodes were updated successfully. */
 #define WICED_BT_MESH_FW_DISTR_PHASE_CANCEL_ACTIVE          0x06 /**< Cancelling the firmware transfer. */
+#define WICED_BT_MESH_FW_DISTR_PHASE_SUSPENDED              0x07 /**< The Transfer BLOB procedure is suspended. */
 /** @} MESH_FW_DISTRIBUTION_PHASES */
 
 /**
@@ -277,6 +279,9 @@ extern "C"
 #define WICED_BT_MESH_FW_DISTR_STATUS_BUSY_UPLOAD           0x08
 #define WICED_BT_MESH_FW_DISTR_STATUS_URI_NOT_SUPPORTED     0x09
 #define WICED_BT_MESH_FW_DISTR_STATUS_URI_MALFORMED         0x0A
+#define WICED_BT_MESH_FW_DISTR_STATUS_URI_UNREACHABLE       0x0B
+#define WICED_BT_MESH_FW_DISTR_STATUS_NO_NEW_FW             0x0C
+#define WICED_BT_MESH_FW_DISTR_STATUS_SUSPEND_FAILED        0x0D
 #define WICED_BT_MESH_FW_DISTR_STATUS_NOT_SUPPORTED         0xFE
  /** @} MESH_FW_DISTRIBUTION_STATUS_CODE */
 
@@ -410,6 +415,7 @@ typedef struct
 
     uint16_t    fw_distr_get;
     uint16_t    fw_distr_start;
+    uint16_t    fw_distr_suspend;
     uint16_t    fw_distr_cancel;
     uint16_t    fw_distr_apply;
     uint16_t    fw_distr_status;
@@ -939,7 +945,7 @@ void wiced_bt_mesh_model_blob_transfer_client_deinit();
  * @param       transfer_mode       Pull/Push
  * @param       ttl                 TTL used by BLOB transfer for all messages
  *
- * @return      WICED_TRUE if distribution has been started successfully
+ * @return      WICED_TRUE if BLOB transfer has been started successfully
  */
 wiced_bool_t wiced_bt_mesh_model_blob_transfer_client_start(uint16_t group_addr, uint16_t *p_group_list, uint16_t group_size, uint8_t *p_blob_id, uint32_t blob_size, uint16_t app_key_idx, uint8_t transfer_mode, uint8_t ttl);
 
@@ -949,9 +955,29 @@ wiced_bool_t wiced_bt_mesh_model_blob_transfer_client_start(uint16_t group_addr,
  *
  * @param       p_blob_id           BLOB ID for the current transmission
  *
- * @return      WICED_TRUE if distribution has been started successfully
+ * @return      WICED_TRUE if BLOB transfer has been aborted successfully
  */
 wiced_bool_t wiced_bt_mesh_model_blob_transfer_client_abort(uint8_t *p_blob_id);
+
+/**
+ * \brief BLOB Transfer Suspend
+ * \details A client model above BLOB Transfer Client or an application can call this function to suspend BLOB Transfer.
+ *
+ * @param       p_blob_id           BLOB ID for the current transmission
+ *
+ * @return      WICED_TRUE if BLOB transfer has been suspended successfully
+ */
+wiced_bool_t wiced_bt_mesh_model_blob_transfer_client_suspend(uint8_t *p_blob_id);
+
+/**
+ * \brief BLOB Transfer Resume
+ * \details A client model above BLOB Transfer Client or an application can call this function to resume BLOB Transfer.
+ *
+ * @param       p_blob_id           BLOB ID for the current transmission
+ *
+ * @return      WICED_TRUE if BLOB transfer has been resumed successfully
+ */
+wiced_bool_t wiced_bt_mesh_model_blob_transfer_client_resume(uint8_t *p_blob_id);
 
 /**
  * \brief BLOB Transfer Client Get Node Status
@@ -1085,6 +1111,7 @@ uint8_t wiced_bt_mesh_model_blob_transfer_get_phase();
 #define WICED_BT_MESH_DFU_STATE_APPLY                       5    /**< Applying firmware on Updating Nodes */
 #define WICED_BT_MESH_DFU_STATE_COMPLETE                    6    /**< Firmware distribution completed successfully */
 #define WICED_BT_MESH_DFU_STATE_FAILED                      7    /**< Firmware distribution failed */
+#define WICED_BT_MESH_DFU_STATE_SUSPENDED                   8    /**< Firmware distribution suspended */
  /** @} FW_DISTRIBUTION_STATE */
 
 typedef PACKED struct

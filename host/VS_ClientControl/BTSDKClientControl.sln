@@ -8,12 +8,15 @@ EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		AutomationDebug|Win32 = AutomationDebug|Win32
+		Debug_Certificate|Win32 = Debug_Certificate|Win32
 		Debug|Win32 = Debug|Win32
 		Release|Win32 = Release|Win32
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{74991452-F05D-4DCB-99DB-2D4E10C74BE6}.AutomationDebug|Win32.ActiveCfg = AutomationDebug|Win32
 		{74991452-F05D-4DCB-99DB-2D4E10C74BE6}.AutomationDebug|Win32.Build.0 = AutomationDebug|Win32
+		{74991452-F05D-4DCB-99DB-2D4E10C74BE6}.Debug_Certificate|Win32.ActiveCfg = Debug_Certificate|Win32
+		{74991452-F05D-4DCB-99DB-2D4E10C74BE6}.Debug_Certificate|Win32.Build.0 = Debug_Certificate|Win32
 		{74991452-F05D-4DCB-99DB-2D4E10C74BE6}.Debug|Win32.ActiveCfg = Debug|Win32
 		{74991452-F05D-4DCB-99DB-2D4E10C74BE6}.Debug|Win32.Build.0 = Debug|Win32
 		{74991452-F05D-4DCB-99DB-2D4E10C74BE6}.Release|Win32.ActiveCfg = Release|Win32

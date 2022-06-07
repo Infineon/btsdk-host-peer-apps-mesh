@@ -5,6 +5,10 @@
       <Configuration>AutomationDebug</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug_Certificate|Win32">
+      <Configuration>Debug_Certificate</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
       <Platform>Win32</Platform>
@@ -38,6 +42,14 @@
     <CharacterSet>Unicode</CharacterSet>
     <UseOfMfc>Static</UseOfMfc>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Certificate|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+    <UseOfMfc>Static</UseOfMfc>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='AutomationDebug|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
@@ -57,6 +69,9 @@
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Certificate|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='AutomationDebug|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
@@ -67,6 +82,10 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>false</LinkIncremental>
+    <TargetName>ClientControlMesh</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Certificate|Win32'">
+    <LinkIncremental>true</LinkIncremental>
     <TargetName>ClientControlMesh</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='AutomationDebug|Win32'">
@@ -128,6 +147,88 @@
       </AssemblyDebug>
       <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <Midl>
+      <MkTypLibCompatible>false</MkTypLibCompatible>
+      <ValidateAllParameters>true</ValidateAllParameters>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </Midl>
+    <ResourceCompile>
+      <Culture>0x0409</Culture>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Certificate|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <FunctionLevelLinking>
+      </FunctionLevelLinking>
+      <IntrinsicFunctions>false</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;_WINDOWS;CLIENTCONTROL;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>.\;..\..\include;..\..\mesh_client_lib;..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include;..\..\..\..\dev-kit\btsdk-include;..\..\..\..\dev-kit\libraries\mesh_libs\include;..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\hal;..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\stack;..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\internal</AdditionalIncludeDirectories>
+      <DisableSpecificWarnings>4996</DisableSpecificWarnings>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <SupportJustMyCode>true</SupportJustMyCode>
+      <WholeProgramOptimization>false</WholeProgramOptimization>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalDependencies>uafxcwd.lib;LIBCMTd.lib;setupapi.lib</AdditionalDependencies>
+      <AssemblyDebug>
+      </AssemblyDebug>
+      <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <Midl>
+      <MkTypLibCompatible>false</MkTypLibCompatible>
+      <ValidateAllParameters>true</ValidateAllParameters>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </Midl>
+    <ResourceCompile>
+      <Culture>0x0409</Culture>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Certificate|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <FunctionLevelLinking>
+      </FunctionLevelLinking>
+      <IntrinsicFunctions>false</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;_WINDOWS;CLIENTCONTROL;NDEBUG;CERTIFICATE_BASED_PROVISIONING_SUPPORTED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>.\;..\..\include;..\..\mesh_client_lib;..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include;..\..\..\..\dev-kit\btsdk-include;..\..\..\..\dev-kit\libraries\mesh_libs\include;..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\hal;..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\stack;..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\internal;..\..\mbedtls\bin\Win32\include</AdditionalIncludeDirectories>
+      <DisableSpecificWarnings>
+      </DisableSpecificWarnings>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <SupportJustMyCode>true</SupportJustMyCode>
+      <WholeProgramOptimization>false</WholeProgramOptimization>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <MinimalRebuild>false</MinimalRebuild>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>
+      </EnableCOMDATFolding>
+      <OptimizeReferences>
+      </OptimizeReferences>
+      <AdditionalDependencies>uafxcwd.lib;LIBCMTd.lib;setupapi.lib;mbedTLS.lib</AdditionalDependencies>
+      <AssemblyDebug>
+      </AssemblyDebug>
+      <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>..\..\mbedtls\bin\Win32</AdditionalLibraryDirectories>
+      <ImageHasSafeExceptionHandlers />
     </Link>
     <Midl>
       <MkTypLibCompatible>false</MkTypLibCompatible>
@@ -205,6 +306,7 @@
     <ClInclude Include="..\..\..\..\libraries\mesh_client_lib\meshdb.h" />
     <ClInclude Include="..\..\..\..\libraries\mesh_client_lib\wiced_bt_mesh_db.h" />
     <ClInclude Include="..\..\..\..\libraries\mesh_client_lib\wiced_mesh_client.h" />
+    <ClInclude Include="..\..\mesh_client_lib\mesh_bt_cert.h" />
     <ClInclude Include=".\automation\mesh_client_script.h" />
     <ClInclude Include=".\automation\script_app.h" />
     <ClInclude Include="ClientControl.h" />
@@ -249,6 +351,20 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
     </ClCompile>
   </ItemGroup>
+  <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Certificate|Win32'">
+    <ClCompile Include="..\..\mesh_client_lib\meshdb.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug_Certificate|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\..\mesh_client_lib\wiced_bt_mesh_db.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug_Certificate|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\..\mesh_client_lib\wiced_mesh_api.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug_Certificate|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\..\mesh_client_lib\wiced_mesh_client.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug_Certificate|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+  </ItemGroup>
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='AutomationDebug|Win32'">
     <ClCompile Include="..\..\mesh_client_lib\meshdb.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='AutomationDebug|Win32'">NotUsing</PrecompiledHeader>
@@ -264,6 +380,13 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\mesh_client_lib\mesh_bt_cert.c">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_Certificate|Win32'">
+      </ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='AutomationDebug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="ClientControl.cpp" />
     <ClCompile Include="ClientControlDlg.cpp" />
     <ClCompile Include="Config.cpp" />
@@ -279,6 +402,7 @@
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug_Certificate|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='AutomationDebug|Win32'">Create</PrecompiledHeader>
     </ClCompile>
   </ItemGroup>

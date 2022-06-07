@@ -452,7 +452,7 @@ public class NodeAdapter extends BaseAdapter {
 
                 propertyList.clear();
                 propertyListNames.clear();
-                if (propValues != null) {
+                if (propValues != null && propValues.length > 0) {
                     for (int i = 0; i < propValues.length; i++) {
                         propertyList.add(propValues[i]);
                         propertyListNames.add(getProperty(propValues[i]));

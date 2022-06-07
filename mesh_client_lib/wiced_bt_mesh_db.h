@@ -1,5 +1,5 @@
 /*
-* Copyright 2016-2021, Cypress Semiconductor Corporation (an Infineon company) or
+* Copyright 2016-2022, Cypress Semiconductor Corporation (an Infineon company) or
 * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
 *
 * This software, including source code, documentation and related
@@ -45,7 +45,6 @@
 #ifdef DIRECTED_FORWARDING_SERVER_SUPPORTED
 #include "wiced_bt_mesh_mdf.h"
 #endif
-
 typedef unsigned int wiced_bool_t;
 #define WICED_TRUE  1
 #define WICED_FALSE 0
@@ -309,22 +308,22 @@ extern "C"
 #endif
 
 /*
- * Check if network wiht specified name already exists
+ * Check if network with specified name already exists
  */
 wiced_bool_t wiced_bt_mesh_db_network_exists(const char *mesh_name);
 
 /*
- * Allocate memeory for the mesh object and read data from the database
+ * Allocate memory for the mesh object and read data from the database
  */
 wiced_bt_mesh_db_mesh_t *wiced_bt_mesh_db_init(const char *p_filename);
 
 /*
- * Release memeory associated with the current database
+ * Release memory associated with the current database
  */
 void wiced_bt_mesh_db_deinit(wiced_bt_mesh_db_mesh_t *mesh_db);
 
 /*
- * Store current database.  The name of the file is contsructed from the mesh_db-?name field
+ * Store current database.  The name of the file is constructed from the mesh_db-?name field
  */
 void wiced_bt_mesh_db_store(wiced_bt_mesh_db_mesh_t *mesh_db);
 

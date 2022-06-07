@@ -1,6 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug_Certificate|Win32">
+      <Configuration>Debug_Certificate</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
       <Platform>Win32</Platform>
@@ -24,6 +28,13 @@
     <CharacterSet>Unicode</CharacterSet>
     <UseOfMfc>Static</UseOfMfc>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Certificate|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v142</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+    <UseOfMfc>Static</UseOfMfc>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
@@ -38,11 +49,20 @@
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Certificate|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <EmbedManifest>true</EmbedManifest>
+    <OutDir>$(SolutionDir)Debug\</OutDir>
+    <TargetName>MeshClient</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Certificate|Win32'">
     <LinkIncremental>true</LinkIncremental>
     <EmbedManifest>true</EmbedManifest>
     <OutDir>$(SolutionDir)Debug\</OutDir>
@@ -59,7 +79,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;REMOTE_PROVISION_SERVER_SUPPORTED;WICED_BT_MESH_TRACE_ENABLE;MESH_OVER_GATT_ONLY;WIN32;_WINDOWS;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.\;..\..\..\include;..\..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include;..\..\..\mesh_client_lib;..\..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\internal;..\..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\hal;..\..\..\..\..\dev-kit\btsdk-include;..\..\..\..\..\dev-kit\libraries\mesh_libs\include;..\..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\stack;..\..\..\..\..\..\..\common\libraries\mesh_core_lib;..\mesh_libs;.\automation</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\;..\..\..\include;..\..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include;..\..\..\mesh_client_lib;..\..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\internal;..\..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\hal;..\..\..\..\..\dev-kit\btsdk-include;..\..\..\..\..\dev-kit\libraries\mesh_libs\include;..\..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\stack;..\..\..\..\..\..\..\common\libraries\mesh_core_lib;..\mesh_libs;.\automation;..\mbedtls\out\install\x64-Debug\include</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>
       </DisableSpecificWarnings>
     </ClCompile>
@@ -72,7 +92,43 @@
       <AddModuleNamesToAssembly>
       </AddModuleNamesToAssembly>
       <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
-      <AdditionalLibraryDirectories>.\MeshLibraries\Release</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>.\MeshLibraries\Debug</AdditionalLibraryDirectories>
+      <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
+    </Link>
+    <Midl>
+      <MkTypLibCompatible>false</MkTypLibCompatible>
+      <ValidateAllParameters>true</ValidateAllParameters>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </Midl>
+    <ResourceCompile>
+      <Culture>0x0409</Culture>
+      <PreprocessorDefinitions>_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ResourceCompile>
+    <Manifest>
+      <AdditionalManifestFiles>MeshClient.exe.manifest</AdditionalManifestFiles>
+    </Manifest>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Certificate|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;REMOTE_PROVISION_SERVER_SUPPORTED;WICED_BT_MESH_TRACE_ENABLE;MESH_OVER_GATT_ONLY;WIN32;_WINDOWS;_DEBUG;CERTIFICATE_BASED_PROVISIONING_SUPPORTED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>.\;..\..\..\include;..\..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include;..\..\..\mesh_client_lib;..\..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\internal;..\..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\hal;..\..\..\..\..\dev-kit\btsdk-include;..\..\..\..\..\dev-kit\libraries\mesh_libs\include;..\..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\stack;..\..\..\..\..\..\..\common\libraries\mesh_core_lib;..\mesh_libs;.\automation;..\..\..\mbedtls\bin\Win32\include</AdditionalIncludeDirectories>
+      <DisableSpecificWarnings>
+      </DisableSpecificWarnings>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>uafxcwd.lib;Libcmtd.lib;setupapi.lib;bthprops.lib;mesh_libs.lib;mbedTLS.lib</AdditionalDependencies>
+      <IgnoreSpecificDefaultLibraries>
+      </IgnoreSpecificDefaultLibraries>
+      <AddModuleNamesToAssembly>
+      </AddModuleNamesToAssembly>
+      <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
+      <AdditionalLibraryDirectories>.\MeshLibraries\Debug;..\..\..\mbedtls\bin\Win32</AdditionalLibraryDirectories>
       <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
     </Link>
     <Midl>
@@ -97,7 +153,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;REMOTE_PROVISION_SERVER_SUPPORTED;WICED_BT_MESH_TRACE_ENABLE;MESH_OVER_GATT_ONLY;WIN32;_WINDOWS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.\;..\..\..\include;..\..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include;..\..\..\mesh_client_lib;..\..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\internal;..\..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\hal;..\..\..\..\..\dev-kit\btsdk-include;..\..\..\..\..\dev-kit\libraries\mesh_libs\include;..\..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\stack;..\..\..\..\..\..\..\common\libraries\mesh_core_lib;..\mesh_libs;.\automation</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\;..\..\..\include;..\..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include;..\..\..\mesh_client_lib;..\..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\internal;..\..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\hal;..\..\..\..\..\dev-kit\btsdk-include;..\..\..\..\..\dev-kit\libraries\mesh_libs\include;..\..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\stack;..\..\..\..\..\..\..\common\libraries\mesh_core_lib;..\mesh_libs;.\automation;..\mbedtls\out\install\x64-Debug\include</AdditionalIncludeDirectories>
       <DebugInformationFormat>OldStyle</DebugInformationFormat>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
       <WholeProgramOptimization>false</WholeProgramOptimization>
@@ -142,6 +198,11 @@
     <ClInclude Include="..\..\..\..\..\..\libraries\mesh_client_lib\meshdb.h" />
     <ClInclude Include="..\..\..\..\..\..\libraries\mesh_client_lib\wiced_bt_mesh_db.h" />
     <ClInclude Include="..\..\..\..\..\..\libraries\mesh_client_lib\wiced_mesh_client.h" />
+    <ClInclude Include="..\..\..\mesh_client_lib\mesh_bt_cert.h">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_Certificate|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClInclude>
     <ClInclude Include="add_defines.h" />
     <ClInclude Include="BtInterface.h" />
     <ClInclude Include="btwleapis.h" />
@@ -181,12 +242,29 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
     </ClCompile>
   </ItemGroup>
+  <ItemGroup Condition="'$(Configuration)|$(Platform)'=='Debug_Certificate|Win32'">
+    <ClCompile Include="..\..\..\mesh_client_lib\meshdb.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug_Certificate|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\..\..\mesh_client_lib\wiced_bt_mesh_db.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug_Certificate|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="..\..\..\mesh_client_lib\wiced_mesh_client.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug_Certificate|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
+  </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\mesh_client_lib\mesh_bt_cert.c">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug_Certificate|Win32'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="LightLCConfig.cpp" />
     <ClCompile Include="MeshAdvPublisher.cpp" />
     <ClCompile Include="MeshScanner.cpp" />
     <ClCompile Include="mesh_app.c">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug_Certificate|Win32'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="MeshClient.cpp" />
@@ -194,6 +272,7 @@
     <ClCompile Include="SensorConfig.cpp" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug_Certificate|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="Win10Interface.cpp" />

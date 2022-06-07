@@ -1,5 +1,5 @@
 /*
-* Copyright 2016-2021, Cypress Semiconductor Corporation (an Infineon company) or
+* Copyright 2016-2022, Cypress Semiconductor Corporation (an Infineon company) or
 * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
 *
 * This software, including source code, documentation and related
@@ -171,7 +171,7 @@ int mesh_client_network_open(const char *provisioner_name, const char *provision
  * Import is not possible while a device is being provisioned or reconfigured.
  * Returns the name of the database opened, or NULL if import is not successfull.
  */
-char* mesh_client_network_import(const char *provisioner_name, const char *provisioner_uuid, char *json_string, mesh_client_network_opened_t p_opened_callback);
+char* mesh_client_network_import(const char *provisioner_name, const char *provisioner_uuid, char *json_string, char *ifx_json_string, mesh_client_network_opened_t p_opened_callback);
 
 /*
  * Export existing network.  The whole database is returned as a string. The caller is responsible to free the string.
@@ -187,7 +187,7 @@ void mesh_client_network_close(void);
 /*
  * Create a new group in the parent group.
  * Devices in a mesh network can be organized in groups. If a controlling device (for example, a light switch) is a part of the group, it
- * sends on/off commands to a grou. If target device (for example, a bulb is a part of a group, it processes the commands addressed to
+ * sends on/off commands to a group. If target device (for example, a bulb is a part of a group, it processes the commands addressed to
  * the group, as well as commands addressed to the specific device.
  *
  * The group is empty when it is created. A new device (both control and a target type) can be provisioned to be a part of the group.
@@ -374,7 +374,7 @@ uint8_t mesh_client_connect_component(char *component_name, uint8_t use_proxy, u
 void mesh_client_connection_state_changed(uint16_t conn_id, uint16_t mtu);
 
 /*
- * Return TRUE if connecting to a provisiong service, FALSE if to proxy.
+ * Return TRUE if connecting to a provisioning service, FALSE if to proxy.
  */
 uint8_t mesh_client_is_connecting_provisioning(void);
 
@@ -410,7 +410,7 @@ int mesh_client_identify(const char *p_name, uint8_t duration);
 
 /*
  * This function can be called to encrypt OTA FW upgrade commands and data. Note that output buffer should be at least 17 bytes larger
- * than input data length.  Function returns the size of the data to be transfered over the air using OTA_FW_UPDATE_COMMAND or _DATA handle
+ * than input data length.  Function returns the size of the data to be transferred over the air using OTA_FW_UPDATE_COMMAND or _DATA handle
  */
 uint16_t mesh_client_ota_data_encrypt(const char *component_name, const uint8_t *p_in_data, uint16_t in_data_len, uint8_t *p_out_buf, uint16_t out_buf_len);
 

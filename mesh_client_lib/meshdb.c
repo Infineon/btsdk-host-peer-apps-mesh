@@ -1,5 +1,5 @@
 /*
-* Copyright 2016-2021, Cypress Semiconductor Corporation (an Infineon company) or
+* Copyright 2016-2022, Cypress Semiconductor Corporation (an Infineon company) or
 * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
 *
 * This software, including source code, documentation and related
@@ -3169,8 +3169,8 @@ int mesh_json_read_model_pub_period(FILE *fp, char prefix, uint32_t *period)
 {
     char tagname[MAX_TAG_NAME];
     char c1;
-    uint8_t steps;
-    uint32_t resolution;
+    uint8_t steps = 0;
+    uint32_t resolution = 0;
     uint32_t tags = 0;
     wiced_bool_t failed = WICED_FALSE;
 

@@ -138,7 +138,6 @@ public class FragmentRoom extends Fragment implements LightingService.IServiceCa
     static String mCurrentNetwork = "NA";
 
     int menuaddBigItem = 0;
-    public static String mALLroom;
     private static int RESULT_LOAD_IMG = 1;
 
     ListView ListRooms;
@@ -836,8 +835,11 @@ public class FragmentRoom extends Fragment implements LightingService.IServiceCa
         filechooser.setFileListener(new FileChooser.FileSelectedListener() {
             @Override
             public void fileSelected(final File file) {
+                String filename = file.getPath();
+                String ifxfile = filename.substring(0, filename.length() - 4) + "ifx.json";
                 String mFileName = file.getAbsolutePath();
                 String json = null;
+                String ifxjson = null;
                 try {
                     FileInputStream is = new FileInputStream(file);
                     int size = is.available();
@@ -847,11 +849,19 @@ public class FragmentRoom extends Fragment implements LightingService.IServiceCa
                     json = new String(buffer, "UTF-8");
                     Log.d(TAG,"content : "+json.length() + "actual len:"+size);
                     JSONObject obj = new JSONObject(json);
-
+                    try {
+                        is = new FileInputStream(ifxfile);
+                        is.read(buffer);
+                        is.close();
+                        ifxjson = new String(buffer, "UTF-8");
+                    }
+                    catch (FileNotFoundException e) {
+                        ifxjson = new String("");
+                    }
                     isChangeNetwork = true;
 
                     //calling import network API
-                    String networkName = mApp.getMesh().importNetwork(getUsername(),json);
+                    String networkName = mApp.getMesh().importNetwork(getUsername(),json, ifxjson);
                     mNewNetwork = networkName;
                     Log.d(TAG,"import network result : "+networkName );
                     if(networkName!=null)
@@ -1007,8 +1017,6 @@ public class FragmentRoom extends Fragment implements LightingService.IServiceCa
             List<String> groups = serviceReference.getMesh().getAllGroups(serviceReference.getCurrentNetwork());
             Log.d(TAG,"groups size = " +groups.size());
             if(groups.size() != 0){
-            //first room is all room
-            serviceReference.setallRoom(groups.get(0));
             Log.d(TAG, " changing network BIgNode = " + device);
             updateRooms();
             }else{
@@ -1533,10 +1541,6 @@ public class FragmentRoom extends Fragment implements LightingService.IServiceCa
         Log.d(TAG, "setUpNewNetwork network opened successfully!!");
 
         serviceReference.changeNetwork(mNewNetwork);
-        int result = serviceReference.createRoom("ALL", serviceReference.getCurrNetwork());
-        if(result != 0)
-            mALLroom = "ALL";
-        serviceReference.setallRoom(mALLroom);
         networkChanged();
     }
 
@@ -1551,10 +1555,6 @@ public class FragmentRoom extends Fragment implements LightingService.IServiceCa
         mApp.setCurrNetwork(mCurrentNetwork);
         List<String> groups = serviceReference.getMesh().getAllGroups(mCurrentNetwork);
         if(groups != null && groups.size() > 0) {
-            //first room is all room
-
-            serviceReference.setallRoom(groups.get(0));
-
             String ntwrk = serviceReference.getCurrentNetwork();
             if(ntwrk!=null) {
                 textView.setAllCaps(true);

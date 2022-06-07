@@ -1,5 +1,5 @@
 /*
- * Copyright 2021, Cypress Semiconductor Corporation (an Infineon company) or
+ * Copyright 2022, Cypress Semiconductor Corporation (an Infineon company) or
  * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
  *
  * This software, including source code, documentation and related
@@ -74,11 +74,11 @@ public struct OtaConstants {
     public struct Notification {
         public static let OTA_STATUS_UPDATED                        = "otaStatusUpdated"
         public static let USER_INFO_KEY_OTA_STATE                   = "userInfoOtaState"                // value type: Int, see enum OtaUpgrade.OtaState.
-        public static let USER_INFO_KEY_OTA_SUBSTATE                = "userInfoOtaSubState"                // value type: Int, see enum OtaUpgrade.OtaState.
+        public static let USER_INFO_KEY_OTA_SUBSTATE                = "userInfoOtaSubState"             // value type: Int, see enum OtaUpgrade.OtaState.
         public static let USER_INFO_KEY_OTA_ERROR_CODE              = "userInfoOtaErrorCode"            // value type: Int, see OtaErrorCode.
         public static let USER_INFO_KEY_OTA_ERROR_DESCRIPTION       = "userInfoOtaErrorDescription"     // value type: String, error description based on error code.
         public static let USER_INFO_KEY_OTA_FW_IMAGE_SIZE           = "userInfoOtaFwImageSize"          // value type: String, fw image size for OTA.
-        public static let USER_INFO_KEY_OTA_FW_TRANSFERRED_SIZE     = "userInfoOtaFwTransferredSize"    // value type: String, transfered fw image size during OTA.
+        public static let USER_INFO_KEY_OTA_FW_TRANSFERRED_SIZE     = "userInfoOtaFwTransferredSize"    // value type: String, transferred fw image size during OTA.
 
         public static func getOtaNotificationData(userInfo: [AnyHashable: Any]) -> OtaNotificationData? {
             guard let userInfo = userInfo as? [String: Any] else {

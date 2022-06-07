@@ -1,5 +1,5 @@
 ﻿/*
- * Copyright 2016-2021, Cypress Semiconductor Corporation (an Infineon company) or
+ * Copyright 2016-2022, Cypress Semiconductor Corporation (an Infineon company) or
  * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
  *
  * This software, including source code, documentation and related
@@ -939,10 +939,31 @@ void MainWindow::on_btnImport()
         Log("on_btnImport, fread error");
     }
     json_string[json_string_size] = 0;
-    char *mesh_name;
 
+    char *ifx_json_string = NULL;
+    if (fileName.endsWith(".json", Qt::CaseInsensitive))
+    {
+        QString ifxFileName = fileName.insert(fileName.length() - 4, "ifx.");
+        FILE *fIfxJsonFile = fopen(STR_TO_CHAR(ifxFileName), "rb");
+        if (fIfxJsonFile != NULL)
+        {
+            fseek(fIfxJsonFile, 0, SEEK_END);
+            json_string_size = ftell(fIfxJsonFile);
+            rewind(fIfxJsonFile);
+
+            ifx_json_string = new char[json_string_size+1];
+            if (ifx_json_string != NULL)
+            {
+                fread(ifx_json_string, 1, json_string_size, fIfxJsonFile);
+                ifx_json_string[json_string_size] = 0;
+            }
+            fclose(fIfxJsonFile);
+        }
+    }
+
+    char *mesh_name;
     if ((mesh_name = mesh_client_network_import(ED_TO_CHAR(ui->edUser),
-                                                ui->cbProUUID->currentText().left(48).toStdString().c_str(), json_string, network_opened)) == NULL)
+                                                ui->cbProUUID->currentText().left(48).toStdString().c_str(), json_string, ifx_json_string, network_opened)) == NULL)
     {
         messageBox(0,"Failed to import json file", "Error", 0);
     }
@@ -975,6 +996,8 @@ void MainWindow::on_btnImport()
     }
     fclose(fJsonFile);
     delete[] json_string;
+    if (ifx_json_string != NULL)
+        delete[] ifx_json_string;
 }
 
 void MainWindow::on_btnExport()

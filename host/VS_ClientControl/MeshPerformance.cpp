@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2021, Cypress Semiconductor Corporation (an Infineon company) or
+ * Copyright 2016-2022, Cypress Semiconductor Corporation (an Infineon company) or
  * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
  *
  * This software, including source code, documentation and related
@@ -92,7 +92,7 @@ DWORD WINAPI UDPServerReceiveThread(LPVOID lpdwThreadParam)
     app_server_sock = socket(AF_INET, SOCK_DGRAM, 0);
     if (app_server_sock == INVALID_SOCKET)
     {
-        printf("Create UDP recieve socket failed\n");
+        printf("Create UDP receive socket failed\n");
         return (0);
     }
 

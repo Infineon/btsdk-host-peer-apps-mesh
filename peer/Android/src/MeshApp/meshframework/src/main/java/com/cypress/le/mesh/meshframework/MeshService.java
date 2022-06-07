@@ -296,7 +296,7 @@ public class MeshService extends Service {
         }
     }
 
-    String importNetwork(String provisionerName, String jsonString) {
+    String importNetwork(String provisionerName, String jsonString, String ifxJsonString) {
         Log.i(TAG, "importNetwork ");
         if (provisionerName == null || provisionerName.equals("") || jsonString == null || jsonString.equals(""))
             return null;
@@ -311,7 +311,7 @@ public class MeshService extends Service {
             }
         }
 
-        return mMeshNativeHelper.meshClientNetworkImport(provisionerName, jsonString);
+        return mMeshNativeHelper.meshClientNetworkImport(provisionerName, jsonString, ifxJsonString);
     }
 
     String exportNetwork(String meshName) {

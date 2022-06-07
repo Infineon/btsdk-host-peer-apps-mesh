@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2021, Cypress Semiconductor Corporation (an Infineon company) or
+ * Copyright 2016-2022, Cypress Semiconductor Corporation (an Infineon company) or
  * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
  *
  * This software, including source code, documentation and related
@@ -288,6 +288,11 @@ open class MeshFrameworkManager {
         if provisioinerName.isEmpty || networkName.isEmpty {
             return MeshErrorCode.MESH_ERROR_INVALID_ARGS
         }
+        MeshFrameworkManager.shared.disconnectMeshNetwork { (isConnected: Bool, connId: Int, addr: Int, isOverGatt: Bool, error: Int) in }
+        openingNetworkName = nil
+        openedNetworkName = nil
+        openingProvisionerName = nil
+        openedProvisionerName = nil
         return Int(MeshNativeHelper.meshClientNetworkCreate(provisioinerName, meshName: networkName))
     }
 
@@ -439,7 +444,7 @@ open class MeshFrameworkManager {
      Note, when meshClientNetworkImport API return the real mesh network name, it doesn't mean the mesh network has been opened successfully.
      When the mesh network opening completed, the callback routine will be invoked, and the opening status can be checked through the status argument.
      */
-    open func meshClientNetworkImport(provisioinerName: String, jsonString: String, completion: @escaping OpenMeshNetworkCallback) -> String? {
+    open func meshClientNetworkImport(provisioinerName: String, jsonString: String, ifxJsonString: String, completion: @escaping OpenMeshNetworkCallback) -> String? {
         guard !provisioinerName.isEmpty, !jsonString.isEmpty else {
             meshLog("error: MeshFrameworkManager, meshClientNetworkImport, invalid arguments, provisioinerName:\(provisioinerName), jsonString:\(jsonString)")
             completion(nil, MeshErrorCode.MESH_ERROR_NETWORK_CLOSED, MeshErrorCode.MESH_ERROR_INVALID_ARGS)
@@ -459,7 +464,7 @@ open class MeshFrameworkManager {
         openMeshNetworkTimer = Timer.scheduledTimer(timeInterval: TimeInterval(MeshConstants.MESH_CLIENT_NETWORK_OPEN_TIMETOUT),
                                                     target: self, selector: #selector(openMeshNetworkTimeoutHandler),
                                                     userInfo: nil, repeats: false)
-        guard let openingMeshNetworkName = MeshNativeHelper.meshClientNetworkImport(provisioinerName, jsonString: jsonString) else {
+        guard let openingMeshNetworkName = MeshNativeHelper.meshClientNetworkImport(provisioinerName, jsonString: jsonString, ifxJsonString: ifxJsonString) else {
             meshLog("error: MeshFrameworkManager, meshClientNetworkImport failed, return openingMeshNetworkName is nil")
             openMeshNetworkTimer?.invalidate()
             openMeshNetworkTimer = nil

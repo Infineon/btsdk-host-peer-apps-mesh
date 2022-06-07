@@ -1,5 +1,5 @@
 /*
-* Copyright 2016-2021, Cypress Semiconductor Corporation (an Infineon company) or
+* Copyright 2016-2022, Cypress Semiconductor Corporation (an Infineon company) or
 * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
 *
 * This software, including source code, documentation and related
@@ -1261,7 +1261,7 @@ char *wiced_bt_mesh_db_get_all_provisioners(wiced_bt_mesh_db_mesh_t *mesh_db)
 /*
  * go recursiverly through parents to figure out if the group is a decendant of a parent
  */
-wiced_bool_t is_group_a_perent_group(wiced_bt_mesh_db_mesh_t *mesh_db, uint16_t parent_group_addr, uint16_t group_addr)
+wiced_bool_t is_group_a_parent_group(wiced_bt_mesh_db_mesh_t *mesh_db, uint16_t parent_group_addr, uint16_t group_addr)
 {
     wiced_bt_mesh_db_group_t *group = wiced_bt_mesh_db_group_get_by_addr(mesh_db, group_addr);
     if (group == NULL)
@@ -1270,7 +1270,7 @@ wiced_bool_t is_group_a_perent_group(wiced_bt_mesh_db_mesh_t *mesh_db, uint16_t 
         return WICED_TRUE;
     if (group->parent_addr.u.address == 0)
         return WICED_FALSE;
-    return is_group_a_perent_group(mesh_db, parent_group_addr, group->parent_addr.u.address);
+    return is_group_a_parent_group(mesh_db, parent_group_addr, group->parent_addr.u.address);
 }
 
 wiced_bt_mesh_db_element_t *element_get_by_addr(wiced_bt_mesh_db_mesh_t *mesh_db, uint16_t element_addr)
@@ -1402,7 +1402,7 @@ wiced_bool_t wiced_bt_mesh_db_element_is_in_group(wiced_bt_mesh_db_mesh_t *mesh_
             else
             {
                 // If we are subscribed to a child group of the group in question, no go.
-                if (is_group_a_perent_group(mesh_db, group_addr, element->model[model_idx].sub[sub_idx].u.address))
+                if (is_group_a_parent_group(mesh_db, group_addr, element->model[model_idx].sub[sub_idx].u.address))
                     return WICED_FALSE;
             }
         }
@@ -2229,7 +2229,7 @@ wiced_bt_mesh_db_net_key_t *wiced_bt_mesh_db_find_bound_net_key(wiced_bt_mesh_db
     if (app_key == NULL)
         return NULL;
 
-    // first net key was added during provisiong.  Need to refresh if the phase is not 0
+    // first net key was added during provisioning.  Need to refresh if the phase is not 0
     for (i = 0; i < wiced_bt_mesh_db_num_net_keys(mesh_db); i++)
     {
         net_key = wiced_bt_mesh_db_net_key_get(mesh_db, i);
@@ -3176,7 +3176,7 @@ wiced_bool_t mesh_db_delete_model_sub(wiced_bt_mesh_db_model_t *model, uint16_t 
             {
                 for (; i < model->num_subs - 1; i++)
                 {
-                    memcpy(&model->sub[i], &model->sub[i + 1], sizeof(uint16_t));
+                    memcpy(&model->sub[i], &model->sub[i + 1], sizeof(wiced_bt_mesh_db_address_t));
                 }
                 model->num_subs--;
                 return WICED_TRUE;

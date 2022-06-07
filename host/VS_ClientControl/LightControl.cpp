@@ -1,5 +1,5 @@
 ﻿/*
- * Copyright 2016-2021, Cypress Semiconductor Corporation (an Infineon company) or
+ * Copyright 2016-2022, Cypress Semiconductor Corporation (an Infineon company) or
  * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
  *
  * This software, including source code, documentation and related
@@ -2096,8 +2096,9 @@ void CLightControl::OnBnClickedNetworkImport()
     CFileDialog dlgFile(TRUE, NULL, NULL, OFN_OVERWRITEPROMPT | OFN_NOCHANGEDIR, szFilter);
     if (dlgFile.DoModal() != IDOK)
         return;
+    CString fileName = dlgFile.GetPathName();
     FILE *fJsonFile;
-    if (_wfopen_s(&fJsonFile, dlgFile.GetPathName(), L"rb"))
+    if (_wfopen_s(&fJsonFile, fileName, L"rb"))
     {
         MessageBox(L"Failed to open the json file", L"Error", MB_OK);
         return;
@@ -2111,14 +2112,38 @@ void CLightControl::OnBnClickedNetworkImport()
     size_t json_string_size = ftell(fJsonFile);
     rewind(fJsonFile);
 
-    char *json_string = (char *)new BYTE[json_string_size];
+    char *json_string = (char *)new BYTE[json_string_size+1];
     if (json_string == NULL)
         return;
     fread(json_string, 1, json_string_size, fJsonFile);
+    json_string[json_string_size] = 0;
+    fclose(fJsonFile);
+
+    char *ifx_json_string = NULL;
+    if (fileName.GetLength() > 4)
+    {
+        fileName.Insert(fileName.GetLength() - 4, L"ifx.");
+        FILE *fIfxJsonFile;
+        if (_wfopen_s(&fIfxJsonFile, fileName, L"rb") == 0)
+        {
+            fseek(fIfxJsonFile, 0, SEEK_END);
+            json_string_size = ftell(fIfxJsonFile);
+            rewind(fIfxJsonFile);
+
+            ifx_json_string = new char[json_string_size+1];
+            if (ifx_json_string != NULL)
+            {
+                fread(ifx_json_string, 1, json_string_size, fIfxJsonFile);
+                ifx_json_string[json_string_size] = 0;
+            }
+            fclose(fIfxJsonFile);
+        }
+    }
+
     char provisioner_name[80];
     char *mesh_name;
     GetDlgItemTextA(m_hWnd, IDC_PROVISIONER, provisioner_name, sizeof(provisioner_name));
-    if ((mesh_name = mesh_client_network_import(provisioner_name, provisioner_uuid, json_string, network_opened)) == NULL)
+    if ((mesh_name = mesh_client_network_import(provisioner_name, provisioner_uuid, json_string, ifx_json_string, network_opened)) == NULL)
     {
         MessageBox(L"Failed to import json file", L"Error", MB_OK);
     }
@@ -2154,6 +2179,8 @@ void CLightControl::OnBnClickedNetworkImport()
         DisplayCurrentGroup();
     }
     delete[] json_string;
+    if (ifx_json_string != NULL)
+        delete[] ifx_json_string;
 }
 
 void CLightControl::OnBnClickedNetworkExport()

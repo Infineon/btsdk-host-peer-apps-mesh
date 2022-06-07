@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2021, Cypress Semiconductor Corporation (an Infineon company) or
+ * Copyright 2016-2022, Cypress Semiconductor Corporation (an Infineon company) or
  * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
  *
  * This software, including source code, documentation and related
@@ -288,23 +288,26 @@ BOOL ComHelper::OpenPort(int port, int baudRate)
         }
         memset(&comStat, 0, sizeof(comStat));
         ClearCommError(m_handle, &dwError, &comStat);
+
+        SetCommMask(m_handle, EV_CTS | EV_DSR);
+
+        Log(L"Opened COM%d at speed: %u\n", port, baudRate);
+        m_bClosing = FALSE;
+        m_hShutdown = CreateEvent(NULL, FALSE, FALSE, NULL);
+
+        // create thread to read the uart data.
+        DWORD dwThreadId;
+        m_hThreadRead = CreateThread(NULL, 0, ReadThread, this, 0, &dwThreadId);
+        if (!m_hThreadRead)
+        {
+            Log(L"Could not create read thread \n");
+            ClosePort();
+        }
     }
-
-    SetCommMask(m_handle, EV_CTS | EV_DSR);
-
-    Log(L"Opened COM%d at speed: %u\n", port, baudRate);
-    m_bClosing = FALSE;
-    m_hShutdown = CreateEvent(NULL, FALSE, FALSE, NULL);
-
-    // create thread to read the uart data.
-    DWORD dwThreadId;
-    m_hThreadRead = CreateThread(NULL, 0, ReadThread, this, 0, &dwThreadId);
-    if (!m_hThreadRead)
+    else
     {
-        Log(L"Could not create read thread \n");
-        ClosePort();
+        Log(L"Failed to open COM%d\n", port);
     }
-
     return m_handle != NULL && m_handle != INVALID_HANDLE_VALUE;
 }
 

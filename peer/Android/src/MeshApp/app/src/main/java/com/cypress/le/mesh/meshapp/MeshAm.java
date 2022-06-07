@@ -25,6 +25,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -670,6 +671,7 @@ public class MeshAm extends Service {
                         }
                         final String provisionerName = extras.getString("provisionerName");
                         final String path = extras.getString("filepath");
+                        final String ifxpath = path.substring(0, path.length() - 4) + "ifx.json";
 
                         pendingResult = goAsync();
                         isImportInProgress = true;
@@ -678,6 +680,7 @@ public class MeshAm extends Service {
                             @Override
                             protected Object doInBackground(Object[] params) {
                                 String json = null;
+                                String ifxjson = null;
                                 int size = 0;
                                 try {
                                     FileInputStream is = new FileInputStream(path);
@@ -688,7 +691,16 @@ public class MeshAm extends Service {
                                     json = new String(buffer, "UTF-8");
                                     Log.d(TAG,"content : "+json.length() + "actual len:"+size);
                                     JSONObject obj = new JSONObject(json);
-                                    mCurrentNtw = mMeshController.importNetwork(provisionerName, json);
+                                    try {
+                                        is = new FileInputStream(ifxpath);
+                                        is.read(buffer);
+                                        is.close();
+                                        ifxjson = new String(buffer, "UTF-8");
+                                    }
+                                    catch (FileNotFoundException e) {
+                                        ifxjson = new String("");
+                                    }
+                                    mCurrentNtw = mMeshController.importNetwork(provisionerName, json, ifxjson);
                                     Log.d(TAG,"mCurrentNtw : "+mCurrentNtw);
                                 } catch (IOException e) {
                                     e.printStackTrace();

@@ -1,5 +1,5 @@
 /*
-* Copyright 2016-2021, Cypress Semiconductor Corporation (an Infineon company) or
+* Copyright 2016-2022, Cypress Semiconductor Corporation (an Infineon company) or
 * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
 *
 * This software, including source code, documentation and related
@@ -167,7 +167,6 @@ static void mesh_sensor_client_callback(uint16_t event, wiced_bt_mesh_event_t* p
 
 static void mesh_core_state_changed(wiced_bt_mesh_core_state_type_t type, wiced_bt_mesh_core_state_t *p_state);
 extern void mesh_provision_process_event(uint16_t event, wiced_bt_mesh_event_t *p_event, void *p_data);
-extern void mesh_sensor_process_event(uint16_t addr, uint16_t event, void *p_data);
 extern void mesh_vendor_specific_data(uint16_t src, uint16_t company_id, uint16_t model_id, uint8_t opcode, uint8_t ttl, void *p_data, uint16_t data_len);
 
 const char* szRegKey = "Software\\Cypress\\Mesh\\MeshClient";
@@ -487,7 +486,7 @@ void mesh_control_message_handler(uint16_t event, wiced_bt_mesh_event_t *p_event
 static void mesh_sensor_client_callback(uint16_t event, wiced_bt_mesh_event_t* p_event, void* p_data)
 {
     WICED_BT_TRACE("sensor message:%d\n", event);
-    mesh_sensor_process_event(p_event->src, event, p_data);
+    mesh_provision_process_event(event, p_event, p_data);
 }
 
 

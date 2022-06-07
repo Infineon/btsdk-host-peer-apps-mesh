@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2021, Cypress Semiconductor Corporation (an Infineon company) or
+ * Copyright 2016-2022, Cypress Semiconductor Corporation (an Infineon company) or
  * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
  *
  * This software, including source code, documentation and related
@@ -249,9 +249,10 @@ class SelectNetworkPopoverViewController: UIViewController {
                                             )
             return
         }
+        let importIfxJsonString = MeshFrameworkManager.shared.readExportedMeshNetwork(networkName: networkName + ".ifx") ?? ""
 
         meshLog("SelectNetworkPopoverViewController, onImportNetworkConfirm, importJsonString=\(importJsonString)")
-        let realNetworkName = MeshFrameworkManager.shared.meshClientNetworkImport(provisioinerName: provisioinerName, jsonString: importJsonString) { (_ networkName: String?, _ status: Int, _ error: Int) in
+        let realNetworkName = MeshFrameworkManager.shared.meshClientNetworkImport(provisioinerName: provisioinerName, jsonString: importJsonString, ifxJsonString: importIfxJsonString) { (_ networkName: String?, _ status: Int, _ error: Int) in
             self.indicatorView.stopAnimating()
             guard error == MeshErrorCode.MESH_SUCCESS else {
                 meshLog("error: SelectNetworkPopoverViewController, onImportNetworkConfirm, failed to call meshClientNetworkImport, error=\(error)")

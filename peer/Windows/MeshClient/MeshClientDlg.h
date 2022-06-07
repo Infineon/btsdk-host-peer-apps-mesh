@@ -1,5 +1,5 @@
 /*
-* Copyright 2016-2021, Cypress Semiconductor Corporation (an Infineon company) or
+* Copyright 2016-2022, Cypress Semiconductor Corporation (an Infineon company) or
 * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
 *
 * This software, including source code, documentation and related
@@ -126,6 +126,7 @@ private:
     HANDLE m_hDevice;
     HANDLE m_hCfgEvent;
     int m_dfuState;
+    BOOL m_bDfuStarted;
 
     // Implementation
 protected:
@@ -167,6 +168,9 @@ public:
     void OnNodeConnected();
     BOOL IsOtaSupported();
     void StartOta();
+    void SetDfuStarted(BOOL started);
+    BOOL OnDfuStart();
+    void OnDfuStop();
 #ifdef MESH_DFU_ENABLED
     BOOL ReadDfuManifestFile(CString sFilePath);
     uint32_t GetDfuImageSize();
@@ -207,7 +211,7 @@ public:
     afx_msg void OnBnClickedLightnessGet();
     afx_msg void OnBnClickedLightnessSet();
 
-    afx_msg void OnBnClickedOtaUpgradeStart();
+    afx_msg void OnBnClickedDfuStartstop();
     afx_msg void OnBnClickedConnectdisconnect();
     afx_msg void OnBnClickedIdentify();
     afx_msg void OnBnClickedReconfigure();
@@ -216,9 +220,9 @@ public:
     afx_msg void OnCbnSelchangeConfigureMoveDevice();
     afx_msg void OnBnClickedNetworkImport();
     afx_msg void OnBnClickedNetworkExport();
-    afx_msg void OnBnClickedOtaUpgradeStop();
+    afx_msg void OnBnClickedDfuPauseresume();
     afx_msg void OnBnClickedGetComponentInfo();
-    afx_msg void OnBnClickedOtaUpgradeStatus();
+    afx_msg void OnBnClickedDfuGetStatus();
     afx_msg void OnBnClickedSensorGet();
     afx_msg void OnCbnSelchangeControlDevice();
     afx_msg void OnBnClickedSensorConfigure();

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2021, Cypress Semiconductor Corporation (an Infineon company) or
+ * Copyright 2016-2022, Cypress Semiconductor Corporation (an Infineon company) or
  * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
  *
  * This software, including source code, documentation and related
@@ -40,6 +40,9 @@
 #ifndef VC_EXTRALEAN
 #define VC_EXTRALEAN            // Exclude rarely-used stuff from Windows headers
 #endif
+
+/* turn off warnings related to use of deprecated winsock APIs */
+#define _WINSOCK_DEPRECATED_NO_WARNINGS
 
 // Enable Mesh Directed Forwarding support
 //#define DIRECTED_FORWARDING_SUPPORTED

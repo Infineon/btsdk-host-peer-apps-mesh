@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2021, Cypress Semiconductor Corporation (an Infineon company) or
+ * Copyright 2016-2022, Cypress Semiconductor Corporation (an Infineon company) or
  * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
  *
  * This software, including source code, documentation and related
@@ -96,7 +96,7 @@ NS_ASSUME_NONNULL_BEGIN
 +(int) meshClientNetworkDelete:(NSString *)provisionerName meshName:(NSString *)meshName;
 +(void) meshClientNetworkClose;
 +(NSString * __nullable) meshClientNetworkExport:(NSString *)meshName;
-+(NSString * __nullable) meshClientNetworkImport:(NSString *)provisionerName jsonString:(NSString *)jsonString;
++(NSString * __nullable) meshClientNetworkImport:(NSString *)provisionerName jsonString:(NSString *)jsonString ifxJsonString:(NSString *)ifxJsonString;
 +(int) meshClientGroupCreate:(NSString *)groupName parentGroupName:(NSString *)parentGroupName;
 +(int) meshClientGroupDelete:(NSString *)groupName;
 +(NSArray<NSString *> * __nullable) meshClientGetAllNetworks;

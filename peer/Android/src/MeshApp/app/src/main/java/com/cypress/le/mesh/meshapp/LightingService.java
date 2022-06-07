@@ -52,7 +52,6 @@ public class LightingService extends Service implements IMeshControllerCallback 
     static ArrayList<String> rooms = new ArrayList<>();
     static ArrayList<String> lights = new ArrayList<>();
     static ArrayList<String> seeks = new ArrayList<>();
-    static String mAllRoom;
     private MeshController mMesh = null;
     private static String mCurrentGroup = null;
     private static Stack stack = new Stack();
@@ -452,14 +451,6 @@ public class LightingService extends Service implements IMeshControllerCallback 
 
     }
 */
-
-    public void setallRoom(String allRoom) {
-        mAllRoom = allRoom;
-    }
-
-    public String getAllRoom() {
-        return  mAllRoom;
-    }
 
     public void setHSLStartTracking() {
         mMesh.startTracking();

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2021, Cypress Semiconductor Corporation (an Infineon company) or
+ * Copyright 2016-2022, Cypress Semiconductor Corporation (an Infineon company) or
  * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
  *
  * This software, including source code, documentation and related
@@ -68,7 +68,6 @@ static void mesh_control_message_handler(uint16_t event, wiced_bt_mesh_event_t *
 static void mesh_sensor_message_handler(uint16_t event, wiced_bt_mesh_event_t* p_event, void* p_data);
 static void mesh_core_state_changed(wiced_bt_mesh_core_state_type_t type, wiced_bt_mesh_core_state_t *p_state);
 extern void mesh_provision_process_event(uint16_t event, wiced_bt_mesh_event_t *p_event, void *p_data);
-extern void mesh_sensor_process_event(uint16_t addr, uint16_t event, void *p_data);
 extern void mesh_vendor_specific_data(uint16_t src, uint16_t company_id, uint16_t model_id, uint8_t opcode, uint8_t ttl, void* p_data, uint16_t data_len);
 extern wiced_bool_t mesh_gatt_client_provision_connect(wiced_bt_mesh_provision_connect_data_t *p_connect, wiced_bool_t use_pb_gatt);
 extern void mesh_gatt_client_scan_unprovisioned_devices(uint8_t start);
@@ -391,7 +390,7 @@ void mesh_control_message_handler(uint16_t event, wiced_bt_mesh_event_t *p_event
 void mesh_sensor_message_handler(uint16_t event, wiced_bt_mesh_event_t* p_event, void* p_data)
 {
     Log("sensor message:%d\n", event);
-    mesh_sensor_process_event(p_event->src, event, p_data);
+    mesh_provision_process_event(event, p_event, p_data);
 }
 
 uint32_t mesh_app_on_received_provision_gatt_pkt(uint8_t *p_data, uint32_t length)

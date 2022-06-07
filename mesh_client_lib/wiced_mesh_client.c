@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2021, Cypress Semiconductor Corporation (an Infineon company) or
+ * Copyright 2016-2022, Cypress Semiconductor Corporation (an Infineon company) or
  * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
  *
  * This software, including source code, documentation and related
@@ -70,6 +70,9 @@
 #endif
 #ifdef PRIVATE_PROXY_SUPPORTED
 #include "wiced_bt_mesh_private_proxy.h"
+#endif
+#ifdef CERTIFICATE_BASED_PROVISIONING_SUPPORTED
+#include "mesh_bt_cert.h"
 #endif
 
 //#ifndef CLIENTCONTROL
@@ -230,7 +233,7 @@ model_element_t models_configured_for_pub[] =
     { 0, 1, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_SENSOR_SRV },
 };
 
-// list of models that are configured for subscribtion when provisioned or placed to a group. These are all server models.
+// list of models that are configured for subscription when provisioned or placed to a group. These are all server models.
 // We also configure Sensor Client. We would configure Sensor Server to publish data to a group, so it would make
 // sense for a client by default to process the messages.
 model_element_t models_configured_for_sub[] =
@@ -282,6 +285,7 @@ typedef struct unprovisioned_report__t
     uint8_t  uuid[16];
     int8_t   rssi;
     uint16_t oob;
+    uint32_t uri_hash;
 #define EXTENDED_SCAN_STATE_NOT_STARTED 0
 #define EXTENDED_SCAN_STATE_STARTED     1
 #define EXTENDED_SCAN_STATE_COMPLETED   2
@@ -289,6 +293,7 @@ typedef struct unprovisioned_report__t
 
     wiced_timer_t scan_timer;
 } unprovisioned_report_t;
+
 
 typedef struct t_mesh_lpn_key_refresh_block
 {
@@ -302,6 +307,25 @@ typedef struct t_mesh_lpn_key_refresh_block
     uint16_t friend_addr;
     wiced_timer_t timer;
 } mesh_lpn_key_refresh_block_t;
+
+#if defined(CERTIFICATE_BASED_PROVISIONING_SUPPORTED)
+typedef struct
+{
+    uint16_t    extensions;                                             /* Bitmask indicating the provisioning extensions supported by the device */
+    uint16_t    list[WICED_BT_MESH_PROVISIONING_RECORD_ID_MAX_SIZE];    /* Lists the Record IDs of the provisioning records stored on the device */
+    uint16_t    size;                                                   /* sizes of the record data in the list */
+} mesh_cbp_provisioning_list_t;
+
+#pragma pack(1)
+typedef struct
+{
+    uint8_t                                                 status;
+    wiced_bt_mesh_provision_device_record_fragment_data_t   response;
+    uint8_t                                                 data[WICED_BT_MESH_PROVISIONING_RECORD_BUFF_MAX_SIZE];
+    uint16_t                                                size;
+} mesh_cbp_provisioning_record_t;
+#pragma pack()
+#endif
 
 typedef struct
 {
@@ -325,11 +349,12 @@ typedef struct
 
     uint8_t     network_opened;
     uint8_t     retries;
+#define WICED_BT_MESH_PROVISION_PROCEDURE_DEV_KEY_REFRESH               0x00
+#define WICED_BT_MESH_PROVISION_PROCEDURE_NODE_ADDRESS_REFRESH          0x01
+#define WICED_BT_MESH_PROVISION_PROCEDURE_NODE_COMPOSITION_REFRESH      0x02
 
+#define WICED_BT_MESH_PROVISION_PROCEDURE_RECORD_RETRIEVAL              0xFE
 #define WICED_BT_MESH_PROVISION_PROCEDURE_PROVISION                     0xFF
-#define WICED_BT_MESH_PROVISION_PROCEDURE_DEV_KEY_REFRESH               0
-#define WICED_BT_MESH_PROVISION_PROCEDURE_NODE_ADDRESS_REFRESH          1
-#define WICED_BT_MESH_PROVISION_PROCEDURE_NODE_COMPOSITION_REFRESH      2
     uint8_t     provision_procedure;
 
     uint16_t    unicast_addr;       // local device unicast address
@@ -403,6 +428,16 @@ typedef struct
 #ifdef PRIVATE_PROXY_SUPPORTED
     wiced_timer_t ps_timer;
 #endif
+#ifdef CERTIFICATE_BASED_PROVISIONING_SUPPORTED
+    uint16_t    oob_info;
+    uint8_t     is_cert_valid;
+    union
+    {
+        pubkey_t    s;
+        uint8_t     a[WICED_BT_MESH_PROVISION_PUBLIC_KEY_LEN];  // public key
+    } pubkey;
+    mesh_provisioning_records_t* p_provisioning_records;
+#endif
 } mesh_provision_cb_t;
 
 mesh_provision_cb_t provision_cb = { 0 };
@@ -425,7 +460,6 @@ static model_element_t* model_needs_default_sub(uint16_t company_id, uint16_t mo
 static const char *get_component_name(uint16_t addr);
 static void get_rpl_filename(char *filename);
 static wiced_bool_t is_model_present(uint16_t element_addr, uint16_t company_id, uint16_t model_id);
-void mesh_sensor_process_event(uint16_t addr, uint16_t event, void *p_data);
 
 void mesh_provision_process_event(uint16_t event, wiced_bt_mesh_event_t *p_event, void *p_data);
 static void mesh_provision_state_idle(mesh_provision_cb_t *p_cb, uint16_t event, wiced_bt_mesh_event_t *p_event, void *p_data);
@@ -452,7 +486,11 @@ static void mesh_node_connecting_link_status(mesh_provision_cb_t *p_cb, wiced_bt
 static void mesh_provision_process_device_caps(mesh_provision_cb_t *p_cb, wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_provision_device_capabilities_data_t *p_data);
 static void mesh_provision_process_provision_end(mesh_provision_cb_t *p_cb, wiced_bt_mesh_provision_status_data_t *p_data);
 static void mesh_provision_process_get_oob_data(mesh_provision_cb_t* p_cb, wiced_bt_mesh_event_t* p_event, wiced_bt_mesh_provision_device_oob_request_data_t* p_data);
-
+#if defined(CERTIFICATE_BASED_PROVISIONING_SUPPORTED)
+static void mesh_provision_process_record_list(mesh_provision_cb_t* p_cb, wiced_bt_mesh_event_t* p_event, mesh_cbp_provisioning_list_t* p_data);
+static void mesh_provision_process_record_response(mesh_provision_cb_t* p_cb, wiced_bt_mesh_event_t* p_event, mesh_cbp_provisioning_record_t* p_data);
+static void mesh_provision_record_clean(mesh_provision_cb_t*);
+#endif
 void mesh_configure_set_local_device_key(uint16_t addr);
 static void mesh_configure_proxy_connection_status(mesh_provision_cb_t *p_cb, wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_connect_status_data_t *p_data);
 static void mesh_configure_disconnecting_link_status(mesh_provision_cb_t *p_cb, wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_connect_status_data_t *p_data);
@@ -515,11 +553,11 @@ static void mesh_process_lightness_status(wiced_bt_mesh_event_t *p_event, void *
 static void mesh_process_hsl_status(wiced_bt_mesh_event_t *p_event, void *p_data);
 static void mesh_process_ctl_status(wiced_bt_mesh_event_t *p_event, void *p_data);
 
-static void mesh_process_sensor_descriptor_status(uint16_t addr, wiced_bt_mesh_sensor_descriptor_status_data_t *ptr);
-static void mesh_process_sensor_setting_status(uint16_t addr, wiced_bt_mesh_sensor_setting_status_data_t *ptr);
-static void mesh_process_sensor_settings_status(uint16_t addr, wiced_bt_mesh_sensor_settings_status_data_t *ptr);
-static void mesh_process_sensor_status(uint16_t addr, wiced_bt_mesh_sensor_status_data_t *ptr);
-static void mesh_process_sensor_cadence_status(uint16_t addr, wiced_bt_mesh_sensor_cadence_status_data_t *ptr);
+static void mesh_process_sensor_descriptor_status(wiced_bt_mesh_event_t* p_event, void* p);
+static void mesh_process_sensor_setting_status(wiced_bt_mesh_event_t* p_event, void* p);
+static void mesh_process_sensor_settings_status(wiced_bt_mesh_event_t* p_event, void* p);
+static void mesh_process_sensor_status(wiced_bt_mesh_event_t* p_event, void* p);
+static void mesh_process_sensor_cadence_status(wiced_bt_mesh_event_t* p_event, void* p);
 
 static void mesh_process_tx_complete(mesh_provision_cb_t *p_cb, wiced_bt_mesh_event_t *p_event);
 static void mesh_client_start_extended_scan(mesh_provision_cb_t* p_cb, unprovisioned_report_t* p_report);
@@ -632,6 +670,7 @@ int mesh_client_network_create(const char *provisioner_name, const char *provisi
             uuid[i] = (uint8_t)j;
         }
         rand128(dev_key);
+
         p_mesh_db->unicast_addr = wiced_bt_mesh_db_provisioner_add(p_mesh_db, provisioner_name, uuid, dev_key);
 
         wiced_bt_mesh_db_store(p_mesh_db);
@@ -880,7 +919,7 @@ int mesh_client_network_open(const char *provisioner_name, const char *provision
     return configure_local_device(p_mesh_db->unicast_addr, 0, p_net_key->index, p_net_key->phase == WICED_BT_MESH_KEY_REFRESH_PHASE_NORMAL ? p_net_key->key : p_net_key->old_key);
 }
 
-char *mesh_client_network_import(const char *provisioner_name, const char *provisioner_uuid, char *json_string, mesh_client_network_opened_t p_opened_callback)
+char *mesh_client_network_import(const char *provisioner_name, const char *provisioner_uuid, char *json_string, char *ifx_json_string, mesh_client_network_opened_t p_opened_callback)
 {
     mesh_provision_cb_t *p_cb = &provision_cb;
     char *db_name = NULL;
@@ -895,12 +934,18 @@ char *mesh_client_network_import(const char *provisioner_name, const char *provi
         fwrite(json_string, 1, strlen(json_string), fp);
         fclose(fp);
 
+        if (ifx_json_string && strlen(ifx_json_string) > 0 && (fp = fopen("temp.ifx.json", "w")) != NULL)
+        {
+            fwrite(ifx_json_string, 1, strlen(ifx_json_string), fp);
+            fclose(fp);
+        }
+
         if (mesh_client_network_open(provisioner_name, provisioner_uuid, "temp", p_opened_callback) == MESH_CLIENT_SUCCESS)
         {
             wiced_bt_mesh_db_store(p_mesh_db);
             db_name = p_mesh_db->name;
         }
-        if (remove("temp.json") != 0)
+        if (remove("temp.json") != 0 || remove("temp.ifx.json") != 0)
             Log("failed to remove temp.json errno:%d\n", errno);
     }
     return db_name;
@@ -1087,14 +1132,15 @@ int mesh_client_group_delete(char *p_group_name)
     wiced_bt_mesh_db_node_t *p_node;
     wiced_bt_mesh_db_model_id_t *p_models_array;
     uint32_t total_len = 0;
+
+    if (p_mesh_db == NULL)
+        return MESH_CLIENT_ERR_NETWORK_CLOSED;
+
     uint16_t group_addr = wiced_bt_mesh_db_group_get_addr(p_mesh_db, p_group_name);
     pending_operation_t *p_op;
     mesh_provision_cb_t *p_cb = &provision_cb;
     wiced_bt_mesh_db_app_key_t *app_key;
     int j;
-
-    if (p_mesh_db == NULL)
-        return MESH_CLIENT_ERR_NETWORK_CLOSED;
 
     if ((p_elements_array = wiced_bt_mesh_db_get_all_elements(p_mesh_db)) == NULL)
         return MESH_CLIENT_ERR_NETWORK_DB;
@@ -3093,6 +3139,12 @@ void mesh_client_start_extended_scan(mesh_provision_cb_t *p_cb, unprovisioned_re
     data.timeout = SCAN_EXTENDED_DURATION;
     data.num_ad_filters = 1;
     data.ad_filter_types[0] = BTM_BLE_ADVERT_TYPE_NAME_COMPLETE;
+    if (p_report->uri_hash)
+    {
+        data.num_ad_filters += 1;
+        data.ad_filter_types[1] = BTM_BLE_ADVERT_TYPE_URI;
+    }
+
     //data.ad_filter_types[1] = BTM_BLE_ADVERT_TYPE_APPEARANCE;
     data.uuid_present = WICED_TRUE;
     memcpy(data.uuid, p_report->uuid, sizeof(p_report->uuid));
@@ -3185,7 +3237,9 @@ uint8_t mesh_client_provision_start(const char* device_name, const char* group_n
         mesh_client_provision_connect(p_cb);
         return MESH_CLIENT_SUCCESS;
     }
-
+#if defined(CERTIFICATE_BASED_PROVISIONING_SUPPORTED)
+    mesh_provision_record_clean(p_cb);
+#endif
     // Find Provisioner with the highest RSSI
     int8_t highest_rssi = -127;
     for (p_report = p_cb->p_first_unprovisioned; p_report != NULL; p_report = p_report->p_next)
@@ -3220,6 +3274,32 @@ uint8_t mesh_client_provision_start(const char* device_name, const char* group_n
     p_cb->over_gatt = 0;
     p_cb->retries = 0;
 
+#ifdef CERTIFICATE_BASED_PROVISIONING_SUPPORTED
+    p_cb->oob_info = p_best_report->oob;
+    p_cb->is_cert_valid = WICED_FALSE;
+
+    /* If device supports certificate provisioning, check if certificate can be preloaded and verified */
+    if (p_cb->oob_info & WICED_BT_MESH_CORE_OOB_BIT_CERTIFICATE)
+    {
+        /* Check if certificate store has device's certificate */
+        if (provisioning_records_validate(p_cb->uuid, &p_cb->pubkey.s, NULL))
+        {
+            /* if the certificate has been obtained already and verified than
+             * retrieving the provisioning records may be skipped
+             */
+            p_cb->is_cert_valid = WICED_TRUE;
+            Log("Certificate UUID %02x-%02x preloaded and successfully validated", p_cb->uuid[0], p_cb->uuid[15]);
+        }
+        else if (p_cb->oob_info & WICED_BT_MESH_CORE_OOB_BIT_RECORD)
+        {
+
+           /* device repported that it has provisioning records inside of its static memory.
+            * update type of procedure then provisioner will retrieve those records before sending invitation PDU
+            */
+            p_cb->provision_procedure = WICED_BT_MESH_PROVISION_PROCEDURE_RECORD_RETRIEVAL;
+        }
+    }
+#endif
     // If we are currently connected to proxy, disconnect the proxy connection,
     // so that we can provision/configure new device over GATT even if the stack supports only one connection.
     // After provisioning/configuration, new node will become a GATT proxy.
@@ -3257,6 +3337,7 @@ uint8_t mesh_client_connect_proxy(mesh_provision_cb_t *p_cb, uint8_t connect_typ
 {
     wiced_bt_mesh_proxy_connect_data_t data;
 
+    memset(&data, 0, sizeof(wiced_bt_mesh_proxy_connect_data_t));
     data.connect_type = connect_type;
     data.scan_duration = scan_duration;
 
@@ -3311,6 +3392,7 @@ uint8_t mesh_client_disconnect_network(void)
     if (p_cb->proxy_conn_id != 0)
     {
         wiced_bt_mesh_client_proxy_disconnect();
+        p_cb->proxy_addr = 0;
     }
     if (p_cb->db_changed)
     {
@@ -3374,6 +3456,11 @@ uint8_t mesh_client_connect_component(char *component_name, uint8_t use_proxy, u
     return MESH_CLIENT_SUCCESS;
 }
 
+/**
+ * @brief mesh client Connect command
+ *
+ * @param p_cb - pointer to the control block
+ */
 void mesh_client_provision_connect(mesh_provision_cb_t *p_cb)
 {
     wiced_bt_mesh_provision_connect_data_t data;
@@ -3386,9 +3473,13 @@ void mesh_client_provision_connect(mesh_provision_cb_t *p_cb)
     memset(&data, 0, sizeof(wiced_bt_mesh_provision_connect_data_t));
     data.procedure = p_cb->provision_procedure;
 
-    if (data.procedure == WICED_BT_MESH_PROVISION_PROCEDURE_PROVISION)
+    if ((data.procedure == WICED_BT_MESH_PROVISION_PROCEDURE_PROVISION)
+#if defined(CERTIFICATE_BASED_PROVISIONING_SUPPORTED)
+        || (data.procedure ==  WICED_BT_MESH_PROVISION_PROCEDURE_RECORD_RETRIEVAL)
+#endif
+    )
     {
-        memcpy(data.uuid, p_cb->uuid, 16);
+        memcpy(data.uuid, p_cb->uuid, sizeof(p_cb->uuid));
         data.identify_duration = p_cb->identify_duration;
     }
     Log("Provision Connect Provisioner:%x identify_duration:%x use_gatt:%x", p_cb->provisioner_addr, data.identify_duration, p_cb->use_gatt);
@@ -3399,42 +3490,6 @@ void mesh_client_provision_connect(mesh_provision_cb_t *p_cb)
 mesh_provision_cb_t *mesh_provision_find_by_addr(uint16_t addr)
 {
     return (provision_cb.addr == addr) ? &provision_cb : NULL;
-}
-
-void mesh_sensor_process_event(uint16_t addr, uint16_t event, void *p_data)
-{
-#ifndef CLIENTCONTROL
-    ods("mesh_sensor_process_event event:%d\n", event);
-#else
-    Log("mesh_sensor_process_event event:%d\n", event);
-#endif
-
-    // client control can receive events before db is opened. ignore.
-    if (p_mesh_db == NULL)
-        return;
-
-    switch (event)
-    {
-        case WICED_BT_MESH_SENSOR_DESCRIPTOR_STATUS:
-            mesh_process_sensor_descriptor_status(addr, (wiced_bt_mesh_sensor_descriptor_status_data_t *)p_data);
-            return;
-
-        case WICED_BT_MESH_SENSOR_SETTING_STATUS:
-            mesh_process_sensor_setting_status(addr, (wiced_bt_mesh_sensor_setting_status_data_t *)p_data);
-            return;
-
-        case WICED_BT_MESH_SENSOR_STATUS:
-            mesh_process_sensor_status(addr, (wiced_bt_mesh_sensor_status_data_t *)p_data);
-            return;
-
-        case WICED_BT_MESH_SENSOR_SETTINGS_STATUS:
-            mesh_process_sensor_settings_status(addr, (wiced_bt_mesh_sensor_settings_status_data_t *)p_data);
-            return;
-
-        case WICED_BT_MESH_SENSOR_CADENCE_STATUS:
-            mesh_process_sensor_cadence_status(addr, (wiced_bt_mesh_sensor_cadence_status_data_t *)p_data);
-            return;
-    }
 }
 
 void mesh_vendor_specific_data(uint16_t src, uint16_t company_id, uint16_t model_id, uint8_t opcode, uint8_t ttl, void* p_data, uint16_t data_len)
@@ -3590,6 +3645,26 @@ void mesh_provision_process_event(uint16_t event, wiced_bt_mesh_event_t *p_event
         mesh_process_ctl_status(p_event, p_data);
         return;
 
+    case WICED_BT_MESH_SENSOR_DESCRIPTOR_STATUS:
+        mesh_process_sensor_descriptor_status(p_event, p_data);
+        return;
+
+    case WICED_BT_MESH_SENSOR_SETTING_STATUS:
+        mesh_process_sensor_setting_status(p_event, p_data);
+        return;
+
+    case WICED_BT_MESH_SENSOR_STATUS:
+        mesh_process_sensor_status(p_event, p_data);
+        return;
+
+    case WICED_BT_MESH_SENSOR_SETTINGS_STATUS:
+        mesh_process_sensor_settings_status(p_event, p_data);
+        return;
+
+    case WICED_BT_MESH_SENSOR_CADENCE_STATUS:
+        mesh_process_sensor_cadence_status(p_event, p_data);
+        return;
+
     case WICED_BT_MESH_DEFAULT_TRANSITION_TIME_STATUS:
         mesh_default_trans_time_status(p_event, p_data);
         return;
@@ -3670,58 +3745,6 @@ void mesh_provision_process_event(uint16_t event, wiced_bt_mesh_event_t *p_event
     // If event is TX complete, it stays in the queue.
     if ((p_event != NULL) && (event != WICED_BT_MESH_TX_COMPLETE))
         wiced_bt_mesh_release_event(p_event);
-}
-
-void mesh_process_sensor_cadence_status(uint16_t addr, wiced_bt_mesh_sensor_cadence_status_data_t *ptr)
-{
-    mesh_provision_cb_t *p_cb = &provision_cb;
-    Log("Sensor Cadence Status from:%x", addr);
-    if (p_cb->store_config)
-    {
-        wiced_bt_mesh_db_sensor_cadence_add(p_mesh_db, addr, ptr);
-        wiced_bt_mesh_db_store(p_mesh_db);
-        p_cb->db_changed = WICED_TRUE;
-    }
-    if ((p_cb->p_first != NULL) && p_cb->p_first->operation == CONFIG_OPERATION_SENSOR_CADENCE_GET)
-        start_next_op(p_cb);
-}
-
-void mesh_process_sensor_status(uint16_t addr, wiced_bt_mesh_sensor_status_data_t *ptr)
-{
-    wiced_bt_mesh_sensor_status_data_t *p_data = (wiced_bt_mesh_sensor_status_data_t *)ptr;
-
-    Log("Sensor Status from:%x", addr);
-
-    if (provision_cb.p_sensor_status != NULL)
-    {
-        provision_cb.p_sensor_status(wiced_bt_mesh_db_get_element_name(p_mesh_db, addr), p_data->property_id, p_data->prop_value_len, p_data->raw_value);
-    }
-}
-
-void mesh_process_sensor_settings_status(uint16_t addr, wiced_bt_mesh_sensor_settings_status_data_t *ptr)
-{
-    mesh_provision_cb_t *p_cb = &provision_cb;
-
-    Log("Sensor settings Status from:%x Property ID:%x", addr, ptr->property_id);
-    if (p_cb->store_config)
-    {
-        wiced_bt_mesh_db_sensor_settings_add(p_mesh_db, addr, ptr);
-        wiced_bt_mesh_db_store(p_mesh_db);
-    }
-    start_next_op(p_cb);
-}
-
-void mesh_process_sensor_setting_status(uint16_t addr, wiced_bt_mesh_sensor_setting_status_data_t *ptr)
-{
-    mesh_provision_cb_t *p_cb = &provision_cb;
-
-    Log("Sensor setting Status from:%x Property ID:%x", addr, ptr->property_id);
-    if (p_cb->store_config)
-    {
-        wiced_bt_mesh_db_sensor_setting_add(p_mesh_db, addr, ptr);
-        wiced_bt_mesh_db_store(p_mesh_db);
-        p_cb->db_changed = WICED_TRUE;
-    }
 }
 
 void mesh_provision_state_idle(mesh_provision_cb_t *p_cb, uint16_t event, wiced_bt_mesh_event_t *p_event, void *p_data)
@@ -3833,7 +3856,18 @@ void mesh_provision_state_connecting(mesh_provision_cb_t *p_cb, uint16_t event, 
     case WICED_BT_MESH_PROVISION_DEVICE_CAPABILITIES:
         mesh_provision_process_device_caps(p_cb, p_event, (wiced_bt_mesh_provision_device_capabilities_data_t *)p_data);
         break;
+#if defined(CERTIFICATE_BASED_PROVISIONING_SUPPORTED)
+    case WICED_BT_MESH_DEVICE_PROVISIONING_RECORD_LIST:
+        Log("Provision: get record list");
+        mesh_provision_process_record_list(p_cb, p_event, (void*)p_data);
+        break;
 
+    case WICED_BT_MESH_DEVICE_PROVISIONING_RECORD_RESP:
+        Log("Provision: get record response");
+        mesh_provision_process_record_response(p_cb, p_event, (void*)p_data);
+        /* if the validated succeeded then clean allocated structures and proceed with invite PDU */
+        break;
+#endif
     default:
         Log("Event:%d ignored\n", event);
         break;
@@ -4613,7 +4647,7 @@ void mesh_provision_process_device_caps(mesh_provision_cb_t *p_cb, wiced_bt_mesh
     start.addr = p_cb->addr;
     start.net_key_idx = 0;      //ToDo: select somehow desired netkey. For now use primary net key (0)
     start.algorithm = (p_data->algorithms & WICED_BT_MESH_PROVISION_ALG_ECDH_P256_HMAC_SHA256_AES_CCM) != 0 ? WICED_BT_MESH_PROVISION_START_ALG_P256_HMAC_SHA256_AES_CCM : WICED_BT_MESH_PROVISION_START_ALG_FIPS_P256;
-    start.public_key_type = 0; // Don't use OOB Pub Key p_data->pub_key_type;    // use value passed in the capabilities
+    start.public_key_type = p_data->pub_key_type;    // use value passed in the capabilities
     start.auth_method = ((p_cb->oob_data_len == 0) || (p_data->static_oob_type == 0)) ? 0 : WICED_BT_MESH_PROVISION_START_AUTH_METHOD_STATIC;
     start.auth_action = 0;
     start.auth_size = 0;
@@ -4622,6 +4656,231 @@ void mesh_provision_process_device_caps(mesh_provision_cb_t *p_cb, wiced_bt_mesh
 
     wiced_bt_mesh_provision_start(p_event1, &start);
 }
+
+#if defined(CERTIFICATE_BASED_PROVISIONING_SUPPORTED)
+/**
+ * @brief Handling device's provisioning records list received from remote provisioner server
+ *
+ * @param p_cb      pointer to the provisioner client control block
+ * @param p_event   pointer to the received event
+ * @param p_data    data to handle
+ */
+void mesh_provision_process_record_list(mesh_provision_cb_t* p_cb, wiced_bt_mesh_event_t* p_event, mesh_cbp_provisioning_list_t* p_data)
+{
+    uint16_t src = (p_event != NULL) ? p_event->src : 0;
+    wiced_bool_t result = WICED_TRUE;
+
+    ods("Provision: Records from Server:%d RFU extentions:%d list size:%d", src, p_data->extensions, p_data->size);
+    if (p_cb->p_provisioning_records == NULL)
+    {
+        /* allocate records descriptor to hold all records from the device */
+        if ((p_cb->p_provisioning_records = wiced_bt_get_buffer(sizeof(mesh_provisioning_records_t))) == NULL)
+        {
+            /* cannot allocate the memory */
+            result = WICED_FALSE;
+        }
+    }
+    result = (p_data->size) ? result : WICED_FALSE;
+    if (WICED_TRUE == result)
+    {
+        memset(p_cb->p_provisioning_records, 0, sizeof(mesh_provisioning_records_t));
+        for (uint16_t i = 0; i < WICED_BT_MESH_PROVISIONING_RECORD_ID_MAX_SIZE; ++i)
+        {
+            p_cb->p_provisioning_records->record[i].d.record_id = (i < p_data->size) ? p_data->list[i] : WICED_BT_MESH_PROVISIONING_RECORD_ID_MAX_SIZE;
+            ods("record id %2d:\t%04d", i, p_data->list[i]);
+        }
+        if ((p_event = mesh_client_configure_create_event(src)) != NULL)
+        {
+            /* Retrieving provisioning records from the device. Start with the first in the list (index 0) */
+            wiced_bt_mesh_provision_device_record_fragment_data_t request;
+            request.record_id = p_cb->p_provisioning_records->record[0].d.record_id;
+            request.fragment_offset = p_cb->p_provisioning_records->record[0].d.fragment_offset;
+            request.total_length = WICED_BT_MESH_PROVISIONING_RECORD_BUFF_MAX_SIZE/2;
+            ods("* record fragment from server:%d id :%d offset :%d size max: %d ", p_cb->provisioner_addr, request.record_id, request.fragment_offset, request.total_length);
+            wiced_bt_mesh_provision_retrieve_record(p_event, &request);
+        }
+        else
+        {
+            mesh_provision_record_clean(p_cb);
+            provision_status_notify(p_cb, MESH_CLIENT_PROVISION_STATUS_FAILED);
+            if ((p_event = mesh_client_configure_create_event(src)) != NULL)
+            {
+                ods(" -- provisioning failed");
+                wiced_bt_mesh_provision_disconnect(p_event);
+            }
+        }
+    }
+}
+
+/**
+ * @brief   Handling fragment of the device's provisioning record received from the remote provisioning server
+ *
+ * @param p_event
+ * @param p_data
+ */
+void mesh_provision_process_record_response(mesh_provision_cb_t* p_cb, wiced_bt_mesh_event_t* p_event, mesh_cbp_provisioning_record_t* p_data)
+{
+    uint16_t src = (p_event != NULL) ? p_event->src : 0;
+    wiced_bool_t result = WICED_TRUE;
+    ods("Provision: records from server:%d record id:%4d offset: %4d total length %d, status: %d, size: %d",
+        src, p_data->response.record_id, p_data->response.fragment_offset, p_data->response.total_length, p_data->status, p_data->size);
+    if (p_cb->p_provisioning_records != NULL)
+    {
+        wiced_bool_t    done = TRUE;
+        switch (p_data->status)
+        {
+        case WICED_BT_MESH_PROVISIONING_RECORD_RESPONSE_STATUS_SUCCESS:
+            {
+                uint16_t index = 0;
+                for (; ((index < WICED_BT_MESH_PROVISIONING_RECORD_ID_MAX_SIZE) &&
+                    (p_cb->p_provisioning_records->record[index].d.record_id != WICED_BT_MESH_PROVISIONING_RECORD_ID_MAX_SIZE)); index++)
+                {
+                    if (p_cb->p_provisioning_records->record[index].d.record_id == p_data->response.record_id)
+                    {
+                        if (p_cb->p_provisioning_records->record[index].p_data == NULL)
+                        {
+                            /* allocate buffer to hold provisioning record */
+                            if ((p_cb->p_provisioning_records->record[index].p_data = wiced_bt_get_buffer(p_data->response.total_length)) == NULL)
+                            {
+                                /* cannot allocate the memory */
+                                result = WICED_FALSE;
+                                break;
+                            }
+                        }
+                        if (p_cb->p_provisioning_records->record[index].d.total_length &&
+                            (p_cb->p_provisioning_records->record[index].d.total_length != p_data->response.total_length))
+                        {
+                            /* there is something wrong and total size got reported different valuse. Should we repeat last request? */
+                            result = WICED_FALSE;
+                            break;
+                        }
+                        if (p_cb->p_provisioning_records->record[index].d.fragment_offset != p_data->response.fragment_offset)
+                        {
+                            /* response has different fragmen offset from what has been requested */
+                            result = WICED_FALSE;
+                            break;
+                        }
+                        memcpy(p_cb->p_provisioning_records->record[index].p_data + p_cb->p_provisioning_records->record[index].d.fragment_offset, p_data->data, p_data->size);
+                        p_cb->p_provisioning_records->record[index].d.total_length = p_data->response.total_length;
+                        p_cb->p_provisioning_records->record[index].d.fragment_offset += p_data->size;
+                        if (p_cb->p_provisioning_records->record[index].d.fragment_offset != p_cb->p_provisioning_records->record[index].d.total_length)
+                        {
+                            if ((p_event = mesh_client_configure_create_event(src)) != NULL)
+                            {
+                                /* Retrieving provisioning records from the device. Start with the first in the list (index 0) */
+                                wiced_bt_mesh_provision_device_record_fragment_data_t request;
+                                request.record_id = p_cb->p_provisioning_records->record[index].d.record_id;
+                                request.fragment_offset = p_cb->p_provisioning_records->record[index].d.fragment_offset;
+                                uint16_t len = p_cb->p_provisioning_records->record[index].d.total_length - p_cb->p_provisioning_records->record[index].d.fragment_offset;
+                                request.total_length = (len > WICED_BT_MESH_PROVISIONING_RECORD_BUFF_MAX_SIZE/2) ? WICED_BT_MESH_PROVISIONING_RECORD_BUFF_MAX_SIZE/2 : len;
+                                ods("+ record fragment from server:%d id :%d offset :%d size max: %d",
+                                    p_cb->provisioner_addr, request.record_id, request.fragment_offset, request.total_length);
+                                wiced_bt_mesh_provision_retrieve_record(p_event, &request);
+                                done = FALSE;
+                            }
+                        }
+                        break;
+                    }
+                }
+                if (done == TRUE)
+                {
+                    /* check if all records are retrieved */
+                    for (uint16_t i = index; ((i < WICED_BT_MESH_PROVISIONING_RECORD_ID_MAX_SIZE) &&
+                        (p_cb->p_provisioning_records->record[i].d.record_id != WICED_BT_MESH_PROVISIONING_RECORD_ID_MAX_SIZE)); ++i)
+                    {
+                        if (0 == p_cb->p_provisioning_records->record[i].d.total_length)
+                        {
+                            if ((p_event = mesh_client_configure_create_event(src)) != NULL)
+                            {
+                                /* Retrieving provisioning records from the device */
+                                wiced_bt_mesh_provision_device_record_fragment_data_t request;
+                                request.record_id = p_cb->p_provisioning_records->record[i].d.record_id;
+                                request.fragment_offset = p_cb->p_provisioning_records->record[i].d.fragment_offset;
+                                request.total_length = WICED_BT_MESH_PROVISIONING_RECORD_BUFF_MAX_SIZE/2;
+                                ods("= record fragment from server:%d id :%d offset :%d size max: %d",
+                                    p_cb->provisioner_addr, request.record_id, request.fragment_offset, request.total_length);
+                                wiced_bt_mesh_provision_retrieve_record(p_event, &request);
+                                done = FALSE;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (done == TRUE)
+                {
+                    /* Preceed to handle provisioning records here */
+                    ods("ALL provisioning records have been retrieved");
+                    //__debugbreak();
+                    /* Validate provisioning records here */
+                    if (provisioning_records_validate(p_cb->uuid, &p_cb->pubkey.s, p_cb->p_provisioning_records))
+                    {
+                        p_cb->is_cert_valid = WICED_TRUE;
+                        Log("Provisioning records from UUID %02x-%02x have been successfully validated", p_cb->uuid[0], p_cb->uuid[15]);
+                        /* Clean up provisioning records allocated buffers and structures */
+                        mesh_provision_record_clean(p_cb);
+                        ods(" +++ continue provisioning");
+                        if ((p_event = mesh_client_configure_create_event(src)) != NULL)
+                        {
+                            wiced_bt_mesh_provision_send_invite(p_event); /* trigger continuation of the provisioning */
+                        }
+                        else
+                        {
+                            result = WICED_FALSE;
+                        }
+                    }
+                    else
+                    {
+                        result = WICED_FALSE;
+                    }
+                }
+            }
+            break;
+        case WICED_BT_MESH_PROVISIONING_RECORD_RESPONSE_STATUS_NOT_PRESENT:
+            ods("Record is not present ");
+            result = WICED_FALSE;
+            break;
+        case WICED_BT_MESH_PROVISIONING_RECORD_RESPONSE_STATUS_OUT_OF_BOUNDS:
+            ods("Record request is out of bound");
+            result = WICED_FALSE;
+            break;
+        default:
+            break;
+        }
+    }
+    if (WICED_FALSE == result)
+    {
+        mesh_provision_record_clean(p_cb);
+        provision_status_notify(p_cb, MESH_CLIENT_PROVISION_STATUS_FAILED);
+        if ((p_event = mesh_client_configure_create_event(src)) != NULL)
+        {
+            ods(" -- provisioning failed");
+            wiced_bt_mesh_provision_disconnect(p_event);
+        }
+    }
+}
+
+/**
+ * @brief       Deallocate provisioning record buffers and handlers array
+ *
+ * @param p_cb  pointer to the provisioning control data block
+ */
+void mesh_provision_record_clean(mesh_provision_cb_t* p_cb)
+{
+    if (p_cb->p_provisioning_records)
+    {
+        for (uint8_t i = 0; i < WICED_BT_MESH_PROVISIONING_RECORD_ID_MAX_SIZE; ++i)
+        {
+            if (p_cb->p_provisioning_records->record[i].p_data)
+            {
+                wiced_bt_free_buffer(p_cb->p_provisioning_records->record[i].p_data);
+            }
+        }
+        wiced_bt_free_buffer(p_cb->p_provisioning_records);
+        p_cb->p_provisioning_records = NULL;
+    }
+}
+
+#endif
 
 void mesh_provision_provisioning_link_status(mesh_provision_cb_t *p_cb, wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_provision_link_report_data_t *p_data)
 {
@@ -4664,7 +4923,11 @@ void mesh_provision_process_provision_end(mesh_provision_cb_t *p_cb, wiced_bt_me
     }
     else
     {
-        if (p_cb->provision_procedure == WICED_BT_MESH_PROVISION_PROCEDURE_PROVISION)
+        if ((p_cb->provision_procedure == WICED_BT_MESH_PROVISION_PROCEDURE_PROVISION)
+#if defined(CERTIFICATE_BASED_PROVISIONING_SUPPORTED)
+            || (p_cb->provision_procedure ==  WICED_BT_MESH_PROVISION_PROCEDURE_RECORD_RETRIEVAL)
+#endif
+        )
         {
             // Do not allow to create a node with the same UUID if one already exists. This can
             // happen if a node was manually factory reset, and now it is being provisioned again.
@@ -4725,15 +4988,36 @@ void mesh_provision_process_provision_end(mesh_provision_cb_t *p_cb, wiced_bt_me
 
 void mesh_provision_process_get_oob_data(mesh_provision_cb_t* p_cb, wiced_bt_mesh_event_t* p_event, wiced_bt_mesh_provision_device_oob_request_data_t* p_data)
 {
-    if ((p_cb->oob_data_len == 0) || (p_data->type != WICED_BT_MESH_PROVISION_GET_OOB_TYPE_ENTER_STATIC))
+    uint8_t* p_d;
+    uint32_t d_len;
+    switch (p_data->type)
     {
+    case WICED_BT_MESH_PROVISION_GET_OOB_TYPE_NONE:            //0   /**< Provisioner: OOB not used */
+        return;                                                // there is nothing to do here
+#ifdef CERTIFICATE_BASED_PROVISIONING_SUPPORTED
+    case WICED_BT_MESH_PROVISION_GET_OOB_TYPE_ENTER_PUB_KEY:   //1   /**< Provisioner: Enter public key() */
+        p_d = p_cb->pubkey.a;
+        d_len = WICED_BT_MESH_PROVISION_PUBLIC_KEY_LEN;
+        break;
+#endif
+    case WICED_BT_MESH_PROVISION_GET_OOB_TYPE_ENTER_STATIC:    //3   /**< Provisioner: Enter static OOB value(size)*/
+        p_d = p_cb->oob_data;
+        d_len = p_cb->oob_data_len;
+        break;
+    case WICED_BT_MESH_PROVISION_GET_OOB_TYPE_ENTER_OUTPUT:    //2   /**< Provisioner: Enter output OOB value(size, action) displayed on provisioning node */
+    case WICED_BT_MESH_PROVISION_GET_OOB_TYPE_ENTER_INPUT:     //4   /**< Provisioning node: Enter input OOB value(size, action) displayed on provisioner */
+    case WICED_BT_MESH_PROVISION_GET_OOB_TYPE_DISPLAY_INPUT:   // 5   /**< Provisioner: Select and display input OOB value(size, action)*/
+    case WICED_BT_MESH_PROVISION_GET_OOB_TYPE_DISPLAY_OUTPUT:  //6   /**< Provisioning node: Select and display output OOB value(size, action) */
+    case WICED_BT_MESH_PROVISION_GET_OOB_TYPE_DISPLAY_STOP:    //7   /**< Provisioner and Provisioning node: Stop displaying OOB value */
+    case WICED_BT_MESH_PROVISION_GET_OOB_TYPE_GET_STATIC:     //8   /**< Provisioning node: Requests static OOB value(size) */
+    default:
         Log("OOB type not supported:%d\n", p_data->type);
         return;
     }
-    p_event = mesh_client_configure_create_event(p_data->provisioner_addr);
-    if (p_event != NULL)
+
+    if ((p_event = mesh_client_configure_create_event(p_data->provisioner_addr)) != NULL)
     {
-        wiced_bt_mesh_provision_client_set_oob(p_event, p_cb->oob_data, p_cb->oob_data_len);
+        wiced_bt_mesh_provision_client_set_oob(p_event, p_d, d_len);
     }
 }
 
@@ -6261,23 +6545,25 @@ void mesh_default_trans_time_status(wiced_bt_mesh_event_t *p_event, void *p)
 }
 
 
-void mesh_process_sensor_descriptor_status(uint16_t addr, wiced_bt_mesh_sensor_descriptor_status_data_t *ptr)
+void mesh_process_sensor_descriptor_status(wiced_bt_mesh_event_t* p_event, void *p)
 {
+    wiced_bt_mesh_sensor_descriptor_status_data_t* ptr = (wiced_bt_mesh_sensor_descriptor_status_data_t*)p;
     mesh_provision_cb_t *p_cb = &provision_cb;
     wiced_bt_mesh_db_app_key_t *app_setup_key;
     pending_operation_t *p_op = p_cb->p_first;
     int i;
 
-    if ((p_op == NULL) || (p_op->p_event == NULL) || (p_op->p_event->dst != addr) ||
+    if ((p_op == NULL) || (p_op->p_event == NULL) || (p_op->p_event->dst != p_event->src) ||
         (p_op->operation != CONFIG_OPERATION_SENSOR_DESC_GET))
     {
-        Log("Ignored Sensor descriptor Status from:%x ", addr);
+        Log("Ignored Sensor descriptor Status from:%x ", p_event->src);
+        wiced_bt_mesh_release_event(p_event);
         return;
     }
 
     if (p_cb->store_config)
     {
-        wiced_bt_mesh_db_sensor_descriptor_add(p_mesh_db, addr, ptr);
+        wiced_bt_mesh_db_sensor_descriptor_add(p_mesh_db, p_event->src, ptr);
         wiced_bt_mesh_db_store(p_mesh_db);
         p_cb->db_changed = WICED_TRUE;
     }
@@ -6293,7 +6579,7 @@ void mesh_process_sensor_descriptor_status(uint16_t addr, wiced_bt_mesh_sensor_d
 #endif
             memset(p_op, 0, sizeof(pending_operation_t));
             p_op->operation = CONFIG_OPERATION_SENSOR_SETTINGS_GET;
-            p_op->p_event = mesh_create_control_event(p_mesh_db, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_SENSOR_CLNT, addr, app_setup_key->index);
+            p_op->p_event = mesh_create_control_event(p_mesh_db, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_SENSOR_CLNT, p_event->src, app_setup_key->index);
 
             //get all settings of sensor
             p_op->uu.sensor_get.property_id = ptr->descriptor_list[i].property_id;
@@ -6308,7 +6594,7 @@ void mesh_process_sensor_descriptor_status(uint16_t addr, wiced_bt_mesh_sensor_d
 #endif
             memset(p_op, 0, sizeof(pending_operation_t));
             p_op->operation = CONFIG_OPERATION_SENSOR_CADENCE_GET;
-            p_op->p_event = mesh_create_control_event(p_mesh_db, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_SENSOR_CLNT, addr, app_setup_key->index);
+            p_op->p_event = mesh_create_control_event(p_mesh_db, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_SENSOR_CLNT, p_event->src, app_setup_key->index);
 
             //get all settings of sensor
             p_op->uu.sensor_get.property_id = ptr->descriptor_list[i].property_id;
@@ -6316,6 +6602,83 @@ void mesh_process_sensor_descriptor_status(uint16_t addr, wiced_bt_mesh_sensor_d
         }
     }
     start_next_op(p_cb);
+}
+
+void mesh_process_sensor_settings_status(wiced_bt_mesh_event_t* p_event, void* p)
+{
+    wiced_bt_mesh_sensor_settings_status_data_t* ptr = (wiced_bt_mesh_sensor_settings_status_data_t*)p;
+    mesh_provision_cb_t* p_cb = &provision_cb;
+    pending_operation_t* p_op = p_cb->p_first;
+
+    Log("Sensor settings Status from:%x Property ID:%x", p_event->src, ptr->property_id);
+
+    if (p_cb->store_config)
+    {
+        wiced_bt_mesh_db_sensor_settings_add(p_mesh_db, p_event->src, ptr);
+        wiced_bt_mesh_db_store(p_mesh_db);
+    }
+
+    if ((p_op == NULL) || (p_op->p_event == NULL) || (p_op->p_event->dst != p_event->src) ||
+        (p_op->operation != CONFIG_OPERATION_SENSOR_SETTINGS_GET))
+    {
+        Log("Ignored Sensor Settings Status from:%x ", p_event->src);
+        wiced_bt_mesh_release_event(p_event);
+        return;
+    }
+    start_next_op(p_cb);
+}
+
+void mesh_process_sensor_setting_status(wiced_bt_mesh_event_t* p_event, void* p)
+{
+    wiced_bt_mesh_sensor_setting_status_data_t* ptr = (wiced_bt_mesh_sensor_setting_status_data_t *)p;
+    mesh_provision_cb_t* p_cb = &provision_cb;
+
+    Log("Sensor setting Status from:%x Property ID:%x", p_event->src, ptr->property_id);
+    if (p_cb->store_config)
+    {
+        wiced_bt_mesh_db_sensor_setting_add(p_mesh_db, p_event->src, ptr);
+        wiced_bt_mesh_db_store(p_mesh_db);
+        p_cb->db_changed = WICED_TRUE;
+    }
+    wiced_bt_mesh_release_event(p_event);
+}
+
+void mesh_process_sensor_cadence_status(wiced_bt_mesh_event_t* p_event, void* p)
+{
+    wiced_bt_mesh_sensor_cadence_status_data_t* ptr = (wiced_bt_mesh_sensor_cadence_status_data_t*)p;
+    mesh_provision_cb_t* p_cb = &provision_cb;
+    pending_operation_t* p_op = p_cb->p_first;
+
+    Log("Sensor Cadence Status from:%x", p_event->src);
+
+    if (p_cb->store_config)
+    {
+        wiced_bt_mesh_db_sensor_cadence_add(p_mesh_db, p_event->src, ptr);
+        wiced_bt_mesh_db_store(p_mesh_db);
+        p_cb->db_changed = WICED_TRUE;
+    }
+
+    if ((p_op == NULL) || (p_op->p_event == NULL) || (p_op->p_event->dst != p_event->src) ||
+        (p_op->operation != CONFIG_OPERATION_SENSOR_CADENCE_GET))
+    {
+        Log("Ignored Sensor Cadence Status from:%x ", p_event->src);
+        wiced_bt_mesh_release_event(p_event);
+        return;
+    }
+    start_next_op(p_cb);
+}
+
+void mesh_process_sensor_status(wiced_bt_mesh_event_t* p_event, void* p)
+{
+    wiced_bt_mesh_sensor_status_data_t* p_data = (wiced_bt_mesh_sensor_status_data_t*)p;
+
+    Log("Sensor Status from:%x", p_event->src);
+
+    if (provision_cb.p_sensor_status != NULL)
+    {
+        provision_cb.p_sensor_status(wiced_bt_mesh_db_get_element_name(p_mesh_db, p_event->src), p_data->property_id, p_data->prop_value_len, p_data->raw_value);
+    }
+    wiced_bt_mesh_release_event(p_event);
 }
 
 
@@ -6844,7 +7207,7 @@ void configure_queue_local_device_operations(mesh_provision_cb_t *p_cb)
     uint16_t features = p_cb->p_local_composition_data->data[8] + (p_cb->p_local_composition_data->data[9] << 8);
     pending_operation_t *p_op;
 
-    // first net key was added during provisiong.  Need to refresh if the phase is not 0
+    // first net key was added during provisioning.  Need to refresh if the phase is not 0
     for (i = 0; i < wiced_bt_mesh_db_num_net_keys(p_mesh_db); i++)
     {
         wiced_bt_mesh_db_net_key_t *net_key = wiced_bt_mesh_db_net_key_get(p_mesh_db, i);
@@ -7118,7 +7481,7 @@ void configure_queue_remote_device_operations(mesh_provision_cb_t *p_cb)
         wiced_bt_free_buffer(p_group_list);
         return;
     }
-    // start with network transmit parameters, so that if some device is manufactured with low ratransmission counts,
+    // start with network transmit parameters, so that if some device is manufactured with low retransmission counts,
     // it will be fixed right away.
     if ((p_op = (pending_operation_t *)wiced_bt_get_buffer(sizeof(pending_operation_t))) != NULL)
     {
@@ -7331,6 +7694,12 @@ void configure_queue_remote_device_operations(mesh_provision_cb_t *p_cb)
                     memset(p_op, 0, sizeof(pending_operation_t));
                     p_op->operation = CONFIG_OPERATION_SENSOR_DESC_GET;
                     p_op->p_event = mesh_create_control_event(p_mesh_db, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_SENSOR_CLNT,  p_cb->addr + element_idx, app_key->index);
+                    if (p_op->p_event)
+                    {
+                        p_op->p_event->retrans_cnt = 4;       // Try 5 times (this is in addition to network layer retransmit)
+                        p_op->p_event->retrans_time = 10;     // Every 500 msec
+                        p_op->p_event->reply_timeout = 80;    // wait for the reply 4 seconds
+                    }
                     // get all descriptors
                     p_op->uu.sensor_get.property_id = 0;
                     configure_pending_operation_queue(p_cb, p_op);
@@ -8238,7 +8607,7 @@ int mesh_client_move_component_to_group(const char *component_name, const char *
         }
     }
 
-    // now the models of the element are subscribed to both group_to and gropu_from. Remove subsciptions from the group_from.
+    // now the models of the element are subscribed to both group_to and group_from. Remove subsciptions from the group_from.
     // Note that we do not need to do publications because publication address has been changed.
 
     // need to move all reconfigure all models of the specified component. There may be
@@ -8873,7 +9242,7 @@ int mesh_client_identify(const char *p_name, uint8_t duration)
 
 /*
  * This function can be called to encrypt OTA FW upgrade commands and data. Note that output buffer should be at least 17 bytes larger
- * than input data length.  Function returns the size of the data to be transfered over the air using OTA_FW_UPDATE_COMMAND or _DATA handle
+ * than input data length.  Function returns the size of the data to be transferred over the air using OTA_FW_UPDATE_COMMAND or _DATA handle
  */
 uint16_t mesh_client_ota_data_encrypt(const char *component_name, const uint8_t *p_in_data, uint16_t in_data_len, uint8_t *p_out_buf, uint16_t out_buf_len)
 {
@@ -10046,6 +10415,7 @@ void mesh_process_scan_report(mesh_provision_cb_t *p_cb, wiced_bt_mesh_event_t *
                 {
                     p_report->provisioner_addr = p_event->src;
                     p_report->oob = p_data->oob;
+                    p_report->uri_hash = p_data->uri_hash;
                     p_report->rssi = p_data->rssi;
                     Log("ScanReport from:%x rssi:%d\n", p_event->src, p_data->rssi);
                     wiced_bt_mesh_release_event(p_event);
@@ -10073,6 +10443,7 @@ void mesh_process_scan_report(mesh_provision_cb_t *p_cb, wiced_bt_mesh_event_t *
     memcpy(p_report->uuid, p_data->uuid, sizeof(p_data->uuid));
     p_report->provisioner_addr = p_event->src;
     p_report->oob = p_data->oob;
+    p_report->uri_hash = p_data->uri_hash;
     p_report->rssi = p_data->rssi;
 
     wiced_bt_mesh_release_event(p_event);
@@ -10393,7 +10764,7 @@ void mesh_client_advert_report(uint8_t *bd_addr, uint8_t addr_type, int8_t rssi,
     scan_result.rssi = rssi;
 
     p = adv_data;
-    if ((p[0] != 0) && (p[1] == BTM_BLE_ADVERT_TYPE_URI))
+    if ((p[0] != 0) && ((p[1] == BTM_BLE_ADVERT_TYPE_URI) || (p[1] == BTM_BLE_ADVERT_TYPE_MESH_BEACON)))
     {
         // processing non-connectable advertisement
         scan_result.ble_evt_type = BTM_BLE_EVT_NON_CONNECTABLE_ADVERTISEMENT;
@@ -10438,7 +10809,7 @@ void mesh_client_connection_state_changed(uint16_t conn_id, uint16_t mtu)
 }
 
 /*
- * Return TRUE if connecting to a provisiong service, FALSE if to proxy.
+ * Return TRUE if connecting to a provisioning service, FALSE if to proxy.
  */
 uint8_t mesh_client_is_connecting_provisioning()
 {

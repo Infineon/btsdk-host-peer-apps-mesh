@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2021, Cypress Semiconductor Corporation (an Infineon company) or
+ * Copyright 2016-2022, Cypress Semiconductor Corporation (an Infineon company) or
  * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
  *
  * This software, including source code, documentation and related
@@ -55,11 +55,36 @@ BYTE configured_dev_key[16] = { 0 };
 BYTE pub_key_type;
 
 // CConfig dialog
+#if defined (CERTIFICATE_BASED_PROVISIONING_SUPPORTED)
+#include "mesh_bt_cert.h"
+
+
+
+typedef struct
+{
+    uint16_t    extensions;                                             /* Bitmask indicating the provisioning extensions supported by the device */
+    uint16_t    list[WICED_BT_MESH_PROVISIONING_RECORD_ID_MAX_SIZE];    /* Lists the Record IDs of the provisioning records stored on the device */
+    uint16_t    size;                                                   /* sizes of the record data in the list */
+} mesh_cbp_provisioning_list_t;
+
+#pragma pack(1)
+typedef struct
+{
+    uint8_t                                                 status;
+    wiced_bt_mesh_provision_device_record_fragment_data_t   response;
+    uint8_t                                                 data[WICED_BT_MESH_PROVISIONING_RECORD_BUFF_MAX_SIZE];
+    uint16_t                                                size;
+} mesh_cbp_provisioning_record_t;
+#pragma pack()
+#endif
+
+
+
 
 #define WICED_BT_MESH_PROVISION_GET_OOB_TYPE_ENTER_PUB_KEY   1   ///< Provisioner: Enter public key()
-#define WICED_BT_MESH_PROVISION_GET_OOB_TYPE_ENTER_OUTPUT    2   /**< Provisioner: Enter output OOB value(size, action) displaied on provisioning node */
+#define WICED_BT_MESH_PROVISION_GET_OOB_TYPE_ENTER_OUTPUT    2   /**< Provisioner: Enter output OOB value(size, action) displayed on provisioning node */
 #define WICED_BT_MESH_PROVISION_GET_OOB_TYPE_ENTER_STATIC    3   ///< Provisioner: Enter static OOB value(size)
-#define WICED_BT_MESH_PROVISION_GET_OOB_TYPE_ENTER_INPUT     4   /**< Provisioning node: Enter input OOB value(size, action) displaied on provisioner */
+#define WICED_BT_MESH_PROVISION_GET_OOB_TYPE_ENTER_INPUT     4   /**< Provisioning node: Enter input OOB value(size, action) displayed on provisioner */
 #define WICED_BT_MESH_PROVISION_GET_OOB_TYPE_DISPLAY_INPUT   5   ///< Provisioner: Select and display input OOB value(size, action)
 #define WICED_BT_MESH_PROVISION_GET_OOB_TYPE_DISPLAY_OUTPUT  6   ///< Provisioning node: Select and display output OOB value(size, action)
 #define WICED_BT_MESH_PROVISION_GET_OOB_TYPE_DISPLAY_STOP    7   ///< Provisioner and Provisioning node: Stop displaying OOB value
@@ -144,6 +169,13 @@ IMPLEMENT_DYNAMIC(COutputOob, CDialogEx)
 COutputOob::COutputOob(CWnd* pParent /*=NULL*/)
     : CDialogEx(IDD_OOB_OUTPUT, pParent)
 {
+    m_oob_type = 0;
+    m_oob_size = 0;
+    m_oob_action = 0;
+    for (int i = 0; i < 17; ++i)
+    {
+        m_output_value[i] = 0;
+    }
 }
 
 BOOL COutputOob::OnInitDialog()
@@ -1144,7 +1176,7 @@ void CConfig::ProcessModelAppStatus(LPBYTE p_data, DWORD len)
         return;
     wsprintf(buf, L"Model App Bind Status from:%x status:%d Element Addr:%x Company:%x Model ID:%x ApptKey Index:%x", p_event->src, p_data[0], p_data[1] + ((ULONG)p_data[2] << 8),
         p_data[3] + ((USHORT)p_data[4] << 8), (USHORT)p_data[5] + ((USHORT)p_data[6] << 8),
-        p_data[8] + ((ULONG)p_data[8] << 8));
+        p_data[7] + ((ULONG)p_data[8] << 8));
     m_trace->SetCurSel(m_trace->AddString(buf));
     free(p_event);
 }
@@ -1464,7 +1496,6 @@ void CConfig::OnBnClickedProvisionConnect()
     DWORD len = GetHexValue(szbuf, data.uuid, 16);
     data.identify_duration = identify_duration;
     data.procedure = WICED_BT_MESH_PROVISION_PROCEDURE_PROVISION;
-
     WCHAR buf[128];
     wsprintf(buf, L"Provision: addr:%x", dst);
     m_trace->SetCurSel(m_trace->AddString(buf));

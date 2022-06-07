@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2021, Cypress Semiconductor Corporation (an Infineon company) or
+ * Copyright 2016-2022, Cypress Semiconductor Corporation (an Infineon company) or
  * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
  *
  * This software, including source code, documentation and related
@@ -1635,18 +1635,21 @@ Java_com_cypress_le_mesh_meshcore_MeshNativeHelper_setFileStorge(JNIEnv *env, jo
 JNIEXPORT jstring JNICALL
 Java_com_cypress_le_mesh_meshcore_MeshNativeHelper_meshClientNetworkImport(JNIEnv *env, jclass type,
                                                                            jstring provName_,
-                                                                           jstring jsonStr_) {
+                                                                           jstring jsonStr_,
+                                                                           jstring ifxJsonStr_) {
     char* network_name;
     const char *p_prov_name = (*env)->GetStringUTFChars(env, provName_, 0);
     const char *p_jstr = (*env)->GetStringUTFChars(env, jsonStr_, 0);
+    const char *p_ifxjstr = (*env)->GetStringUTFChars(env, ifxJsonStr_, 0);
 
     pthread_mutex_lock(&cs);
     create_prov_uuid();
-    network_name = mesh_client_network_import(p_prov_name, provisioner_uuid, p_jstr, meshClientNetworkOpened);
+    network_name = mesh_client_network_import(p_prov_name, provisioner_uuid, p_jstr, p_ifxjstr, meshClientNetworkOpened);
     pthread_mutex_unlock(&cs);
 
     jstring networkName = (*env)->NewStringUTF(env, network_name);
 
+    (*env)->ReleaseStringUTFChars(env, ifxJsonStr_, p_ifxjstr);
     (*env)->ReleaseStringUTFChars(env, jsonStr_, p_jstr);
     (*env)->ReleaseStringUTFChars(env, provName_, p_prov_name);
 

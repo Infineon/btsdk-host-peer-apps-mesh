@@ -1,5 +1,5 @@
 ﻿/*
-* Copyright 2016-2021, Cypress Semiconductor Corporation (an Infineon company) or
+* Copyright 2016-2022, Cypress Semiconductor Corporation (an Infineon company) or
 * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
 *
 * This software, including source code, documentation and related
@@ -438,7 +438,7 @@ BEGIN_MESSAGE_MAP(CMeshClientDlg, CDialogEx)
     ON_BN_CLICKED(IDC_LIGHTNESS_GET, &CMeshClientDlg::OnBnClickedLightnessGet)
     ON_BN_CLICKED(IDC_LIGHTNESS_SET, &CMeshClientDlg::OnBnClickedLightnessSet)
     ON_BN_CLICKED(IDC_CONNECTDISCONNECT, &CMeshClientDlg::OnBnClickedConnectdisconnect)
-    ON_BN_CLICKED(IDC_OTA_UPGRADE_START, &CMeshClientDlg::OnBnClickedOtaUpgradeStart)
+    ON_BN_CLICKED(IDC_DFU_START_STOP, &CMeshClientDlg::OnBnClickedDfuStartstop)
     ON_BN_CLICKED(IDC_IDENTIFY, &CMeshClientDlg::OnBnClickedIdentify)
     ON_BN_CLICKED(IDC_RECONFIGURE, &CMeshClientDlg::OnBnClickedReconfigure)
     ON_BN_CLICKED(IDC_BROWSE, &CMeshClientDlg::OnBnClickedBrowse)
@@ -447,8 +447,8 @@ BEGIN_MESSAGE_MAP(CMeshClientDlg, CDialogEx)
     ON_BN_CLICKED(IDC_NETWORK_IMPORT, &CMeshClientDlg::OnBnClickedNetworkImport)
     ON_BN_CLICKED(IDC_NETWORK_EXPORT, &CMeshClientDlg::OnBnClickedNetworkExport)
     ON_BN_CLICKED(IDC_GET_COMPONENT_INFO, &CMeshClientDlg::OnBnClickedGetComponentInfo)
-    ON_BN_CLICKED(IDC_OTA_UPGRADE_STATUS, &CMeshClientDlg::OnBnClickedOtaUpgradeStatus)
-    ON_BN_CLICKED(IDC_OTA_UPGRADE_STOP, &CMeshClientDlg::OnBnClickedOtaUpgradeStop)
+    ON_BN_CLICKED(IDC_DFU_GET_STATUS, &CMeshClientDlg::OnBnClickedDfuGetStatus)
+    ON_BN_CLICKED(IDC_DFU_PAUSE_RESUME, &CMeshClientDlg::OnBnClickedDfuPauseresume)
     ON_BN_CLICKED(IDC_SENSOR_GET, &CMeshClientDlg::OnBnClickedSensorGet)
     ON_CBN_SELCHANGE(IDC_CONTROL_DEVICE, &CMeshClientDlg::OnCbnSelchangeControlDevice)
     ON_BN_CLICKED(IDC_SENSOR_CONFIGURE, &CMeshClientDlg::OnBnClickedSensorConfigure)
@@ -693,6 +693,7 @@ BOOL CMeshClientDlg::OnInitDialog()
 #ifdef MESH_DFU_ENABLED
     m_dfuState = WICED_BT_MESH_DFU_STATE_INIT;
     m_bDfuStatus = FALSE;
+    m_bDfuStarted = FALSE;
 
     CComboBox *pCb = (CComboBox *)GetDlgItem(IDC_DFU_METHOD);
     pCb->ShowWindow(SW_SHOW);
@@ -700,9 +701,9 @@ BOOL CMeshClientDlg::OnInitDialog()
         pCb->AddString(dfuMethods[i]);
     pCb->SetCurSel(0);
 
-    GetDlgItem(IDC_OTA_UPGRADE_STATUS)->ShowWindow(SW_SHOW);
-    SetDlgItemText(IDC_OTA_UPGRADE_START, L"DFU Start");
-    SetDlgItemText(IDC_OTA_UPGRADE_STOP, L"DFU Stop");
+    SetDlgItemText(IDC_DFU_START_STOP, L"DFU Start");
+    GetDlgItem(IDC_DFU_PAUSE_RESUME)->ShowWindow(SW_SHOW);
+    GetDlgItem(IDC_DFU_GET_STATUS)->ShowWindow(SW_SHOW);
 #endif
 
     mesh_adv_scanner_open();
@@ -2397,7 +2398,42 @@ return_false:
 }
 #endif
 
-void CMeshClientDlg::OnBnClickedOtaUpgradeStart()
+void CMeshClientDlg::OnBnClickedDfuStartstop()
+{
+    if (m_bDfuStarted)
+    {
+        OnDfuStop();
+        SetDfuStarted(FALSE);
+    }
+    else if (OnDfuStart())
+    {
+        SetDfuStarted(TRUE);
+    }
+}
+
+void CMeshClientDlg::SetDfuStarted(BOOL started)
+{
+    m_bDfuStarted = started;
+
+    if (m_bDfuStarted)
+    {
+#ifdef MESH_DFU_ENABLED
+        SetDlgItemText(IDC_DFU_START_STOP, L"DFU Stop");
+#else
+        SetDlgItemText(IDC_DFU_START_STOP, L"OTA Stop");
+#endif
+    }
+    else
+    {
+#ifdef MESH_DFU_ENABLED
+        SetDlgItemText(IDC_DFU_START_STOP, L"DFU Start");
+#else
+        SetDlgItemText(IDC_DFU_START_STOP, L"OTA Start");
+#endif
+    }
+}
+
+BOOL CMeshClientDlg::OnDfuStart()
 {
     CString sFilePath;
     GetDlgItemText(IDC_FILENAME, sFilePath);
@@ -2406,7 +2442,7 @@ void CMeshClientDlg::OnBnClickedOtaUpgradeStart()
     if (m_dfuState != WICED_BT_MESH_DFU_STATE_INIT && m_dfuState != WICED_BT_MESH_DFU_STATE_COMPLETE && m_dfuState != WICED_BT_MESH_DFU_STATE_FAILED)
     {
         Log(L"DFU already started\n");
-        return;
+        return FALSE;
     }
 #endif
 
@@ -2415,7 +2451,7 @@ void CMeshClientDlg::OnBnClickedOtaUpgradeStart()
         OnBnClickedBrowse();
         GetDlgItemText(IDC_FILENAME, sFilePath);
         if (sFilePath.IsEmpty())
-            return;
+            return FALSE;
     }
 
 #ifdef MESH_DFU_ENABLED
@@ -2428,13 +2464,13 @@ void CMeshClientDlg::OnBnClickedOtaUpgradeStart()
         if (sFileExt.CompareNoCase(CString(L".json")) != 0)
         {
             MessageBox(L"Please choose correct DFU manifest file (.json)", L"Error", MB_OK);
-            return;
+            return FALSE;
         }
 
         if (!ReadDfuManifestFile(sFilePath))
         {
             MessageBox(L"Failed to read from manifest file", L"Error", MB_OK);
-            return;
+            return FALSE;
         }
 
         m_Progress.SetRange32(0, 100);
@@ -2448,8 +2484,10 @@ void CMeshClientDlg::OnBnClickedOtaUpgradeStart()
         if (result == MESH_CLIENT_SUCCESS)
         {
             m_bDfuStatus = FALSE;
-            OnBnClickedOtaUpgradeStatus();
+            OnBnClickedDfuGetStatus();
         }
+        else
+            return FALSE;
     }
     else
 #endif
@@ -2459,13 +2497,13 @@ void CMeshClientDlg::OnBnClickedOtaUpgradeStart()
         if (sFileExt.CompareNoCase(CString(L".ota.bin")) != 0)
         {
             MessageBox(L"Please choose correct OTA firmware file (.ota.bin)", L"Error", MB_OK);
-            return;
+            return FALSE;
         }
 
         if (m_btInterface == NULL)
         {
             MessageBox(L"Device not connected", L"Error", MB_OK);
-            return;
+            return FALSE;
         }
 
         m_sDfuImageFilePath = sFilePath;
@@ -2478,6 +2516,7 @@ void CMeshClientDlg::OnBnClickedOtaUpgradeStart()
         mesh_client_connect_component(name, 1, 10);
         LeaveCriticalSection(&cs);
     }
+    return TRUE;
 }
 
 BOOL CMeshClientDlg::IsOtaSupported()
@@ -2550,7 +2589,7 @@ void CMeshClientDlg::StartOta()
     m_pDownloader->ProcessEvent(WSDownloader::WS_UPGRADE_CONNECTED);
 }
 
-void CMeshClientDlg::OnBnClickedOtaUpgradeStop()
+void CMeshClientDlg::OnDfuStop()
 {
     // If OTA download is in progress, stop it
     if (m_pDownloader && m_pDownloader->m_state == WSDownloader::WS_UPGRADE_STATE_DATA_TRANSFER)
@@ -2565,10 +2604,31 @@ void CMeshClientDlg::OnBnClickedOtaUpgradeStop()
     LeaveCriticalSection(&cs);
 
     if (m_bDfuStatus)
-        OnBnClickedOtaUpgradeStatus();
+        OnBnClickedDfuGetStatus();
 
     m_dfuState = WICED_BT_MESH_DFU_STATE_INIT;
     Log(L"DFU stopped\n");
+#endif
+}
+
+void CMeshClientDlg::OnBnClickedDfuPauseresume()
+{
+    static BOOL dfu_paused = FALSE;
+
+#ifdef MESH_DFU_ENABLED
+    EnterCriticalSection(&cs);
+    if (dfu_paused)
+    {
+        mesh_client_dfu_resume();
+        dfu_paused = FALSE;
+        SetDlgItemText(IDC_DFU_PAUSE_RESUME, L"DFU Pause");
+    }
+    else if (mesh_client_dfu_suspend() == MESH_CLIENT_SUCCESS)
+    {
+        dfu_paused = TRUE;
+        SetDlgItemText(IDC_DFU_PAUSE_RESUME, L"DFU Resume");
+    }
+    LeaveCriticalSection(&cs);
 #endif
 }
 
@@ -2583,7 +2643,7 @@ void fw_distribution_status(uint8_t state, uint8_t* p_data, uint32_t data_length
 }
 #endif
 
-void CMeshClientDlg::OnBnClickedOtaUpgradeStatus()
+void CMeshClientDlg::OnBnClickedDfuGetStatus()
 {
 #ifdef MESH_DFU_ENABLED
     m_bDfuStatus = !m_bDfuStatus;
@@ -2592,12 +2652,12 @@ void CMeshClientDlg::OnBnClickedOtaUpgradeStatus()
     if (m_bDfuStatus)
     {
         mesh_client_dfu_get_status(fw_distribution_status, DISTRIBUTION_STATUS_TIMEOUT);
-        SetDlgItemText(IDC_OTA_UPGRADE_STATUS, L"Stop DFU Status");
+        SetDlgItemText(IDC_DFU_GET_STATUS, L"Stop DFU Status");
     }
     else
     {
         mesh_client_dfu_get_status(NULL, 0);
-        SetDlgItemText(IDC_OTA_UPGRADE_STATUS, L"Get DFU Status");
+        SetDlgItemText(IDC_DFU_GET_STATUS, L"Get DFU Status");
     }
     LeaveCriticalSection(&cs);
 #endif
@@ -2673,6 +2733,9 @@ void CMeshClientDlg::OnDfuStatusCallback(uint8_t state, uint8_t* p_data, uint32_
     case WICED_BT_MESH_DFU_STATE_APPLY:
         Log(L"DFU applying firmware\n");
         break;
+    case WICED_BT_MESH_DFU_STATE_SUSPENDED:
+        Log(L"DFU paused\n");
+        break;
     case WICED_BT_MESH_DFU_STATE_COMPLETE:
         Log(L"DFU completed\n");
         m_Progress.SetPos(100);
@@ -2692,12 +2755,14 @@ void CMeshClientDlg::OnDfuStatusCallback(uint8_t state, uint8_t* p_data, uint32_
             }
         }
         if (m_bDfuStatus)
-            OnBnClickedOtaUpgradeStatus();
+            OnBnClickedDfuGetStatus();
+        SetDfuStarted(FALSE);
         break;
     case WICED_BT_MESH_DFU_STATE_FAILED:
         Log(L"DFU failed\n");
         if (m_bDfuStatus)
-            OnBnClickedOtaUpgradeStatus();
+            OnBnClickedDfuGetStatus();
+        SetDfuStarted(FALSE);
         break;
     }
 }
@@ -2767,6 +2832,8 @@ LRESULT CMeshClientDlg::OnProgress(WPARAM state, LPARAM param)
 #endif
             ota_transfer_for_dfu = FALSE;
         }
+        else
+            SetDfuStarted(FALSE);
     }
     else if (state == WSDownloader::WS_UPGRADE_STATE_ABORTED)
     {
@@ -2779,7 +2846,7 @@ LRESULT CMeshClientDlg::OnProgress(WPARAM state, LPARAM param)
             ota_transfer_for_dfu = FALSE;
         }
         else
-            m_Progress.SetPos(total);
+            SetDfuStarted(FALSE);
     }
     return S_OK;
 }
@@ -3027,8 +3094,9 @@ void CMeshClientDlg::OnBnClickedNetworkImport()
     CFileDialog dlgFile(TRUE, NULL, NULL, OFN_OVERWRITEPROMPT | OFN_NOCHANGEDIR, szFilter);
     if (dlgFile.DoModal() != IDOK)
         return;
+    CString fileName = dlgFile.GetPathName();
     FILE *fJsonFile;
-    if (_wfopen_s(&fJsonFile, dlgFile.GetPathName(), L"rb"))
+    if (_wfopen_s(&fJsonFile, fileName, L"rb"))
     {
         MessageBox(L"Failed to open the json file", L"Error", MB_OK);
         return;
@@ -3042,14 +3110,38 @@ void CMeshClientDlg::OnBnClickedNetworkImport()
     size_t json_string_size = ftell(fJsonFile);
     rewind(fJsonFile);
 
-    char *json_string = (char *)new BYTE[json_string_size];
+    char *json_string = (char *)new BYTE[json_string_size+1];
     if (json_string == NULL)
         return;
     fread(json_string, 1, json_string_size, fJsonFile);
+    json_string[json_string_size] = 0;
+    fclose(fJsonFile);
+
+    char *ifx_json_string = NULL;
+    if (fileName.GetLength() > 4)
+    {
+        fileName.Insert(fileName.GetLength() - 4, L"ifx.");
+        FILE *fIfxJsonFile;
+        if (_wfopen_s(&fIfxJsonFile, fileName, L"rb") == 0)
+        {
+            fseek(fIfxJsonFile, 0, SEEK_END);
+            json_string_size = ftell(fIfxJsonFile);
+            rewind(fIfxJsonFile);
+
+            ifx_json_string = new char[json_string_size+1];
+            if (ifx_json_string != NULL)
+            {
+                fread(ifx_json_string, 1, json_string_size, fIfxJsonFile);
+                ifx_json_string[json_string_size] = 0;
+            }
+            fclose(fIfxJsonFile);
+        }
+    }
+
     char provisioner_name[80];
     char *mesh_name;
     GetDlgItemTextA(m_hWnd, IDC_PROVISIONER, provisioner_name, sizeof(provisioner_name));
-    if ((mesh_name = mesh_client_network_import(provisioner_name, provisioner_uuid, json_string, network_opened)) == NULL)
+    if ((mesh_name = mesh_client_network_import(provisioner_name, provisioner_uuid, json_string, ifx_json_string, network_opened)) == NULL)
     {
         MessageBox(L"Failed to import json file", L"Error", MB_OK);
     }
@@ -3085,6 +3177,8 @@ void CMeshClientDlg::OnBnClickedNetworkImport()
         DisplayCurrentGroup();
     }
     delete[] json_string;
+    if (ifx_json_string != NULL)
+        delete[] ifx_json_string;
 }
 
 void CMeshClientDlg::OnBnClickedNetworkExport()
