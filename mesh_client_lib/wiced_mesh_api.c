@@ -506,26 +506,24 @@ void process_provision_record_response(uint8_t *p_buffer, uint16_t len)
 
 void process_tx_complete(uint8_t *p_buffer, uint16_t len)
 {
-    uint16_t addr;
     uint16_t hci_opcode;
-    uint8_t  tx_status;
 
     wiced_bt_mesh_event_t *p_event = wiced_bt_mesh_event_from_hci_header(&p_buffer, &len);
     if (p_event == NULL)
         return;
 
     hci_opcode = p_buffer[0] + (p_buffer[1] << 8);
-    tx_status = p_buffer[2];
-    addr = p_buffer[3] + (p_buffer[4] << 8);
-    if (tx_status == TX_STATUS_FAILED)
+    p_event->status.tx_flag = p_buffer[2];
+    p_event->dst = p_buffer[3] + (p_buffer[4] << 8);
+    if (p_event->status.tx_flag == TX_STATUS_FAILED)
     {
-        Log("Node unreachable: opcode:%x addr:%x", hci_opcode, addr);
+        Log("Node unreachable: opcode:%x addr:%x", hci_opcode, p_event->dst);
     }
     else
     {
         // Log("Mesh Tx Complete: opcode:%x addr:%x", hci_opcode, addr);
     }
-    wiced_bt_mesh_release_event(p_event);
+    mesh_provision_process_event(WICED_BT_MESH_TX_COMPLETE, p_event, NULL);
 }
 
 void process_node_reset_status(uint8_t *p_buffer, uint16_t len)

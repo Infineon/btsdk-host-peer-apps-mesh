@@ -32,7 +32,7 @@
 */
 
 /** @file
-* Mesh Publisher : Creates and starts BLE advertisements
+* Mesh Publisher : Creates and starts LE advertisements
 * Advertisement data: Manufacturer Specific Data: Company ID + Proxy on Req + Network ID
 *
 */

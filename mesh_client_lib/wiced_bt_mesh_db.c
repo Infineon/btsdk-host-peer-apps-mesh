@@ -314,6 +314,10 @@ static int parse_ext(const struct dirent *dir)
 #endif
 #endif  /* #if defined __ANDROID__ || defined __APPLE__ */
 
+#if defined(_WIN32)
+int get_file_path_in_appdata_folder(const char* file, char* buffer, unsigned long bufferLen);
+#endif
+
 char *wiced_bt_mesh_db_get_all_networks(void)
 {
 #if !(defined(_WIN32)) && (defined __ANDROID__ || defined __APPLE__ || defined WICEDX_LINUX || defined BSA )
@@ -377,7 +381,13 @@ char *wiced_bt_mesh_db_get_all_networks(void)
     long hFile;
 #endif
 
-    if ((hFile = _findfirst("*.json", &json_file)) == -1L)
+    const char* filespec = "*.json";
+#if defined(_WIN32)
+    char path[260]; // MAX_PATH(260)
+    if (get_file_path_in_appdata_folder(filespec, path, 260))
+        filespec = path;
+#endif
+    if ((hFile = _findfirst(filespec, &json_file)) == -1L)
         return NULL;
     do
     {
@@ -391,7 +401,7 @@ char *wiced_bt_mesh_db_get_all_networks(void)
         return NULL;
 
     p_buf = buf;
-    if ((hFile = _findfirst("*.json", &json_file)) == -1L)
+    if ((hFile = _findfirst(filespec, &json_file)) == -1L)
     {
         wiced_bt_free_buffer(buf);
         return NULL;
@@ -418,8 +428,14 @@ wiced_bool_t wiced_bt_mesh_db_network_exists(const char *mesh_name)
 
     strcpy(p_filename, mesh_name);
     strcat(p_filename, ".json");
+    const char* filename = p_filename;
+#if defined(_WIN32)
+    char path[260]; // MAX_PATH(260)
+    if (get_file_path_in_appdata_folder(p_filename, path, 260))
+        filename = path;
+#endif
 
-    FILE *fp = fopen(p_filename, "rb");
+    FILE *fp = fopen(filename, "rb");
     if (fp == NULL)
     {
     }
@@ -441,11 +457,22 @@ wiced_bool_t wiced_bt_mesh_db_network_delete(const char *mesh_name)
 
     strcpy(p_filename, mesh_name);
     strcat(p_filename, ".json");
-    res1 = (remove(p_filename) == 0);
+    const char* filename = p_filename;
+#if defined(_WIN32)
+    char path[260]; // MAX_PATH(260)
+    if (get_file_path_in_appdata_folder(p_filename, path, 260))
+        filename = path;
+#endif
+    res1 = (remove(filename) == 0);
 
     strcpy(p_filename, mesh_name);
     strcat(p_filename, ".ifx.json");
-    res2 = (remove(p_filename) == 0);
+    filename = p_filename;
+#if defined(_WIN32)
+    if (get_file_path_in_appdata_folder(p_filename, path, 260))
+        filename = path;
+#endif
+    res2 = (remove(filename) == 0);
 
     wiced_bt_free_buffer(p_filename);
     return res1;
@@ -461,8 +488,14 @@ wiced_bt_mesh_db_mesh_t *wiced_bt_mesh_db_init(const char *mesh_name)
 
     strcpy(p_filename, mesh_name);
     strcat(p_filename, ".json");
+    const char* filename = p_filename;
+#if defined(_WIN32)
+    char path[260]; // MAX_PATH(260)
+    if (get_file_path_in_appdata_folder(p_filename, path, 260))
+        filename = path;
+#endif
 
-    FILE *fp = fopen(p_filename, "rb");
+    FILE *fp = fopen(filename, "rb");
     if (fp == NULL)
     {
         wiced_bt_free_buffer(p_filename);
@@ -473,8 +506,13 @@ wiced_bt_mesh_db_mesh_t *wiced_bt_mesh_db_init(const char *mesh_name)
 
     strcpy(p_filename, mesh_name);
     strcat(p_filename, ".ifx.json");
+    filename = p_filename;
+#if defined(_WIN32)
+    if (get_file_path_in_appdata_folder(p_filename, path, 260))
+        filename = path;
+#endif
 
-    fp = fopen(p_filename, "rb");
+    fp = fopen(filename, "rb");
     if (fp != NULL)
     {
         if (mesh_db != NULL)
@@ -606,8 +644,14 @@ void wiced_bt_mesh_db_store(wiced_bt_mesh_db_mesh_t *mesh_db)
 
     strcpy(p_filename, mesh_db->name);
     strcat(p_filename, ".json");
+    const char* filename = p_filename;
+#if defined(_WIN32)
+    char path[260]; // MAX_PATH(260)
+    if (get_file_path_in_appdata_folder(p_filename, path, 260))
+        filename = path;
+#endif
 
-    FILE *fp = fopen(p_filename, "wb");
+    FILE *fp = fopen(filename, "wb");
     if (fp == NULL)
     {
         wiced_bt_free_buffer(p_filename);
@@ -618,8 +662,13 @@ void wiced_bt_mesh_db_store(wiced_bt_mesh_db_mesh_t *mesh_db)
 
     strcpy(p_filename, mesh_db->name);
     strcat(p_filename, ".ifx.json");
+    filename = p_filename;
+#if defined(_WIN32)
+    if (get_file_path_in_appdata_folder(p_filename, path, 260))
+        filename = path;
+#endif
 
-    fp = fopen(p_filename, "wb");
+    fp = fopen(filename, "wb");
     if (fp == NULL)
     {
         wiced_bt_free_buffer(p_filename);

@@ -213,7 +213,7 @@ open class OtaUpgrader: OtaUpgraderProtocol {
         self.completeError = nil
 
         if device.getDeviceType() == .ble {
-            // do WICED OTA process for BLE device.
+            // do AIROC OTA process for LE device.
             let _ = self.otaUpgradeWicedOtaStart()
             return
         }
@@ -226,7 +226,7 @@ open class OtaUpgrader: OtaUpgraderProtocol {
             }
 
             if dfuType == MeshDfuType.APP_OTA_TO_DEVICE {
-                // do WICED OTA process. Default OTA method for BLE or specific Mesh Device only.
+                // do WICED OTA process. Default OTA method for LE or specific Mesh Device only.
                 let _ = self.otaUpgradeWicedOtaStart()
             } else {
                 // do DFU process.
@@ -352,7 +352,7 @@ open class OtaUpgrader: OtaUpgraderProtocol {
      */
     open func isOtaSupportedForDfu() -> Bool {
         guard let connectedPeripheral = MeshNativeHelper.getCurrentConnectedPeripheral() else {
-            meshLog("error: OtaUpgrader, isOtaSupportedForDfu, no BLE/Mesh device found connected, return false")
+            meshLog("error: OtaUpgrader, isOtaSupportedForDfu, no LE/Mesh device found connected, return false")
             return false
         }
         let otaControlPointUuids = [OtaConstants.BLE.UUID_CHARACTERISTIC_CONTROL_POINT, OtaConstants.BLE_V2.UUID_CHARACTERISTIC_CONTROL_POINT]

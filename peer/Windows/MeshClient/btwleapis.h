@@ -1053,7 +1053,7 @@ typedef DWORD (WINAPI *FP_BtwGattDeleteService)
 **
 ** Function:        BtwGattCharValueChanged
 **
-** Description:     This function instructs BLE core to send indication or
+** Description:     This function instructs LE core to send indication or
 **  notification to the connected client.
 **
 ** Parameters:

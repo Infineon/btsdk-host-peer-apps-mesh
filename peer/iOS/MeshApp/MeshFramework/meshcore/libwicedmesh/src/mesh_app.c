@@ -99,7 +99,6 @@ extern wiced_bool_t mesh_native_helper_is_ota_supported_for_dfu(void);
  ******************************************************/
 #define MESH_PID                0x3006
 #define MESH_VID                0x0002
-#define MESH_CACHE_REPLAY_SIZE  200
 #define APPEARANCE_GENERIC_TAG  512
 /*
  * TODO: Change to any allocated SIG company ID when required.
@@ -197,7 +196,6 @@ wiced_bt_mesh_core_config_t  mesh_config =
     .company_id         = MESH_VENDOR_COMPANY_ID,                   // Company identifier assigned by the Bluetooth SIG
     .product_id         = MESH_PID,                                 // Vendor-assigned product identifier
     .vendor_id          = MESH_VID,                                 // Vendor-assigned product version identifier
-    .replay_cache_size  = MESH_CACHE_REPLAY_SIZE,                   // Number of replay protection entries, i.e. maximum number of mesh devices that can send application messages to this device.
     .features           = WICED_BT_MESH_CORE_FEATURE_BIT_NO_ADV_BEARER,     // GATT client mode: advert scanning but no advert sending and receiving
     .friend_cfg         =                                           // Empty Configuration of the Friend Feature
     {

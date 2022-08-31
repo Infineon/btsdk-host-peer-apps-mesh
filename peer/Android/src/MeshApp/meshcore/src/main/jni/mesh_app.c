@@ -84,7 +84,6 @@ extern void mesh_native_lib_read_dfu_meta_data(uint8_t *p_fw_id, uint32_t *p_fw_
 
 #define MESH_PID                0x3001          //change this from 0x3016 to 0x 3001
 #define MESH_VID                0x0002
-#define MESH_CACHE_REPLAY_SIZE  200
 #define APPEARANCE_GENERIC_TAG  512
 #define MESH_VENDOR_COMPANY_ID          0x131   // Cypress Company ID
 #define MESH_VENDOR_MODEL_ID            1       // ToDo.  This need to be modified
@@ -125,6 +124,7 @@ wiced_bt_mesh_core_config_model_t   mesh_element1_models[] =
     WICED_BT_MESH_MODEL_LIGHT_HSL_CLIENT,
     WICED_BT_MESH_MODEL_SENSOR_CLIENT,
     WICED_BT_MESH_MODEL_LIGHT_LC_CLIENT,
+    WICED_BT_MESH_MODEL_LIGHT_XYL_CLIENT,
 #ifdef MESH_DFU_ENABLED
     WICED_BT_MESH_MODEL_FW_DISTRIBUTION_CLIENT,
     WICED_BT_MESH_MODEL_BLOB_TRANSFER_CLIENT,
@@ -172,7 +172,6 @@ wiced_bt_mesh_core_config_t  mesh_config =
     .company_id         = MESH_COMPANY_ID_CYPRESS,                  // Company identifier assigned by the Bluetooth SIG
     .product_id         = MESH_PID,                                 // Vendor-assigned product identifier
     .vendor_id          = MESH_VID,                                 // Vendor-assigned product version identifier
-    .replay_cache_size  = MESH_CACHE_REPLAY_SIZE,                   // Number of replay protection entries, i.e. maximum number of mesh devices that can send application messages to this device.
     .features                  = 0,                                 //
     .friend_cfg         =                                           // Empty Configuration of the Friend Feature
     {
@@ -185,7 +184,7 @@ wiced_bt_mesh_core_config_t  mesh_config =
         .receive_window_factor = 0,                                 // contribution of the supported Receive Window used in Friend Offer Delay calculations.
         .min_cache_size_log    = 0,                                 // minimum number of messages that the Friend node can store in its Friend Cache.
         .receive_delay         = 0,                                 // Receive delay in 1 ms units to be requested by the Low Power node.
-        .poll_timeout          = 0                                  // Poll timeout in 100ms unite to bt requested by the Low Power node.
+        .poll_timeout          = 0                                  // Poll timeout in 100ms unite to Bluetooth requested by the Low Power node.
     },
     .gatt_client_only          = WICED_TRUE,                        // Can connect to mesh over GATT or ADV
     .elements_num  = (uint8_t)(sizeof(mesh_elements) / sizeof(mesh_elements[0])),   // number of elements on this device

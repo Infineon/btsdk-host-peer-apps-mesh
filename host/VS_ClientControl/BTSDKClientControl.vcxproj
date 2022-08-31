@@ -251,7 +251,7 @@
       <IntrinsicFunctions>false</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;_WINDOWS;CLIENTCONTROL;NDEBUG;MESH_AUTOMATION_ENABLED;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.\;.\automation;..\..\mesh_client_lib;..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include;..\..\..\..\dev-kit\btsdk-include;..\..\..\..\dev-kit\libraries\mesh_libs\include;..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\hal;..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\stack;..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\internal;..\..\..\test\automation\nanopb</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\;.\automation;..\..\mesh_client_lib;..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include;..\..\..\..\dev-kit\btsdk-include;..\..\..\..\dev-kit\libraries\mesh_libs\include;..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\hal;..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\stack;..\..\..\..\dev-kit\baselib\20819A1\COMPONENT_20819A1\include\internal;..\..\..\..\btsdk-test\automation\nanopb</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4996</DisableSpecificWarnings>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <SupportJustMyCode>true</SupportJustMyCode>
@@ -262,7 +262,7 @@
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>uafxcwd.lib;LIBCMTd.lib</AdditionalDependencies>
+      <AdditionalDependencies>uafxcwd.lib;LIBCMTd.lib;setupapi.lib</AdditionalDependencies>
       <AssemblyDebug>
       </AssemblyDebug>
       <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
@@ -279,22 +279,22 @@
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <PreBuildEvent>
-      <Command>cmd.exe /c "cd ..\..\..\test\automation&amp; .\nanopb-0.3.9.2-windows-x86\generator-bin\protoc.exe --nanopb_out=.\nanopb --python_out=.\python\protobuf --proto_path=.\proto3 .\proto3\*.proto"</Command>
+      <Command>cmd.exe /c "cd ..\..\..\..\btsdk-test\automation&amp; .\nanopb-0.3.9.2-windows-x86\generator-bin\protoc.exe --nanopb_out=.\nanopb --python_out=.\python\protobuf --proto_path=.\proto3 .\proto3\*.proto"</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='AutomationDebug|Win32'">
-    <ClInclude Include="..\..\..\test\automation\nanopb\pb.h" />
-    <ClInclude Include="..\..\..\test\automation\nanopb\pb_common.h" />
-    <ClInclude Include="..\..\..\test\automation\nanopb\pb_decode.h" />
-    <ClInclude Include="..\..\..\test\automation\nanopb\pb_encode.h" />
-    <ClInclude Include="..\..\..\test\automation\nanopb\rpc.pb.h" />
+    <ClInclude Include="..\..\..\..\btsdk-test\automation\nanopb\pb.h" />
+    <ClInclude Include="..\..\..\..\btsdk-test\automation\nanopb\pb_common.h" />
+    <ClInclude Include="..\..\..\..\btsdk-test\automation\nanopb\pb_decode.h" />
+    <ClInclude Include="..\..\..\..\btsdk-test\automation\nanopb\pb_encode.h" />
+    <ClInclude Include="..\..\..\..\btsdk-test\automation\nanopb\rpc.pb.h" />
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='AutomationDebug|Win32'">
-    <ClCompile Include="..\..\..\test\automation\nanopb\mesh_client.pb.c" />
-    <ClCompile Include="..\..\..\test\automation\nanopb\pb_common.c" />
-    <ClCompile Include="..\..\..\test\automation\nanopb\pb_decode.c" />
-    <ClCompile Include="..\..\..\test\automation\nanopb\pb_encode.c" />
-    <ClCompile Include="..\..\..\test\automation\nanopb\rpc.pb.c" />
+    <ClCompile Include="..\..\..\..\btsdk-test\automation\nanopb\mesh_client.pb.c" />
+    <ClCompile Include="..\..\..\..\btsdk-test\automation\nanopb\pb_common.c" />
+    <ClCompile Include="..\..\..\..\btsdk-test\automation\nanopb\pb_decode.c" />
+    <ClCompile Include="..\..\..\..\btsdk-test\automation\nanopb\pb_encode.c" />
+    <ClCompile Include="..\..\..\..\btsdk-test\automation\nanopb\rpc.pb.c" />
   </ItemGroup>
   <ItemGroup Condition="'$(Configuration)|$(Platform)'=='AutomationDebug|Win32'">
     <ClCompile Include=".\automation\mesh_automation.cpp" />

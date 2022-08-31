@@ -151,7 +151,7 @@ void CLightLcConfig::OnBnClickedLightLcPropertyGet()
         return;
     int property_id = lightLcProp[sel].PropId;
     EnterCriticalSection(&cs);
-    mesh_client_light_lc_property_get(component_name, property_id, &property_status_callback);
+    mesh_client_light_lc_property_get(component_name, property_id);
     LeaveCriticalSection(&cs);
 }
 
@@ -165,7 +165,7 @@ void CLightLcConfig::OnBnClickedLightLcPropertySet()
     int property_id = lightLcProp[sel].PropId;
     int value = GetDlgItemInt(IDC_LIGHT_LC_PROPERTY_VALUE, 0, 0);
     EnterCriticalSection(&cs);
-    mesh_client_light_lc_property_set(component_name, property_id, value, &property_status_callback);
+    mesh_client_light_lc_property_set(component_name, property_id, value);
     LeaveCriticalSection(&cs);
 }
 
@@ -176,21 +176,21 @@ void lc_mode_status_callback(const char* device_name, int mode)
 void CLightLcConfig::OnBnClickedLightLcModeGet()
 {
     EnterCriticalSection(&cs);
-    mesh_client_light_lc_mode_get(component_name, &lc_mode_status_callback);
+    mesh_client_light_lc_mode_get(component_name);
     LeaveCriticalSection(&cs);
 }
 
 void CLightLcConfig::OnBnClickedLightLcModeSetOn()
 {
     EnterCriticalSection(&cs);
-    mesh_client_light_lc_mode_set(component_name, 1, &lc_mode_status_callback);
+    mesh_client_light_lc_mode_set(component_name, 1);
     LeaveCriticalSection(&cs);
 }
 
 void CLightLcConfig::OnBnClickedLightLcModeSetOff()
 {
     EnterCriticalSection(&cs);
-    mesh_client_light_lc_mode_set(component_name, 0, &lc_mode_status_callback);
+    mesh_client_light_lc_mode_set(component_name, 0);
     LeaveCriticalSection(&cs);
 }
 
@@ -201,14 +201,14 @@ void lc_occupancy_mode_status_callback(const char* device_name, int mode)
 void CLightLcConfig::OnBnClickedLightLcOccupancyModeGet()
 {
     EnterCriticalSection(&cs);
-    mesh_client_light_lc_occupancy_mode_get(component_name, &lc_occupancy_mode_status_callback);
+    mesh_client_light_lc_occupancy_mode_get(component_name);
     LeaveCriticalSection(&cs);
 }
 
 void CLightLcConfig::OnBnClickedLightLcOccupancyModeSetOn()
 {
     EnterCriticalSection(&cs);
-    mesh_client_light_lc_occupancy_mode_set(component_name, 1, &lc_occupancy_mode_status_callback);
+    mesh_client_light_lc_occupancy_mode_set(component_name, 1);
     LeaveCriticalSection(&cs);
 }
 
@@ -216,7 +216,7 @@ void CLightLcConfig::OnBnClickedLightLcOccupancyModeSetOn()
 void CLightLcConfig::OnBnClickedLightLcOccupancyModeSetOff()
 {
     EnterCriticalSection(&cs);
-    mesh_client_light_lc_occupancy_mode_set(component_name, 0, &lc_occupancy_mode_status_callback);
+    mesh_client_light_lc_occupancy_mode_set(component_name, 0);
     LeaveCriticalSection(&cs);
 }
 

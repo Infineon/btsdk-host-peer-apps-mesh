@@ -62,9 +62,9 @@ extern "C" wiced_bt_mesh_event_t * wiced_bt_mesh_event_from_hci_header(uint8_t *
 extern ClsStopWatch thesw;
 
 // #define MESH_AUTOMATION_ENABLED TRUE
-#if defined(MESH_AUTOMATION_ENABLED) && (MESH_AUTOMATION_ENABLED == TRUE)
-#include "mesh_client_script.h"
-#endif
+//#if defined(MESH_AUTOMATION_ENABLED) && (MESH_AUTOMATION_ENABLED == TRUE)
+//#include "mesh_client_script.h"
+//#endif
 
 extern BOOL SendMessageToUDPServer(char* p_msg, UINT len);
 #define WM_MESH_ADD_VENDOR_MODEL    (WM_USER + 111)
@@ -116,6 +116,7 @@ void network_opened(uint8_t status);
 /*extern "C" */ void lightness_status(const char *device_name, uint16_t present, uint16_t target, uint32_t remaining_time);
 /*extern "C" */ void hsl_status(const char *device_name, uint16_t lightness, uint16_t hue, uint16_t saturation, uint32_t remaining_time);
 /*extern "C" */ void ctl_status(const char *device_name, uint16_t present_lightness, uint16_t present_temperature, uint16_t target_lightness, uint16_t target_temperature, uint32_t remaining_time);
+/*extern "C" */ void xyl_status(const char* device_name, uint16_t present_lightness, uint16_t x, uint16_t y, uint32_t remaining_time);
 /*extern "C" */ void sensor_status(const char *device_name, int property_id, uint8_t value_len, uint8_t *value);
 /*extern "C" */ void vendor_specific_data(const char *device_name, uint16_t company_id, uint16_t model_id, uint8_t opcode, uint8_t ttl, uint8_t *p_data, uint16_t data_len);
 /*extern "C" */ void fw_distribution_status(uint8_t status, uint8_t progress);
@@ -129,6 +130,10 @@ WCHAR *dfuMethods[] = {
 extern wiced_bool_t mesh_adv_scanner_open();
 extern void mesh_adv_scanner_close(void);
 extern "C" void mesh_client_advert_report(uint8_t *bd_addr, uint8_t addr_type, int8_t rssi, uint8_t *adv_data);
+
+extern void lc_property_status(const char* device_name, int property_id, int value);
+extern void lc_mode_status(const char* device_name, int mode);
+extern void lc_occupancy_mode_status(const char* device_name, int mode);
 
 char provisioner_uuid[50];
 
@@ -146,7 +151,12 @@ mesh_client_init_t mesh_client_init_callbacks =
     ctl_status,
     sensor_status,
     vendor_specific_data,
+    xyl_status,
+    lc_mode_status,
+    lc_occupancy_mode_status,
+    lc_property_status,
 };
+
 
 extern void TraceHciPkt(BYTE type, BYTE *buffer, USHORT length);
 extern void Log(WCHAR *fmt, ...);
@@ -157,6 +167,47 @@ extern "C" void wiced_hci_process_data(uint16_t opcode, uint8_t *p_buffer, uint1
 // CLightControl dialog
 
 IMPLEMENT_DYNAMIC(CLightControl, CPropertyPage)
+
+// Fills buffer by the full path to the file in the subfolder Infineon\\MeshClient of the local appdata folder.
+// It creates a subfolder Infineon\\MeshClient in the local appdata folder if it doesn't exist
+// Returns 1 on success. Returns 0 on error.
+extern "C" int get_file_path_in_appdata_folder(const char* file, char* buffer, unsigned long bufferLen)
+{
+    int res = 1;
+    PWSTR path = NULL;
+    if (S_OK != SHGetKnownFolderPath(FOLDERID_LocalAppData, 0, NULL, &path))
+        res = 0;
+    else if (0 == WideCharToMultiByte(CP_UTF8, 0, path, -1, buffer, bufferLen, NULL, FALSE))
+        res = 0;
+    else
+    {
+        strcat_s(buffer, bufferLen, "\\Infineon\\MeshClient\\");
+        int iRes = SHCreateDirectoryExA(NULL, buffer, NULL);
+        if (iRes != ERROR_SUCCESS && iRes != ERROR_ALREADY_EXISTS && iRes != ERROR_FILE_EXISTS)
+            res = 0;
+        else if (file != NULL && file[0] != 0)
+            strcat_s(buffer, bufferLen, file);
+    }
+    // The calling process is responsible for freeing this resource (path) whether SHGetKnownFolderPath succeeds or not
+    // If the parameter is NULL, the function CoTaskMemFree has no effect.
+    CoTaskMemFree(path);
+    return res;
+}
+
+// Writes content of the DeviceConfig into the file NetParameters.bin in the subfolder Infineon\\MeshClient of the local appdata folder.
+void WriteDeviceConfig()
+{
+    char path[MAX_PATH];
+    if (get_file_path_in_appdata_folder("NetParameters.bin", path, sizeof(path)))
+    {
+        FILE* fp = fopen(path, "wb");
+        if (fp)
+        {
+            fwrite(&DeviceConfig, 1, sizeof(DeviceConfig), fp);
+            fclose(fp);
+        }
+    }
+}
 
 CLightControl::CLightControl()
 	: CPropertyPage(IDD_LIGHT_CONTROL)
@@ -174,11 +225,15 @@ CLightControl::CLightControl()
     m_dwPatchSize = 0;
     m_event = 0;
 
-    FILE *fp = fopen("NetParameters.bin", "rb");
-    if (fp)
+    char path[MAX_PATH];
+    if (get_file_path_in_appdata_folder("NetParameters.bin", path, sizeof(path)))
     {
-        fread(&DeviceConfig, 1, sizeof(DeviceConfig), fp);
-        fclose(fp);
+        FILE* fp = fopen(path, "rb");
+        if (fp)
+        {
+            fread(&DeviceConfig, 1, sizeof(DeviceConfig), fp);
+            fclose(fp);
+        }
     }
 }
 
@@ -307,7 +362,7 @@ BOOL CLightControl::OnSetActive()
 
     CString sStaticOobData = theApp.GetProfileString(L"LightControl", L"StaticOobData", L"");
     if (sStaticOobData == "")
-        SetDlgItemText(IDC_OOB_DATA, L"00000000000000000102030405060708");
+        SetDlgItemText(IDC_OOB_DATA, L"965ca5c944b64d5786b47a29685c8bac");
     else
         SetDlgItemText(IDC_OOB_DATA, sStaticOobData);
 
@@ -486,7 +541,7 @@ void CLightControl::SetDlgItemHex(DWORD id, DWORD val)
     SetDlgItemText(id, buf);
 }
 
-DWORD CLightControl::GetHexValue(DWORD id, LPBYTE buf, DWORD buf_size)
+DWORD GetHexValueById(HWND hWnd, DWORD id, LPBYTE buf, DWORD buf_size)
 {
     char szbuf[1300];
     char *psz = szbuf;
@@ -495,7 +550,7 @@ DWORD CLightControl::GetHexValue(DWORD id, LPBYTE buf, DWORD buf_size)
 
     memset(buf, 0, buf_size);
 
-    GetDlgItemTextA(m_hWnd, id, szbuf, sizeof(szbuf));
+    GetDlgItemTextA(hWnd, id, szbuf, sizeof(szbuf));
     if (strlen(szbuf) == 1)
     {
         szbuf[2] = 0;
@@ -522,6 +577,11 @@ DWORD CLightControl::GetHexValue(DWORD id, LPBYTE buf, DWORD buf_size)
         }
     }
     return res;
+}
+
+DWORD CLightControl::GetHexValue(DWORD id, LPBYTE buf, DWORD buf_size)
+{
+    return GetHexValueById(m_hWnd, id, buf, buf_size);
 }
 
 void CLightControl::ProcessEvent(LPBYTE p_data, DWORD len)
@@ -677,12 +737,7 @@ void CLightControl::OnBnClickedProvision()
     DeviceConfig.publish_retransmit_count = GetDlgItemInt(IDC_MODEL_PUB_RETRANSMIT_COUNT);
     DeviceConfig.publish_retransmit_interval = GetDlgItemInt(IDC_MODEL_PUB_RETRANSMIT_INTERVAL);
 
-    FILE *fp = fopen("NetParameters.bin", "wb");
-    if (fp)
-    {
-        fwrite(&DeviceConfig, 1, sizeof(DeviceConfig), fp);
-        fclose(fp);
-    }
+    WriteDeviceConfig();
 
     mesh_client_set_device_config(NULL, DeviceConfig.is_gatt_proxy, DeviceConfig.is_friend, DeviceConfig.is_relay, DeviceConfig.send_net_beacon, DeviceConfig.relay_xmit_count, DeviceConfig.relay_xmit_interval, DeviceConfig.default_ttl, DeviceConfig.net_xmit_count, DeviceConfig.net_xmit_interval);
     mesh_client_set_publication_config(DeviceConfig.publish_credential_flag, DeviceConfig.publish_retransmit_count, DeviceConfig.publish_retransmit_interval, DeviceConfig.publish_ttl);
@@ -1311,6 +1366,29 @@ void ctl_status(const char *device_name, uint16_t present_lightness, uint16_t pr
 #endif
 }
 
+void xyl_status(const char* device_name, uint16_t present_lightness, uint16_t x, uint16_t y, uint32_t remaining_time)
+{
+    WCHAR szDevName[80];
+    size_t name_len = device_name ? strlen(device_name) + 1 : 0;
+    MultiByteToWideChar(CP_UTF8, 0, device_name, -1, szDevName, sizeof(szDevName) / sizeof(WCHAR));
+    Log(L"%s present Light:%d x/y:%d/%d\n", szDevName, present_lightness, x, y);
+
+#if defined( MESH_AUTOMATION_ENABLED ) && (MESH_AUTOMATION_ENABLED == TRUE)
+    // Hook location where callback received from the mesh core is queued and forwarded to the Mesh Automation Script
+    tMESH_CLIENT_SCRIPT_XYL_STATUS xyl_status = { 0 };
+    if (device_name && name_len)
+    {
+        memcpy(&xyl_status.device_name, device_name, name_len);
+    }
+    xyl_status.present_lightness = present_lightness;
+    xyl_status.x = x;
+    xyl_status.y = y;
+    xyl_status.remaining_time = remaining_time;
+    mesh_client_enqueue_and_check_event(MESH_CLIENT_SCRIPT_EVT_XYL_STATUS, &xyl_status, sizeof(xyl_status));
+#endif
+}
+
+
 void sensor_status(const char *device_name, int property_id, uint8_t value_len, uint8_t *value)
 {
     WCHAR szDevName[80];
@@ -1429,12 +1507,7 @@ void CLightControl::OnBnClickedConfigureNewName()
     DeviceConfig.net_xmit_count = (BYTE)GetDlgItemInt(IDC_NETWORK_TRANSMIT_COUNT);
     DeviceConfig.net_xmit_interval = (USHORT)GetDlgItemInt(IDC_NETWORK_TRANSMIT_INTERVAL);
 
-    FILE *fp = fopen("NetParameters.bin", "wb");
-    if (fp)
-    {
-        fwrite(&DeviceConfig, 1, sizeof(DeviceConfig), fp);
-        fclose(fp);
-    }
+    WriteDeviceConfig();
 
     mesh_client_set_device_config(old_name, DeviceConfig.is_gatt_proxy, DeviceConfig.is_friend, DeviceConfig.is_relay, DeviceConfig.send_net_beacon, DeviceConfig.relay_xmit_count, DeviceConfig.relay_xmit_interval, DeviceConfig.default_ttl, DeviceConfig.net_xmit_count, DeviceConfig.net_xmit_interval);
     mesh_client_set_publication_config(DeviceConfig.publish_credential_flag, DeviceConfig.publish_retransmit_count, DeviceConfig.publish_retransmit_interval, DeviceConfig.publish_ttl);
@@ -1475,12 +1548,7 @@ void CLightControl::OnBnClickedMoveToGroup()
     }
 
     // We might need to use default pub params
-    FILE* fp = fopen("NetParameters.bin", "wb");
-    if (fp)
-    {
-        fwrite(&DeviceConfig, 1, sizeof(DeviceConfig), fp);
-        fclose(fp);
-    }
+    WriteDeviceConfig();
     mesh_client_set_publication_config(DeviceConfig.publish_credential_flag, DeviceConfig.publish_retransmit_count, DeviceConfig.publish_retransmit_interval, DeviceConfig.publish_ttl);
     if (((group_from_name[0] == 0) || (strcmp(mesh_name, group_from_name) == 0)) && ((group_to_name[0] != 0) && (strcmp(mesh_name, group_to_name) != 0)))
         mesh_client_add_component_to_group(device_name, group_to_name);
@@ -2052,13 +2120,13 @@ void CLightControl::OnBnClickedConnectdisconnect()
 
     if (!m_bConnected)
     {
-        wsprintf(buf, L"Connecting Network");
+        wsprintf(buf, L"Connecting to Proxy");
         m_trace->SetCurSel(m_trace->AddString(buf));
         mesh_client_connect_network(1, 7);
     }
     else
     {
-        wsprintf(buf, L"Disconnecting Network");
+        wsprintf(buf, L"Disconnecting from Proxy");
         m_trace->SetCurSel(m_trace->AddString(buf));
         mesh_client_disconnect_network();
     }
@@ -2163,10 +2231,10 @@ void CLightControl::OnBnClickedNetworkImport()
         {
             MultiByteToWideChar(CP_UTF8, 0, p, strlen(p) + 1, szNetwork, sizeof(szNetwork) / sizeof(WCHAR));
             ((CComboBox *)GetDlgItem(IDC_NETWORK))->AddString(szNetwork);
-            p += strlen(p) + 1;
-            i++;
             if (strcmp(p, mesh_name) == 0)
                 sel = i;
+            p += strlen(p) + 1;
+            i++;
         }
         if (sel >= 0)
         {
@@ -2193,12 +2261,28 @@ void CLightControl::OnBnClickedNetworkExport()
         return;
 
     char *json_string = mesh_client_network_export(mesh_name);
+    FILE *fJsonFile;
+    CString fileName = dlgFile.GetPathName();
     if (json_string != NULL)
     {
-        FILE *fJsonFile;
-        if (_wfopen_s(&fJsonFile, dlgFile.GetPathName(), L"w"))
+        if (_wfopen_s(&fJsonFile, fileName, L"w"))
         {
             MessageBox(L"Failed to open the json file", L"Error", MB_OK);
+            return;
+        }
+        fwrite(json_string, 1, strlen(json_string), fJsonFile);
+        fclose(fJsonFile);
+
+        free(json_string);
+    }
+    strcat(mesh_name, ".ifx");
+    json_string = mesh_client_network_export(mesh_name);
+    if (json_string != NULL)
+    {
+        fileName.Insert(fileName.GetLength() - 4, L"ifx.");
+        if (_wfopen_s(&fJsonFile, fileName, L"w"))
+        {
+            MessageBox(L"Failed to open the ifx.json file", L"Error", MB_OK);
             return;
         }
         fwrite(json_string, 1, strlen(json_string), fJsonFile);
@@ -2302,12 +2386,7 @@ extern "C" int mesh_client_set_publication_config_UI_Ex(const char *device_name,
     DeviceConfig.publish_retransmit_count = publish_retransmit_count;
     DeviceConfig.publish_retransmit_interval = publish_retransmit_interval;
 
-    FILE *fp = fopen("NetParameters.bin", "wb");
-    if (fp)
-    {
-        fwrite(&DeviceConfig, 1, sizeof(DeviceConfig), fp);
-        fclose(fp);
-    }
+    WriteDeviceConfig();
 
     return 0;
 }

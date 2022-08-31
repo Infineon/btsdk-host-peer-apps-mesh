@@ -1,26 +1,36 @@
 /*
- * Copyright 2017, Cypress Semiconductor Corporation or a subsidiary of Cypress Semiconductor
- * Corporation. All rights reserved. This software, including source code, documentation and
- * related materials ("Software"), is owned by Cypress Semiconductor  Corporation or one of its
- * subsidiaries ("Cypress") and is protected by and subject to worldwide patent protection
- * (United States and foreign), United States copyright laws and international treaty provisions.
- * Therefore, you may use this Software only as provided in the license agreement accompanying the
- * software package from which you obtained this Software ("EULA"). If no EULA applies, Cypress
- * hereby grants you a personal, nonexclusive, non-transferable license to  copy, modify, and
- * compile the Software source code solely for use in connection with Cypress's  integrated circuit
- * products. Any reproduction, modification, translation, compilation,  or representation of this
- * Software except as specified above is prohibited without the express written permission of
- * Cypress. Disclaimer: THIS SOFTWARE IS PROVIDED AS-IS, WITH NO  WARRANTY OF ANY KIND, EXPRESS
- * OR IMPLIED, INCLUDING,  BUT NOT LIMITED TO, NONINFRINGEMENT, IMPLIED WARRANTIES OF MERCHANTABILITY
- * AND FITNESS FOR A PARTICULAR PURPOSE. Cypress reserves the right to make changes to
- * the Software without notice. Cypress does not assume any liability arising out of the application
- * or use of the Software or any product or circuit  described in the Software. Cypress does
- * not authorize its products for use in any products where a malfunction or failure of the
- * Cypress product may reasonably be expected to result  in significant property damage, injury
- * or death ("High Risk Product"). By including Cypress's product in a High Risk Product, the
- * manufacturer of such system or application assumes  all risk of such use and in doing so agrees
- * to indemnify Cypress against all liability.
+ * Copyright 2016-2022, Cypress Semiconductor Corporation (an Infineon company) or
+ * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
+ *
+ * This software, including source code, documentation and related
+ * materials ("Software") is owned by Cypress Semiconductor Corporation
+ * or one of its affiliates ("Cypress") and is protected by and subject to
+ * worldwide patent protection (United States and foreign),
+ * United States copyright laws and international treaty provisions.
+ * Therefore, you may use this Software only as provided in the license
+ * agreement accompanying the software package from which you
+ * obtained this Software ("EULA").
+ * If no EULA applies, Cypress hereby grants you a personal, non-exclusive,
+ * non-transferable license to copy, modify, and compile the Software
+ * source code solely for use in connection with Cypress's
+ * integrated circuit products.  Any reproduction, modification, translation,
+ * compilation, or representation of this Software except as specified
+ * above is prohibited without the express written permission of Cypress.
+ *
+ * Disclaimer: THIS SOFTWARE IS PROVIDED AS-IS, WITH NO WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, NONINFRINGEMENT, IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE. Cypress
+ * reserves the right to make changes to the Software without notice. Cypress
+ * does not assume any liability arising out of the application or use of the
+ * Software or any product or circuit described in the Software. Cypress does
+ * not authorize its products for use in any products where a malfunction or
+ * failure of the Cypress product may reasonably be expected to result in
+ * significant property damage, injury or death ("High Risk Product"). By
+ * including Cypress's product in a High Risk Product, the manufacturer
+ * of such system or application assumes all risk of such use and in doing
+ * so agrees to indemnify Cypress against all liability.
  */
+
 package com.cypress.le.mesh.meshapp;
 
 import android.accounts.Account;
@@ -479,12 +489,12 @@ public class FragmentRoom extends Fragment implements LightingService.IServiceCa
                         break;
                     case R.id.addBig:
 
-                        if (item.getTitle().equals("Add BT Internet Gateway")) {
+                        if (item.getTitle().equals("Add Bluetooth Internet Gateway")) {
                             menuaddBigItem = item.getItemId();
                             int res = serviceReference.getMesh().disconnectNetwork();
                             showBIGDevicesDialog();
                             //TODO set title after onProv complete for BIG
-                        } else if (item.getTitle().equals("Remove BT Internet Gateway")) {
+                        } else if (item.getTitle().equals("Remove Bluetooth Internet Gateway")) {
                             Log.d(TAG, "mApp.getPreferredTransport() = " + mApp.getPreferredTransport());
                             if (mApp.getPreferredTransport() == Constants.TRANSPORT_GATT) {
                                 Log.d(TAG, "setting UI to remove big");
@@ -492,7 +502,7 @@ public class FragmentRoom extends Fragment implements LightingService.IServiceCa
 //                            serviceReference.deleteBIG(BIGNode);
                                 BIGNode = null;
                                 BIGaddress = null;
-                                item.setTitle("Add BT Internet Gateway");
+                                item.setTitle("Add Bluetooth Internet Gateway");
                             }
                         }
                         break;
@@ -1006,9 +1016,9 @@ public class FragmentRoom extends Fragment implements LightingService.IServiceCa
 
             Log.d(TAG, " changing network BIGip = " + BIGip);
             if(BIGip!=null) {
-                toolbar.getMenu().getItem(2).setTitle("Remove BT Internet Gateway");
+                toolbar.getMenu().getItem(2).setTitle("Remove Bluetooth Internet Gateway");
             } else {
-                toolbar.getMenu().getItem(2).setTitle("Add BT Internet Gateway");
+                toolbar.getMenu().getItem(2).setTitle("Add Bluetooth Internet Gateway");
             }
 
             textView.setText(serviceReference.getCurrentNetwork() + " : " + getLocation());
@@ -1342,7 +1352,7 @@ public class FragmentRoom extends Fragment implements LightingService.IServiceCa
                                 serviceReference.getMesh().provision("BIG",mCurrentNetwork, mPeerDevice.mUUID, (byte)10);
 
                               //  startSpin();
-                                toolbar.getMenu().getItem(2).setTitle("Remove BT Internet Gateway");
+                                toolbar.getMenu().getItem(2).setTitle("Remove Bluetooth Internet Gateway");
                             } else{
                                 Log.d(TAG, "Please select device");
                             }
@@ -1444,7 +1454,7 @@ public class FragmentRoom extends Fragment implements LightingService.IServiceCa
             String BIGip = getNetworkIP();
             Log.d(TAG, " changing network BIGip = " + BIGip);
             if(BIGip!=null)
-                toolbar.getMenu().getItem(2).setTitle("Remove BT Internet Gateway");
+                toolbar.getMenu().getItem(2).setTitle("Remove Bluetooth Internet Gateway");
 
             BIGNode = "BIGNode";
             Log.d(TAG, " changing network BIgNode = " + BIGNode);

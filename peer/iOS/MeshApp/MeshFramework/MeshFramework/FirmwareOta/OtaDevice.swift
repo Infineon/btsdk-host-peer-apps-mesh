@@ -91,7 +91,7 @@ public protocol OtaDeviceProtocol {
     func writeValue(to: OtaCharacteristic, value: Data, completion: @escaping OtaCompletionHandler)
 
     /*
-     * OtaManager will call this API when the write operation has been done by the system BLE stach
+     * OtaManager will call this API when the write operation has been done by the system LE stach
      * after called the system API peripheral.writeValue with type parameter set to .withResponse, or the timeout error happenned.
      * When this API called, writeValue completion must be called.
      */
@@ -187,7 +187,7 @@ public class OtaBleDevice: NSObject, OtaDeviceProtocol {
         } else {
             OtaUpgrader.shared.didUpdateConnectionState(isConnected: false,
                                                         error: OtaError(code: OtaErrorCode.FAILED,
-                                                                        desc: "BLE not enabled or not ready yet"))
+                                                                        desc: "LE not enabled or not ready yet"))
         }
     }
 
@@ -209,7 +209,7 @@ public class OtaBleDevice: NSObject, OtaDeviceProtocol {
         } else {
             OtaUpgrader.shared.didUpdateConnectionState(isConnected: false,
                                                         error: OtaError(code: OtaErrorCode.FAILED,
-                                                                        desc: "BLE not enabled or not ready yet"))
+                                                                        desc: "LE not enabled or not ready yet"))
         }
     }
 
@@ -614,15 +614,15 @@ extension OtaHomeKitDevice: HMAccessoryDelegate {
             meshLog("  - accessory service: \(service.name), \(service)")
             // HMService uniqueIdentifier UUID, allocated by HomeKit framework.
             meshLog("    service.uniqueIdentifier: \(service.uniqueIdentifier)")
-            // BLE Service UUID.
+            // LE Service UUID.
             meshLog("    service.serviceType: \(service.serviceType)")
-            // Inlcuded BLE Service UUID.
+            // Included LE Service UUID.
             meshLog("    service.associatedServiceType: \(String(describing: service.associatedServiceType))")
             for characteristic in service.characteristics {
                 meshLog("    - characteristic: \(characteristic)")
                 // HMCharacteristic uniqueIdentifier UUID, allocated by HomeKit framework.
                 meshLog("      characteristic.uniqueIdentifier: \(characteristic.uniqueIdentifier)")
-                // BLE Characterisitic UUID.
+                // LE Characterisitic UUID.
                 meshLog("      characteristic.characteristicType: \(characteristic.characteristicType)")
                 meshLog("      characteristic.properties: \(characteristic.properties)")
             }

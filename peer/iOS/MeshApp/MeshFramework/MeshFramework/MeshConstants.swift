@@ -105,7 +105,7 @@ public struct MeshConstants {
         return remaining_time
     }
 
-    // Public BLE device address, just a placeholder, useless.
+    // Public LE device address, just a placeholder, useless.
     public static let MESH_DEFAULT_PERIPHERAL_BDADDR_TYPE: UInt8    = 0
 
     public static let MESH_DEFAULT_COMPONENT_CONNECT_SCAN_DURATION  = 10     // unit: seconds

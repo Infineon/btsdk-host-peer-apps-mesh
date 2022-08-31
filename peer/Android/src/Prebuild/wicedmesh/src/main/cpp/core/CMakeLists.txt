@@ -66,6 +66,7 @@ file(GLOB MY_SRC
     "${DEV_KIT_PATH}/libraries/mesh_libs/mesh_models_lib/light_ctl_client.c"
     "${DEV_KIT_PATH}/libraries/mesh_libs/mesh_models_lib/light_hsl_client.c"
     "${DEV_KIT_PATH}/libraries/mesh_libs/mesh_models_lib/light_lc_client.c"
+    "${DEV_KIT_PATH}/libraries/mesh_libs/mesh_models_lib/light_xyl_client.c"
     "${DEV_KIT_PATH}/libraries/mesh_libs/mesh_models_lib/light_lightness_client.c"
     "${DEV_KIT_PATH}/libraries/mesh_libs/mesh_models_lib/mesh_gatt_client.c"
     "${DEV_KIT_PATH}/libraries/mesh_libs/mesh_models_lib/mesh_model_utils.c"

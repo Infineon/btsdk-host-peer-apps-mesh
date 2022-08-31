@@ -352,7 +352,7 @@ wiced_bt_mesh_db_mesh_t *mesh_json_read_file(FILE *fp)
         }
         else if (strcmp(tagname, "version") == 0)
         {
-            if (!mesh_json_read_string(fp, c1, buffer, 100) || strcmp(buffer, "1.0.0") != 0)    // only support version 1.0.0
+            if (!mesh_json_read_string(fp, c1, buffer, 100) || strcmp(buffer, "1.0.1") != 0)    // only support version 1.0.1
             {
                 failed = WICED_TRUE;
                 break;
@@ -3503,7 +3503,7 @@ uint8_t process_nibble(char n)
     return (n);
 }
 
-static char *mesh_header = "{\r  \"$schema\":\"http://json-schema.org/draft-04/schema#\",\r  \"id\":\"http://www.bluetooth.com/specifications/assigned-numbers/mesh-profile/cdb-schema.json#\",\r  \"version\":\"1.0.0\",\r";
+static char *mesh_header = "{\r  \"$schema\":\"http://json-schema.org/draft-04/schema#\",\r  \"id\":\"https://www.bluetooth.com/specifications/specs/mesh-cdb-1-0-1-schema.json#\",\r  \"version\":\"1.0.1\",\r";
 static char *mesh_footer = "}\r";
 static char *hex_digits = "0123456789ABCDEF";
 

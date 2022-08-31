@@ -33,7 +33,7 @@
 
 /** @file
  *
- * WICED BT trace API definitions.
+ * AIROC Bluetooth trace API definitions.
  */
 
 #ifndef _WICED_BT_TRACE_H_

@@ -1832,7 +1832,11 @@ mesh_client_init_t mesh_client_init_callbacks =
     meshClientHslState,
     meshClientCtlState,
     meshClientSensorState,
-    meshClientVendorSpecificDataStatus
+    meshClientVendorSpecificDataStatus,
+    NULL,
+    meshClientLightLcModeStatus,
+    meshClientLightLcOccupancyModeStatus,
+    meshClientLightLcPropertyStatus
 };
 
 JNIEXPORT void JNICALL
@@ -2304,7 +2308,7 @@ Java_com_cypress_le_mesh_meshcore_MeshNativeHelper_meshClientGetLightLcMode(JNIE
     const char *componentName = (*env)->GetStringUTFChars(env, componentName_, 0);
 
     pthread_mutex_lock(&cs);
-    mode = mesh_client_light_lc_mode_get(componentName, meshClientLightLcModeStatus);
+    mode = mesh_client_light_lc_mode_get(componentName);
     pthread_mutex_unlock(&cs);
 
     (*env)->ReleaseStringUTFChars(env, componentName_, componentName);
@@ -2321,7 +2325,7 @@ Java_com_cypress_le_mesh_meshcore_MeshNativeHelper_meshClientSetLightLcMode(JNIE
     const char *componentName = (*env)->GetStringUTFChars(env, componentName_, 0);
 
     pthread_mutex_lock(&cs);
-    res = mesh_client_light_lc_mode_set(componentName, mode, meshClientLightLcModeStatus);
+    res = mesh_client_light_lc_mode_set(componentName, mode);
     pthread_mutex_unlock(&cs);
 
     (*env)->ReleaseStringUTFChars(env, componentName_, componentName);
@@ -2337,7 +2341,7 @@ Java_com_cypress_le_mesh_meshcore_MeshNativeHelper_meshClientGetLightLcOccupancy
     const char *componentName = (*env)->GetStringUTFChars(env, componentName_, 0);
 
     pthread_mutex_lock(&cs);
-    mode = mesh_client_light_lc_occupancy_mode_get(componentName, meshClientLightLcOccupancyModeStatus);
+    mode = mesh_client_light_lc_occupancy_mode_get(componentName);
     pthread_mutex_unlock(&cs);
     (*env)->ReleaseStringUTFChars(env, componentName_, componentName);
     return mode;
@@ -2353,7 +2357,7 @@ Java_com_cypress_le_mesh_meshcore_MeshNativeHelper_meshClientSetLightLcOccupancy
     const char *componentName = (*env)->GetStringUTFChars(env, componentName_, 0);
 
     pthread_mutex_lock(&cs);
-    res = mesh_client_light_lc_occupancy_mode_set(componentName, mode, meshClientLightLcOccupancyModeStatus);
+    res = mesh_client_light_lc_occupancy_mode_set(componentName, mode);
     pthread_mutex_unlock(&cs);
 
     (*env)->ReleaseStringUTFChars(env, componentName_, componentName);
@@ -2370,7 +2374,7 @@ Java_com_cypress_le_mesh_meshcore_MeshNativeHelper_meshClientGetLightLcProperty(
     const char *componentName = (*env)->GetStringUTFChars(env, componentName_, 0);
 
     pthread_mutex_lock(&cs);
-    res = mesh_client_light_lc_property_get(componentName, propertyId, meshClientLightLcPropertyStatus);
+    res = mesh_client_light_lc_property_get(componentName, propertyId);
     pthread_mutex_unlock(&cs);
 
     (*env)->ReleaseStringUTFChars(env, componentName_, componentName);
@@ -2388,7 +2392,7 @@ Java_com_cypress_le_mesh_meshcore_MeshNativeHelper_meshClientSetLightLcProperty(
     const char *componentName = (*env)->GetStringUTFChars(env, componentName_, 0);
 
     pthread_mutex_lock(&cs);
-    res = mesh_client_light_lc_property_set(componentName, propertyId, val, meshClientLightLcPropertyStatus);
+    res = mesh_client_light_lc_property_set(componentName, propertyId, val);
     pthread_mutex_unlock(&cs);
 
     (*env)->ReleaseStringUTFChars(env, componentName_, componentName);

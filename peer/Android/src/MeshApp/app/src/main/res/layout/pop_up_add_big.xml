@@ -10,7 +10,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceLarge"
-        android:text="Add BT Internet Gateway"
+        android:text="Add Bluetooth Internet Gateway"
         android:gravity="center"
         android:id="@+id/textView5"
         android:textColor="@color/primary"
@@ -29,7 +29,7 @@
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Select BT Internet Gateway BD Address"
+        android:text="Select Bluetooth Internet Gateway BD Address"
         android:id="@+id/textView7"
         android:layout_marginRight="@dimen/activity_horizontal_margin"
         android:layout_below="@+id/myRadioGroup"

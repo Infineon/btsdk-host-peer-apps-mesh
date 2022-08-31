@@ -76,20 +76,20 @@ open class MeshGattClient: NSObject {
 
     open func startScan() {
         if centralManager.state == .poweredOn {
-            MeshNativeHelper.meshClientLog("[MeshGattClient stopScan] BLE scan started, isOtaScanning: \(OtaManager.shared.isOtaScanning)")
+            MeshNativeHelper.meshClientLog("[MeshGattClient stopScan] LE scan started, isOtaScanning: \(OtaManager.shared.isOtaScanning)")
             let serviceUUIDs = OtaManager.shared.isOtaScanning ? nil : [MeshUUIDConstants.UUID_SERVICE_MESH_PROVISIONING, MeshUUIDConstants.UUID_SERVICE_MESH_PROXY]
             centralManager.scanForPeripherals(withServices: serviceUUIDs, options: nil)
         } else {
-            MeshNativeHelper.meshClientLog("[MeshGattClient stopScan] warning: BLE scan not supported, invalid centralManager.state=\(centralManager.state.rawValue), isScanning=\(centralManager.isScanning)")
+            MeshNativeHelper.meshClientLog("[MeshGattClient stopScan] warning: LE scan not supported, invalid centralManager.state=\(centralManager.state.rawValue), isScanning=\(centralManager.isScanning)")
         }
     }
 
     open func stopScan() {
         if centralManager.state == .poweredOn {
             centralManager.stopScan()
-            MeshNativeHelper.meshClientLog("[MeshGattClient stopScan] BLE scan stopped")
+            MeshNativeHelper.meshClientLog("[MeshGattClient stopScan] LE scan stopped")
         } else {
-            MeshNativeHelper.meshClientLog("[MeshGattClient stopScan] warning: BLE not pwered on, invalid centralManager.state=\(centralManager.state.rawValue), isScanning=\(centralManager.isScanning)")
+            MeshNativeHelper.meshClientLog("[MeshGattClient stopScan] warning: LE not pwered on, invalid centralManager.state=\(centralManager.state.rawValue), isScanning=\(centralManager.isScanning)")
         }
     }
 

@@ -101,7 +101,7 @@
 #define BTTRC_ID_AVDT_SCB                  73         /* avdt scb */
 #define BTTRC_ID_AVDT_CCB                  74         /* avdt ccb */
 
-/* LayerIDs for BT APP */
+/* LayerIDs for Bluetooth APP */
 #define BTTRC_ID_BTAPP                     75
 #define BTTRC_ID_MAX_ID                    BTTRC_ID_BTAPP
 #define BTTRC_ID_ALL_LAYERS                0xFF       /* all trace layers */

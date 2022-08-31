@@ -48,6 +48,19 @@ struct ProvisionedNode
     UINT   bpsTx;
 };
 
+struct FirmwareID
+{
+    BYTE   length;
+#define MAX_FIRMWARE_ID_LEN   20
+    BYTE   id[MAX_FIRMWARE_ID_LEN];
+};
+
+struct FirmwareUpdateNode
+{
+    BYTE   addr;
+    BYTE   state;
+};
+
 #define MAX_RCVD_PACKET_DELAY   3
 
 class ConnectedMesh : public CPropertyPage
@@ -117,6 +130,32 @@ public:
     afx_msg void OnBnClickedConnMeshGetDataStats();
     afx_msg void OnBnClickedConnMeshIdentify();
     afx_msg void OnBnClickedConnMeshGetRssi ();
+    afx_msg void OnBnClickedConnMeshUpdateBrowse();
+    afx_msg void OnBnClickedConnMeshUpdateStartStop();
+    afx_msg void OnBnClickedConnMeshGetNodesInfo();
+
+private:
+#define UPDATE_STATE_IDLE           0       // Idle
+#define UPDATE_STATE_STARTING       1       // Update starting
+#define UPDATE_STATE_UPDATING       2       // Sending image to nodes
+#define UPDATE_STATE_APPLYING       3       // Nodes applying to new firmware image
+    UINT8 m_nUpdateState;
+    CString m_sFirmwareFilePath;
+    UINT m_nFirmwareSize;
+    LPBYTE m_pFirmwareImage;
+    LPBYTE m_pDataSendPtr;
+    FirmwareID m_FirmwareId;
+    UINT8 m_nUpdateMtu;
+    FirmwareUpdateNode m_UpdateNodeList[MAX_NODES];
+    int m_nUpdateNodes;
+    int m_nTotalNodes;
+    int m_nFactoryReset;
+
+    void SetUpdateState(UINT8 state);
+    BOOL OnUpdateStart();
+    void OnUpdateStop();
+    int SendFirmwareData();
+    BOOL ReadFirmwareManifestFile(CString sFilePath);
 };
 
 extern CClientControlApp theApp;

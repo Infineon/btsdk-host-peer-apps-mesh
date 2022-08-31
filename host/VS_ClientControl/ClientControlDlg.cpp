@@ -1160,6 +1160,23 @@ DWORD CClientControlDlg::GetHandle(DWORD id)
         return buf[0];
 }
 
+// Fills buffer by the full path to the log file in the in the subfolder Infineon\\MeshClient of the temp folder.
+// It creates a subfolder Infineon\\MeshClient in the temp folder if it doesn't exist
+bool GetLogFilePath(char* buffer, DWORD bufferLen)
+{
+    DWORD len = GetTempPathA(bufferLen, buffer);
+    if (len == 0)
+        return false;
+    if (buffer[len - 1] != '\\')
+        buffer[len++] = '\\';
+    strcpy_s(&buffer[len], bufferLen - len, "Infineon\\MeshClient\\");
+    int res = SHCreateDirectoryExA(NULL, buffer, NULL);
+    if (res != ERROR_SUCCESS && res != ERROR_ALREADY_EXISTS && res != ERROR_FILE_EXISTS)
+        return false;
+    strcat_s(buffer, bufferLen, log_filename);
+    return true;
+}
+
 void Log(WCHAR *fmt, ...)
 {
     WCHAR   msg[1002];
@@ -1176,10 +1193,11 @@ void Log(WCHAR *fmt, ...)
     vswprintf(&msg[wcslen(msg)], (sizeof(msg) / sizeof(WCHAR)) - wcslen(msg), fmt, cur_arg);
     va_end(cur_arg);
 
-    if (strlen(log_filename))
+    char path[MAX_PATH];
+    if (GetLogFilePath(path, sizeof(path)))
     {
         FILE* fp;
-        fopen_s(&fp, log_filename, "a");
+        fopen_s(&fp, path, "a");
         if (fp)
         {
             fputws(msg, fp);
@@ -1244,10 +1262,10 @@ void LogFile(WCHAR* fmt, ...)
 
     va_list cur_arg;
 
-    if (strlen(log_filename))
+    if (GetLogFilePath((char*)msg, sizeof(msg)))
     {
         FILE* fp;
-        fopen_s(&fp, log_filename, "a");
+        fopen_s(&fp, (char*)msg, "a");
         if (fp)
         {
             SYSTEMTIME st;
@@ -1288,10 +1306,11 @@ extern "C" void Log(char *fmt, ...)
 
     MultiByteToWideChar(CP_UTF8, 0, msg, -1, wmsg, sizeof(wmsg) / 2);
 
-    if (strlen(log_filename))
+    // buffer msg is not needed anymore. Use it to get path for the log file.
+    if (GetLogFilePath(msg, sizeof(msg)))
     {
         FILE* fp;
-        fopen_s(&fp, log_filename, "a");
+        fopen_s(&fp, msg, "a");
         wcscat(wmsg, L"\n");
         if (fp)
         {

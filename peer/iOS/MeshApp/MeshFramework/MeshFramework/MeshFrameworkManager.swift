@@ -1254,8 +1254,8 @@ open class MeshFrameworkManager {
     }
 
     /**
-     Start or stop BLE scanning for unprovisioned mesh devices.
-     Listoning for the Mesh Provisioning UUID and Mesh Proxy UUID in the BLE advertisement data.
+     Start or stop LE scanning for unprovisioned mesh devices.
+     Listoning for the Mesh Provisioning UUID and Mesh Proxy UUID in the LE advertisement data.
 
      @param startStop       true - start scanning; false - stop scanning.
 
@@ -2367,7 +2367,7 @@ extension MeshFrameworkManager: IMeshNativeCallback {
     }
 
     /**
-     * Mesh library calls this routine to get the support from host to start BLE devices scanning.
+     * Mesh library calls this routine to get the support from host to start LE devices scanning.
      */
     public func meshClientAdvScanStartCb() -> Bool {
         meshLog("IMeshNativeCallback, meshClientAdvScanStartCb")
@@ -2376,7 +2376,7 @@ extension MeshFrameworkManager: IMeshNativeCallback {
     }
 
     /**
-     * Mesh library calls this routine to get the support from host to stop BLE devices scanning.
+     * Mesh library calls this routine to get the support from host to stop LE devices scanning.
      */
     public func meshClientAdvScanStopCb() {
         meshLog("IMeshNativeCallback, meshClientAdvScanStopCb")
@@ -2384,7 +2384,7 @@ extension MeshFrameworkManager: IMeshNativeCallback {
     }
 
     /**
-     * Mesh library calls this routine to get the support from host to connect to the specific mesh device based on the BLE address.
+     * Mesh library calls this routine to get the support from host to connect to the specific mesh device based on the LE address.
      */
     public func meshClientConnect(_ bdaddr: Data) -> Bool {
         meshLog("IMeshNativeCallback, meshClientConnect, bdaddr: \(bdaddr.dumpHexBytes())")

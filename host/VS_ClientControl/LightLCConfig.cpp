@@ -41,7 +41,7 @@
 
 extern "C" CRITICAL_SECTION cs;
 extern DWORD GetHexValue(char* szbuf, LPBYTE buf, DWORD buf_size);
-
+extern void Log(WCHAR* fmt, ...);
 CLightLcConfig* pDlg = NULL;
 
 
@@ -127,11 +127,7 @@ END_MESSAGE_MAP()
 
 
 // CLightLcConfig message handlers
-void property_status_callback(const char* device_name, int property_id, int value)
-{
-    if (pDlg != NULL)
-        pDlg->PropertyStatus(property_id, value);
-}
+
 
 void CLightLcConfig::PropertyStatus(int property_id, int value)
 {
@@ -154,7 +150,7 @@ void CLightLcConfig::OnBnClickedLightLcPropertyGet()
         return;
     int property_id = lightLcProp[sel].PropId;
     EnterCriticalSection(&cs);
-    mesh_client_light_lc_property_get(component_name, property_id, &property_status_callback);
+    mesh_client_light_lc_property_get(component_name, property_id);
     LeaveCriticalSection(&cs);
 }
 
@@ -168,50 +164,45 @@ void CLightLcConfig::OnBnClickedLightLcPropertySet()
     int property_id = lightLcProp[sel].PropId;
     int value = GetDlgItemInt(IDC_LIGHT_LC_PROPERTY_VALUE, 0, 0);
     EnterCriticalSection(&cs);
-    mesh_client_light_lc_property_set(component_name, property_id, value, &property_status_callback);
+    mesh_client_light_lc_property_set(component_name, property_id, value);
     LeaveCriticalSection(&cs);
 }
 
-void lc_mode_status_callback(const char* device_name, int mode)
-{
-}
+
 
 void CLightLcConfig::OnBnClickedLightLcModeGet()
 {
     EnterCriticalSection(&cs);
-    mesh_client_light_lc_mode_get(component_name, &lc_mode_status_callback);
+    mesh_client_light_lc_mode_get(component_name);
     LeaveCriticalSection(&cs);
 }
 
 void CLightLcConfig::OnBnClickedLightLcModeSetOn()
 {
     EnterCriticalSection(&cs);
-    mesh_client_light_lc_mode_set(component_name, 1, &lc_mode_status_callback);
+    mesh_client_light_lc_mode_set(component_name, 1);
     LeaveCriticalSection(&cs);
 }
 
 void CLightLcConfig::OnBnClickedLightLcModeSetOff()
 {
     EnterCriticalSection(&cs);
-    mesh_client_light_lc_mode_set(component_name, 0, &lc_mode_status_callback);
+    mesh_client_light_lc_mode_set(component_name, 0);
     LeaveCriticalSection(&cs);
 }
 
-void lc_occupancy_mode_status_callback(const char* device_name, int mode)
-{
-}
 
 void CLightLcConfig::OnBnClickedLightLcOccupancyModeGet()
 {
     EnterCriticalSection(&cs);
-    mesh_client_light_lc_occupancy_mode_get(component_name, &lc_occupancy_mode_status_callback);
+    mesh_client_light_lc_occupancy_mode_get(component_name);
     LeaveCriticalSection(&cs);
 }
 
 void CLightLcConfig::OnBnClickedLightLcOccupancyModeSetOn()
 {
     EnterCriticalSection(&cs);
-    mesh_client_light_lc_occupancy_mode_set(component_name, 1, &lc_occupancy_mode_status_callback);
+    mesh_client_light_lc_occupancy_mode_set(component_name, 1);
     LeaveCriticalSection(&cs);
 }
 
@@ -219,7 +210,7 @@ void CLightLcConfig::OnBnClickedLightLcOccupancyModeSetOn()
 void CLightLcConfig::OnBnClickedLightLcOccupancyModeSetOff()
 {
     EnterCriticalSection(&cs);
-    mesh_client_light_lc_occupancy_mode_set(component_name, 0, &lc_occupancy_mode_status_callback);
+    mesh_client_light_lc_occupancy_mode_set(component_name, 0);
     LeaveCriticalSection(&cs);
 }
 
@@ -242,4 +233,76 @@ void CLightLcConfig::OnBnClickedLightLcSetOff()
     EnterCriticalSection(&cs);
     mesh_client_light_lc_on_off_set(component_name, 0, WICED_TRUE, DEFAULT_TRANSITION_TIME, 0);
     LeaveCriticalSection(&cs);
+}
+
+
+
+void lc_mode_status(const char* device_name, int mode)
+{
+    WCHAR szDevName[80];
+    size_t name_len = device_name ? strlen(device_name) + 1 : 0;
+    MultiByteToWideChar(CP_UTF8, 0, device_name, -1, szDevName, sizeof(szDevName) / sizeof(WCHAR));
+    Log(L"%s mode:%d\n", szDevName, mode);
+
+
+
+#if defined( MESH_AUTOMATION_ENABLED ) && (MESH_AUTOMATION_ENABLED == TRUE)
+    // Hook location where callback received from the mesh core is queued and forwarded to the Mesh Automation Script
+    tMESH_CLIENT_SCRIPT_LIGHT_LC_MODE_STATUS lc_mode_status = { 0 };
+    if (device_name && name_len)
+    {
+        memcpy(&lc_mode_status.device_name, device_name, name_len);
+    }
+    lc_mode_status.mode = mode;
+
+    mesh_client_enqueue_and_check_event(MESH_CLIENT_SCRIPT_EVT_LIGHT_LC_MODE_STATUS, &lc_mode_status, sizeof(lc_mode_status));
+#endif
+
+}
+
+void lc_occupancy_mode_status(const char* device_name, int mode)
+{
+    WCHAR szDevName[80];
+    size_t name_len = device_name ? strlen(device_name) + 1 : 0;
+    MultiByteToWideChar(CP_UTF8, 0, device_name, -1, szDevName, sizeof(szDevName) / sizeof(WCHAR));
+    Log(L"%s mode:%d\n", szDevName, mode);
+
+
+
+#if defined( MESH_AUTOMATION_ENABLED ) && (MESH_AUTOMATION_ENABLED == TRUE)
+    // Hook location where callback received from the mesh core is queued and forwarded to the Mesh Automation Script
+    tMESH_CLIENT_SCRIPT_LIGHT_LC_MODE_STATUS lc_occupancy_mode_status = { 0 };
+    if (device_name && name_len)
+    {
+        memcpy(&lc_occupancy_mode_status.device_name, device_name, name_len);
+    }
+    lc_occupancy_mode_status.mode = mode;
+
+    mesh_client_enqueue_and_check_event(MESH_CLIENT_SCRIPT_EVT_LIGHT_LC_OCCUPANCY_MODE_STATUS, &lc_occupancy_mode_status, sizeof(lc_occupancy_mode_status));
+#endif
+
+}
+
+void lc_property_status(const char* device_name, int property_id, int value)
+{
+    WCHAR szDevName[80];
+    size_t name_len = device_name ? strlen(device_name) + 1 : 0;
+    MultiByteToWideChar(CP_UTF8, 0, device_name, -1, szDevName, sizeof(szDevName) / sizeof(WCHAR));
+    Log(L"%s property_id:%d value:%d\n", szDevName, property_id, value);
+
+    if (pDlg != NULL)
+        pDlg->PropertyStatus(property_id, value);
+
+#if defined( MESH_AUTOMATION_ENABLED ) && (MESH_AUTOMATION_ENABLED == TRUE)
+    // Hook location where callback received from the mesh core is queued and forwarded to the Mesh Automation Script
+    tMESH_CLIENT_SCRIPT_LIGHT_LC_PROPERTY_STATUS lc_property_status = { 0 };
+    if (device_name && name_len)
+    {
+        memcpy(&lc_property_status.device_name, device_name, name_len);
+    }
+    lc_property_status.property_id = property_id;
+    lc_property_status.value = value;
+
+    mesh_client_enqueue_and_check_event(MESH_CLIENT_SCRIPT_EVT_LIGHT_LC_MODE_STATUS, &lc_property_status, sizeof(lc_property_status));
+#endif
 }

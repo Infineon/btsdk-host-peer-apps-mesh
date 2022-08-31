@@ -47,6 +47,7 @@
 #include "wiced_bt_mesh_model_defs.h"
 #ifdef __windows__
 #include <winsock.h>
+#include <Shlobj.h>
 #else
 #ifdef __linux__
 //#include "mesh_client_script.h"
@@ -951,10 +952,12 @@ void MainWindow::on_btnImport()
             json_string_size = ftell(fIfxJsonFile);
             rewind(fIfxJsonFile);
 
-            ifx_json_string = new char[json_string_size+1];
-            if (ifx_json_string != NULL)
+            if (json_string_size > 0 && (ifx_json_string = new char[json_string_size+1]) != NULL)
             {
-                fread(ifx_json_string, 1, json_string_size, fIfxJsonFile);
+                if(fread(ifx_json_string, 1, json_string_size, fIfxJsonFile) != (size_t)json_string_size)
+                {
+                    Log("on_btnImport, fread ifx error");
+                }
                 ifx_json_string[json_string_size] = 0;
             }
             fclose(fIfxJsonFile);
@@ -1972,3 +1975,10 @@ extern "C" void wiced_bt_mesh_gatt_client_connection_state_changed(uint16_t conn
 extern "C" void wiced_bt_mesh_remote_provisioning_connection_state_changed(uint16_t conn_id, uint16_t reason)
 {
 }
+
+#ifdef __windows__
+extern "C" int get_file_path_in_appdata_folder(const char* file, char* buffer, unsigned long bufferLen)
+{
+    return 0;
+}
+#endif

@@ -22,7 +22,7 @@
         <!--android:orderInCategory="100"-->
         <!--app:showAsAction="always"/>-->
     <item android:id="@+id/addBig"
-        android:title="Add BT Internet Gateway"
+        android:title="Add Bluetooth Internet Gateway"
         android:orderInCategory="100"
         app:showAsAction="never"/>
 <!--    <item android:id="@+id/deleteNtw"-->

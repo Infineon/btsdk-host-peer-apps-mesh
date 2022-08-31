@@ -339,10 +339,23 @@ BOOL CConfig::OnSetActive()
 
     SetDlgItemHex(IDC_IDENTITY_DURATION, 1);
 
-    ((CComboBox *)GetDlgItem(IDC_AUTH_METHOD))->SetCurSel(0);
     SetDlgItemText(IDC_DEVICE_PUB_KEY, L"F465E43FF23D3F1B9DC7DFC04DA8758184DBC966204796ECCF0D6CF5E16500CC0201D048BCBBD899EEEFC424164E33C201C2B010CA6B4D43A8A155CAD8ECB279");
     SetDlgItemText(IDC_BD_ADDR, L"001bdc08e4e8");
     SetDlgItemInt(IDC_BD_ADDR_TYPE, 0);
+
+    // If static OOB data is requered in the profile then set 1(static OOB) in the IDC_AUTH_METOD. Otherwise set 0(No OOB)
+    BOOL bUseStaticOobData = theApp.GetProfileInt(L"LightControl", L"UseStaticOobData", 0);
+    ((CComboBox*)GetDlgItem(IDC_AUTH_METHOD))->SetCurSel(bUseStaticOobData ? 1 : 0);
+    // Reset drop-down-box IDC_AUTH_ACTION
+    ((CComboBox*)GetDlgItem(IDC_AUTH_ACTION))->ResetContent();
+
+    // Fill Static OOB Data with the same value as in the LightControl tab
+    CString sStaticOobData = theApp.GetProfileString(L"LightControl", L"StaticOobData", L"");
+    if (sStaticOobData == "")
+        SetDlgItemText(IDC_OOB_DATA_CFG, L"965ca5c944b64d5786b47a29685c8bac");
+    else
+        SetDlgItemText(IDC_OOB_DATA_CFG, sStaticOobData);
+
     return TRUE;  // return TRUE unless you set the focus to a control
 }
 
@@ -436,6 +449,7 @@ BEGIN_MESSAGE_MAP(CConfig, CPropertyPage)
 END_MESSAGE_MAP()
 extern BYTE ProcNibble(char n);
 extern DWORD GetHexValue(char *szbuf, LPBYTE buf, DWORD buf_size);
+extern DWORD GetHexValueById(HWND hWnd, DWORD id, LPBYTE buf, DWORD buf_size);
 
 void CConfig::OnCbnSelchangeComPort()
 {
@@ -773,7 +787,6 @@ void CConfig::ProcessProvisionOobDataRequest(LPBYTE p_data, DWORD len)
     BYTE oob_action = p_data[4];
     BYTE oob_data_size;
     BYTE oob_data[64];
-    BYTE oob_static[16] = {0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, 6, 7, 8};
 
     if ((static_oob_type == WICED_BT_MESH_PROVISION_GET_OOB_TYPE_DISPLAY_OUTPUT) && (oob_action < 5))
         wsprintf(buf, L"Provision: Get OOB Data oob type:%s oob size:%d oob_action:%s", wchOobType[static_oob_type], oob_size, wchOutputOobAction[oob_action]);
@@ -800,8 +813,11 @@ void CConfig::ProcessProvisionOobDataRequest(LPBYTE p_data, DWORD len)
 
     if (static_oob_type == WICED_BT_MESH_PROVISION_GET_OOB_TYPE_ENTER_STATIC)
     {
-        oob_data_size = 16;
-        memcpy(oob_data, oob_static, 16);
+        // Get static OOB data from the UI
+        BYTE auth_method = ((CComboBox*)GetDlgItem(IDC_AUTH_METHOD))->GetCurSel();
+        oob_data_size = 0;
+        if(auth_method == 1)
+            oob_data_size = (uint8_t)GetHexValueById(m_hWnd, IDC_OOB_DATA_CFG, oob_data, 16);
     }
     else if (static_oob_type == WICED_BT_MESH_PROVISION_GET_OOB_TYPE_DISPLAY_INPUT)
     {
@@ -1534,6 +1550,13 @@ void CConfig::OnBnClickedProvisionStart()
             return;
         }
     }
+
+    // Save static OOB data in the user profile. Also save UseStaticOobData depending on auth_method
+    CString sStaticOobData;
+    GetDlgItemText(IDC_OOB_DATA_CFG, sStaticOobData);
+    theApp.WriteProfileString(L"LightControl", L"StaticOobData", sStaticOobData);
+    theApp.WriteProfileInt(L"LightControl", L"UseStaticOobData", auth_method == 1);
+
     wiced_bt_mesh_provision_start_data_t data;
     data.addr = dst;
     data.algorithm = algorithm;

@@ -284,7 +284,7 @@ BOOL CMeshClientApp::InitInstance()
     //==== CoInitializeEx and Security for WRL LE Functionality ====//
 
 
-    // Lets check if BT is plugged in
+    // Lets check if Bluetooth is plugged in
     HANDLE hRadio = INVALID_HANDLE_VALUE;
     BLUETOOTH_FIND_RADIO_PARAMS params = {sizeof(BLUETOOTH_FIND_RADIO_PARAMS)};
     HBLUETOOTH_RADIO_FIND hf = BluetoothFindFirstRadio(&params, &hRadio);

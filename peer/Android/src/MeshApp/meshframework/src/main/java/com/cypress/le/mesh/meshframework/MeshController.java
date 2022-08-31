@@ -36,8 +36,8 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * This class provides functionality to communicate and manage BLE mesh devices .
- * {@link MeshController} allows you to create a BLE mesh network, add device, configure and control them.
+ * This class provides functionality to communicate and manage LE mesh devices .
+ * {@link MeshController} allows you to create a LE mesh network, add device, configure and control them.
  * <p>Fundamentally, this is the starting point for all mesh applications</p>
  */
 
@@ -895,7 +895,7 @@ public class MeshController {
      * <p>To perform any operation on a mesh device, for example, reconfiguration or control,
      * the application needs to connect to the network.
      * The connection is established over GATT and involves searching for a proxy device which belongs
-     * to the opened network in the immediate radio range and establishing and setting up the BLE connection.
+     * to the opened network in the immediate radio range and establishing and setting up the LE connection.
      * When operation completes, the {@link IMeshControllerCallback#onNetworkConnectionStatusChanged} method is executed.</p>
      *
      * @param scanDuration Scan timeout indicates how long the mesh stack should search for a proxy device before declaring failure.

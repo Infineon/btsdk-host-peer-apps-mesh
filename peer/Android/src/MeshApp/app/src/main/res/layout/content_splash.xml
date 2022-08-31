@@ -29,7 +29,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceLarge"
-        android:text="BLE MESH"
+        android:text="LE MESH"
         android:id="@+id/textView12"
         android:textColor="@color/ltgray"
         android:layout_below="@+id/textView9"

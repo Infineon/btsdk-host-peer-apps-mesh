@@ -193,6 +193,23 @@ mesh_client_init_t mesh_client_init_callbacks =
     vendor_specific_data,
 };
 
+// Fills buffer by the full path to the log file in the in the subfolder Infineon\\MeshClient of the temp folder.
+// It creates a subfolder Infineon\\MeshClient in the temp folder if it doesn't exist
+bool GetLogFilePath(char* buffer, DWORD bufferLen)
+{
+    DWORD len = GetTempPathA(bufferLen, buffer);
+    if (len == 0)
+        return false;
+    if (buffer[len - 1] != '\\')
+        buffer[len++] = '\\';
+    strcpy_s(&buffer[len], bufferLen - len, "Infineon\\MeshClient\\");
+    int res = SHCreateDirectoryExA(NULL, buffer, NULL);
+    if (res != ERROR_SUCCESS && res != ERROR_ALREADY_EXISTS && res != ERROR_FILE_EXISTS)
+        return false;
+    strcat_s(buffer, bufferLen, log_filename);
+    return true;
+}
+
 extern void Log(WCHAR *fmt, ...)
 {
     WCHAR   *msg;
@@ -207,13 +224,14 @@ extern void Log(WCHAR *fmt, ...)
     int len = swprintf_s(msg, 1002, L"%02d:%02d:%02d.%03d ", st.wHour, st.wMinute, st.wSecond, st.wMilliseconds);
 
     va_start(cur_arg, fmt);
-    vswprintf(&msg[wcslen(msg)], (sizeof(msg) / sizeof(WCHAR)) - wcslen(msg), fmt, cur_arg);
+    vswprintf(&msg[wcslen(msg)], 1002 - wcslen(msg), fmt, cur_arg);
     va_end(cur_arg);
 
-    if (log_filename != NULL)
+    char path[MAX_PATH];
+    if (GetLogFilePath(path, sizeof(path)))
     {
         FILE *fp;
-        fopen_s(&fp, log_filename, "a");
+        fopen_s(&fp, path, "a");
         if (fp)
         {
             fputws(msg, fp);
@@ -246,10 +264,11 @@ extern "C" void Log(char *fmt, ...)
 
     MultiByteToWideChar(CP_UTF8, 0, msg, -1, wmsg, 1002);
 
-    if (log_filename != NULL)
+    // buffer msg is not needed anymore. Use it to get path for the log file.
+    if (GetLogFilePath(msg, sizeof(msg)))
     {
         FILE *fp;
-        fopen_s(&fp, log_filename, "a");
+        fopen_s(&fp, msg, "a");
         wcscat(wmsg, L"\n");
         if (fp)
         {
@@ -349,6 +368,47 @@ void CAboutDlg::DoDataExchange(CDataExchange* pDX)
 BEGIN_MESSAGE_MAP(CAboutDlg, CDialogEx)
 END_MESSAGE_MAP()
 
+// Fills buffer by the full path to the file in the subfolder Infineon\\MeshClient of the local appdata folder.
+// It creates a subfolder Infineon\\MeshClient in the local appdata folder if it doesn't exist
+// Returns 1 on success. Returns 0 on error.
+extern "C" int get_file_path_in_appdata_folder(const char* file, char* buffer, unsigned long bufferLen)
+{
+    int res = 1;
+    PWSTR path = NULL;
+    if (S_OK != SHGetKnownFolderPath(FOLDERID_LocalAppData, 0, NULL, &path))
+        res = 0;
+    else if (0 == WideCharToMultiByte(CP_UTF8, 0, path, -1, buffer, bufferLen, NULL, FALSE))
+        res = 0;
+    else
+    {
+        strcat_s(buffer, bufferLen, "\\Infineon\\MeshClient\\");
+        int iRes = SHCreateDirectoryExA(NULL, buffer, NULL);
+        if (iRes != ERROR_SUCCESS && iRes != ERROR_ALREADY_EXISTS && iRes != ERROR_FILE_EXISTS)
+            res = 0;
+        else if (file != NULL && file[0] != 0)
+            strcat_s(buffer, bufferLen, file);
+    }
+    // The calling process is responsible for freeing this resource (path) whether SHGetKnownFolderPath succeeds or not
+    // If the parameter is NULL, the function CoTaskMemFree has no effect.
+    CoTaskMemFree(path);
+    return res;
+}
+
+// Writes content of the DeviceConfig into the file NetParameters.bin in the subfolder Infineon\\MeshClient of the local appdata folder.
+void WriteDeviceConfig()
+{
+    char path[MAX_PATH];
+    if (get_file_path_in_appdata_folder("NetParameters.bin", path, sizeof(path)))
+    {
+        FILE* fp = fopen(path, "wb");
+        if (fp)
+        {
+            fwrite(&DeviceConfig, 1, sizeof(DeviceConfig), fp);
+            fclose(fp);
+        }
+    }
+}
+
 // CMeshClientDlg dialog
 CMeshClientDlg::CMeshClientDlg(CWnd* pParent /*=NULL*/)
     : CDialogEx(CMeshClientDlg::IDD, pParent)
@@ -361,11 +421,15 @@ CMeshClientDlg::CMeshClientDlg(CWnd* pParent /*=NULL*/)
     m_btInterface = NULL;
     m_hCfgEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
 
-    FILE *fp = fopen("NetParameters.bin", "rb");
-    if (fp)
+    char path[MAX_PATH];
+    if (get_file_path_in_appdata_folder("NetParameters.bin", path, sizeof(path)))
     {
-        fread(&DeviceConfig, 1, sizeof(DeviceConfig), fp);
-        fclose(fp);
+        FILE* fp = fopen(path, "rb");
+        if (fp)
+        {
+            fread(&DeviceConfig, 1, sizeof(DeviceConfig), fp);
+            fclose(fp);
+        }
     }
     m_bConnected = FALSE;
     m_pPatch = NULL;
@@ -1075,12 +1139,7 @@ void CMeshClientDlg::OnBnClickedProvision()
     DeviceConfig.publish_retransmit_count = GetDlgItemInt(IDC_MODEL_PUB_RETRANSMIT_COUNT);
     DeviceConfig.publish_retransmit_interval = GetDlgItemInt(IDC_MODEL_PUB_RETRANSMIT_INTERVAL);
 
-    FILE *fp = fopen("NetParameters.bin", "wb");
-    if (fp)
-    {
-        fwrite(&DeviceConfig, 1, sizeof(DeviceConfig), fp);
-        fclose(fp);
-    }
+    WriteDeviceConfig();
 
     EnterCriticalSection(&cs);
     mesh_client_set_device_config(NULL, DeviceConfig.is_gatt_proxy, DeviceConfig.is_friend, DeviceConfig.is_relay, DeviceConfig.send_net_beacon, DeviceConfig.relay_xmit_count, DeviceConfig.relay_xmit_interval, DeviceConfig.default_ttl, DeviceConfig.net_xmit_count, DeviceConfig.net_xmit_interval);
@@ -1803,12 +1862,7 @@ void CMeshClientDlg::OnBnClickedReconfigure()
     DeviceConfig.net_xmit_count = (BYTE)GetDlgItemInt(IDC_NETWORK_TRANSMIT_COUNT);
     DeviceConfig.net_xmit_interval = (USHORT)GetDlgItemInt(IDC_NETWORK_TRANSMIT_INTERVAL);
 
-    FILE *fp = fopen("NetParameters.bin", "wb");
-    if (fp)
-    {
-        fwrite(&DeviceConfig, 1, sizeof(DeviceConfig), fp);
-        fclose(fp);
-    }
+    WriteDeviceConfig();
 
     EnterCriticalSection(&cs);
     mesh_client_set_device_config(old_name, DeviceConfig.is_gatt_proxy, DeviceConfig.is_friend, DeviceConfig.is_relay, DeviceConfig.send_net_beacon, DeviceConfig.relay_xmit_count, DeviceConfig.relay_xmit_interval, DeviceConfig.default_ttl, DeviceConfig.net_xmit_count, DeviceConfig.net_xmit_interval);
@@ -1851,12 +1905,7 @@ void CMeshClientDlg::OnBnClickedMoveToGroup()
     }
 
     // We might need to use default pub params
-    FILE* fp = fopen("NetParameters.bin", "wb");
-    if (fp)
-    {
-        fwrite(&DeviceConfig, 1, sizeof(DeviceConfig), fp);
-        fclose(fp);
-    }
+    WriteDeviceConfig();
     mesh_client_set_publication_config(DeviceConfig.publish_credential_flag, DeviceConfig.publish_retransmit_count, DeviceConfig.publish_retransmit_interval, DeviceConfig.publish_ttl);
 
     EnterCriticalSection(&cs);
@@ -3161,10 +3210,10 @@ void CMeshClientDlg::OnBnClickedNetworkImport()
         {
             MultiByteToWideChar(CP_UTF8, 0, p, strlen(p) + 1, szNetwork, sizeof(szNetwork) / sizeof(WCHAR));
             ((CComboBox *)GetDlgItem(IDC_NETWORK))->AddString(szNetwork);
-            p += strlen(p) + 1;
-            i++;
             if (strcmp(p, mesh_name) == 0)
                 sel = i;
+            p += strlen(p) + 1;
+            i++;
         }
         if (sel >= 0)
         {
@@ -3191,12 +3240,28 @@ void CMeshClientDlg::OnBnClickedNetworkExport()
         return;
 
     char *json_string = mesh_client_network_export(mesh_name);
+    FILE *fJsonFile;
+    CString fileName = dlgFile.GetPathName();
     if (json_string != NULL)
     {
-        FILE *fJsonFile;
-        if (_wfopen_s(&fJsonFile, dlgFile.GetPathName(), L"w"))
+        if (_wfopen_s(&fJsonFile, fileName, L"w"))
         {
             MessageBox(L"Failed to open the json file", L"Error", MB_OK);
+            return;
+        }
+        fwrite(json_string, 1, strlen(json_string), fJsonFile);
+        fclose(fJsonFile);
+
+        free(json_string);
+    }
+    strcat(mesh_name, ".ifx");
+    json_string = mesh_client_network_export(mesh_name);
+    if (json_string != NULL)
+    {
+        fileName.Insert(fileName.GetLength() - 4, L"ifx.");
+        if (_wfopen_s(&fJsonFile, fileName, L"w"))
+        {
+            MessageBox(L"Failed to open the ifx.json file", L"Error", MB_OK);
             return;
         }
         fwrite(json_string, 1, strlen(json_string), fJsonFile);
@@ -3421,12 +3486,7 @@ extern "C" int mesh_client_set_publication_config_UI_Ex(const char *device_name,
     DeviceConfig.publish_retransmit_count = publish_retransmit_count;
     DeviceConfig.publish_retransmit_interval = publish_retransmit_interval;
 
-    FILE *fp = fopen("NetParameters.bin", "wb");
-    if (fp)
-    {
-        fwrite(&DeviceConfig, 1, sizeof(DeviceConfig), fp);
-        fclose(fp);
-    }
+    WriteDeviceConfig();
 
     return 0;
 }

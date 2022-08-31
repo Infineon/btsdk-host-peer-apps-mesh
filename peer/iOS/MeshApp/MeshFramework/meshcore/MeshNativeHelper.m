@@ -252,6 +252,40 @@ void meshClientVendorSpecificDataCb(const char *device_name, uint16_t company_id
                                                              data:[NSData dataWithBytes:p_data length:data_len]];
 }
 
+void meshClientLightLcModeStatusCb(const char *device_name, int mode)
+{
+    if (device_name == NULL || *device_name == '\0') {
+        WICED_BT_TRACE("[MeshNativeHelper meshClientLightLcModeStatusCb] error: invalid parameters, device_name=0x%p\n", device_name);
+        return;
+    }
+    [nativeCallbackDelegate onLightLcModeStatusCb:[NSString stringWithUTF8String:(const char *)device_name]
+                                             mode:mode];
+}
+
+void meshClientLightLcOccupancyModeStatusCb(const char *device_name, int mode)
+{
+    if (device_name == NULL || *device_name == '\0') {
+        WICED_BT_TRACE("[MeshNativeHelper meshClientLightLcOccupancyModeStatusCb] error: invalid parameters, device_name=0x%p\n", device_name);
+        return;
+    }
+    [nativeCallbackDelegate onLightLcOccupancyModeStatusCb:[NSString stringWithUTF8String:(const char *)device_name]
+                                                      mode:mode];
+}
+
+
+void meshClientLightLcPropertyStatusCb(const char *device_name, int property_id, int value)
+{
+    if (device_name == NULL || *device_name == '\0') {
+        WICED_BT_TRACE("[MeshNativeHelper meshClientLightLcPropertyStatusCb] error: invalid parameters, device_name=0x%p\n", device_name);
+        return;
+    }
+    WICED_BT_TRACE("[MeshNativeHelper meshClientLightLcPropertyStatusCb] device_name=%s, property_id=%d, value=%d\n", device_name, property_id, value);
+    [nativeCallbackDelegate onLightLcPropertyStatusCb:[NSString stringWithUTF8String:(const char *)device_name]
+                                           propertyId:property_id
+                                                value:value];
+}
+
+
 mesh_client_init_t mesh_client_init_callback = {
     .unprovisioned_device_callback = meshClientUnprovisionedDeviceFoundCb,
     .provision_status_callback = meshClientProvisionCompleted,
@@ -265,6 +299,10 @@ mesh_client_init_t mesh_client_init_callback = {
     .ctl_changed_callback = meshClientCtlState,
     .sensor_changed_callback = meshClientSensorStatusChangedCb,
     .vendor_specific_data_callback = meshClientVendorSpecificDataCb,
+    .xyl_changed_callback = NULL,
+    .lc_mode_status_callback = meshClientLightLcModeStatusCb,
+    .lc_occupancy_mode_status_callback = meshClientLightLcOccupancyModeStatusCb,
+    .lc_property_status_callback = meshClientLightLcPropertyStatusCb,
 };
 
 // timer based iOS platform.
@@ -2021,22 +2059,14 @@ void mesh_client_dfu_status_cb(uint8_t state, uint8_t *p_data, uint32_t data_len
     return (ret == 0) ? FALSE : TRUE;
 }
 
-void meshClientLightLcModeStatusCb(const char *device_name, int mode)
-{
-    if (device_name == NULL || *device_name == '\0') {
-        WICED_BT_TRACE("[MeshNativeHelper meshClientLightLcModeStatusCb] error: invalid parameters, device_name=0x%p\n", device_name);
-        return;
-    }
-    [nativeCallbackDelegate onLightLcModeStatusCb:[NSString stringWithUTF8String:(const char *)device_name]
-                                             mode:mode];
-}
+
 
 +(int) meshClientGetLightLcMode:(NSString *)componentName
 {
     WICED_BT_TRACE("[MeshNativeHelper meshClientGetLightLcMode] componentName:%s\n", componentName.UTF8String);
     int ret;
     EnterCriticalSection();
-    ret = mesh_client_light_lc_mode_get(componentName.UTF8String, meshClientLightLcModeStatusCb);
+    ret = mesh_client_light_lc_mode_get(componentName.UTF8String);
     LeaveCriticalSection();
     return ret;
 }
@@ -2046,27 +2076,18 @@ void meshClientLightLcModeStatusCb(const char *device_name, int mode)
     WICED_BT_TRACE("[MeshNativeHelper meshClientGetLightLcMode] componentName:%s, mode:%d\n", componentName.UTF8String, mode);
     int ret;
     EnterCriticalSection();
-    ret = mesh_client_light_lc_mode_set(componentName.UTF8String, mode, meshClientLightLcModeStatusCb);
+    ret = mesh_client_light_lc_mode_set(componentName.UTF8String, mode);
     LeaveCriticalSection();
     return ret;
 }
 
-void meshClientLightLcOccupancyModeStatusCb(const char *device_name, int mode)
-{
-    if (device_name == NULL || *device_name == '\0') {
-        WICED_BT_TRACE("[MeshNativeHelper meshClientLightLcOccupancyModeStatusCb] error: invalid parameters, device_name=0x%p\n", device_name);
-        return;
-    }
-    [nativeCallbackDelegate onLightLcOccupancyModeStatusCb:[NSString stringWithUTF8String:(const char *)device_name]
-                                                      mode:mode];
-}
 
 +(int) meshClientGetLightLcOccupancyMode:(NSString *)componentName
 {
     WICED_BT_TRACE("[MeshNativeHelper meshClientGetLightLcOccupancyMode] componentName:%s\n", componentName.UTF8String);
     int ret;
     EnterCriticalSection();
-    ret = mesh_client_light_lc_occupancy_mode_get(componentName.UTF8String, meshClientLightLcOccupancyModeStatusCb);
+    ret = mesh_client_light_lc_occupancy_mode_get(componentName.UTF8String);
     LeaveCriticalSection();
     return ret;
 }
@@ -2076,22 +2097,9 @@ void meshClientLightLcOccupancyModeStatusCb(const char *device_name, int mode)
     WICED_BT_TRACE("[MeshNativeHelper meshClientSetLightLcOccupancyMode] componentName:%s, mode:%d\n", componentName.UTF8String, mode);
     int ret;
     EnterCriticalSection();
-    ret = mesh_client_light_lc_occupancy_mode_set(componentName.UTF8String, mode, meshClientLightLcOccupancyModeStatusCb);
+    ret = mesh_client_light_lc_occupancy_mode_set(componentName.UTF8String, mode);
     LeaveCriticalSection();
     return ret;
-}
-
-
-void meshClientLightLcPropertyStatusCb(const char *device_name, int property_id, int value)
-{
-    if (device_name == NULL || *device_name == '\0') {
-        WICED_BT_TRACE("[MeshNativeHelper meshClientLightLcPropertyStatusCb] error: invalid parameters, device_name=0x%p\n", device_name);
-        return;
-    }
-    WICED_BT_TRACE("[MeshNativeHelper meshClientLightLcPropertyStatusCb] device_name=%s, property_id=%d, value=%d\n", device_name, property_id, value);
-    [nativeCallbackDelegate onLightLcPropertyStatusCb:[NSString stringWithUTF8String:(const char *)device_name]
-                                           propertyId:property_id
-                                                value:value];
 }
 
 +(int) meshClientGetLightLcProperty:(NSString *)componentName propertyId:(int)propertyId
@@ -2099,7 +2107,7 @@ void meshClientLightLcPropertyStatusCb(const char *device_name, int property_id,
     WICED_BT_TRACE("[MeshNativeHelper meshClientGetLightLcProperty] componentName:%s, propertyId:0x%X\n", componentName.UTF8String, propertyId);
     int ret;
     EnterCriticalSection();
-    ret = mesh_client_light_lc_property_get(componentName.UTF8String, propertyId, meshClientLightLcPropertyStatusCb);
+    ret = mesh_client_light_lc_property_get(componentName.UTF8String, propertyId);
     LeaveCriticalSection();
     return ret;
 }
@@ -2109,7 +2117,7 @@ void meshClientLightLcPropertyStatusCb(const char *device_name, int property_id,
     WICED_BT_TRACE("[MeshNativeHelper meshClientSetLightLcProperty] componentName:%s, propertyId:0x%X, value:0x%X\n", componentName.UTF8String, propertyId, value);
     int ret;
     EnterCriticalSection();
-    ret = mesh_client_light_lc_property_set(componentName.UTF8String, propertyId, value, meshClientLightLcPropertyStatusCb);
+    ret = mesh_client_light_lc_property_set(componentName.UTF8String, propertyId, value);
     LeaveCriticalSection();
     return ret;
 }

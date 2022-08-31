@@ -103,6 +103,9 @@ BEGIN_MESSAGE_MAP(ConnectedMesh, CPropertyPage)
     ON_BN_CLICKED(IDC_CONN_MESH_GET_DATA_STATS, &ConnectedMesh::OnBnClickedConnMeshGetDataStats)
     ON_BN_CLICKED(IDC_CONN_MESH_IDENTIFY, &ConnectedMesh::OnBnClickedConnMeshIdentify)
     ON_BN_CLICKED (IDC_CONN_MESH_GET_RSSI, &ConnectedMesh::OnBnClickedConnMeshGetRssi)
+    ON_BN_CLICKED (IDC_CONN_MESH_UPDATE_BROWSE, &ConnectedMesh::OnBnClickedConnMeshUpdateBrowse)
+    ON_BN_CLICKED (IDC_CONN_MESH_UPDATE_STARTSTOP, &ConnectedMesh::OnBnClickedConnMeshUpdateStartStop)
+    ON_BN_CLICKED (IDC_CONN_MESH_GET_NODES_INFO, &ConnectedMesh::OnBnClickedConnMeshGetNodesInfo)
 END_MESSAGE_MAP()
 
 BOOL ConnectedMesh::OnSetActive()
@@ -190,6 +193,7 @@ BOOL ConnectedMesh::OnSetActive()
     {
         bAuto = FALSE;
     }
+    m_nUpdateState = UPDATE_STATE_IDLE;
     return TRUE; // return TRUE unless you set the focus to a control
 }
 
@@ -756,6 +760,103 @@ void ConnectedMesh::ProcessData(int port_num, DWORD opcode, LPBYTE p_data, DWORD
         Log (buff);
         break;
 
+    case HCI_CONTROL_CONN_MESH_EVENT_APP_INFO:
+        STREAM_TO_UINT8 (num_nodes, p);
+        STREAM_TO_UINT8 (node, p);
+        len -= 2;
+
+        // We send get app info in two cases: 1. starting update, 2. user clicked "Get Nodes Info" button
+        if (m_nUpdateState == UPDATE_STATE_STARTING)
+        {
+            // starting update, check firmware ID and save node to be updated
+            if ((memcmp(p, m_FirmwareId.id, 6) == 0) && (p[6] <= m_FirmwareId.id[6]))
+                m_UpdateNodeList[m_nUpdateNodes++].addr = node;
+
+            if (num_nodes == ++m_nTotalNodes)
+            {
+                uint8_t buffer[100];
+
+                // all nodes returned app info, start update
+                p = buffer;
+                UINT32_TO_STREAM(p, m_nFirmwareSize);
+                UINT8_TO_STREAM(p, m_FirmwareId.length);
+                memcpy(p, m_FirmwareId.id, m_FirmwareId.length);
+                p += m_FirmwareId.length;
+                for (i = 0; i < m_nUpdateNodes; i++)
+                    UINT8_TO_STREAM(p, m_UpdateNodeList[i].addr);
+                m_ComHelper->SendWicedCommand(HCI_CONTROL_CONN_MESH_COMMAND_OTA_START, buffer, p - buffer);
+            }
+        }
+        else    // user clicked "Get Nodes Info" button, display node app info
+        {
+            UINT16 cid, pid, vid;
+            UINT8 major, minor;
+
+            BE_STREAM_TO_UINT16(cid, p);
+            BE_STREAM_TO_UINT16(pid, p);
+            BE_STREAM_TO_UINT16(vid, p);
+            BE_STREAM_TO_UINT8(major, p);
+            BE_STREAM_TO_UINT8(minor, p);
+
+            Log(L"Node: 0x%02x Company ID: 0x%04x Product ID: 0x%04x HW Ver: %d SW Ver: %d.%d", node, cid, pid, vid, major, minor);
+        }
+        break;
+
+    case HCI_CONTROL_CONN_MESH_EVENT_OTA_STATUS:
+        UINT8 status;
+        STREAM_TO_UINT8 (status, p);
+        len--;
+
+        if (status == 0)
+        {
+            switch (m_nUpdateState)
+            {
+            case UPDATE_STATE_STARTING:
+                STREAM_TO_UINT8 (m_nUpdateMtu, p);
+                yy = wsprintf(buff, L"Firmware update started on nodes:");
+                for (xx = 0; xx < m_nUpdateNodes; xx++)
+                    yy += wsprintf (&buff[yy], L" 0x%02x", m_UpdateNodeList[xx].addr);
+                Log (buff);
+
+                SetUpdateState(UPDATE_STATE_UPDATING);
+                m_pDataSendPtr = m_pFirmwareImage;
+                SendFirmwareData();
+                break;
+            case UPDATE_STATE_UPDATING:
+                if (SendFirmwareData() == 0)
+                {
+                    UINT8 reset = (UINT8)m_nFactoryReset;
+                    SetUpdateState(UPDATE_STATE_APPLYING);
+                    m_ComHelper->SendWicedCommand(HCI_CONTROL_CONN_MESH_COMMAND_OTA_APPLY, &reset, 1);
+                }
+                break;
+            case UPDATE_STATE_APPLYING:
+                Log(L"Firmware Update finished successfully.");
+                SetUpdateState(UPDATE_STATE_IDLE);
+                break;
+            }
+        }
+        else
+        {
+            switch (m_nUpdateState)
+            {
+            case UPDATE_STATE_STARTING:
+                yy = wsprintf(buff, L"Firmware update rejected by nodes:");
+                break;
+            case UPDATE_STATE_UPDATING:
+                yy = wsprintf(buff, L"Firmware data transfer failed with nodes:");
+                break;
+            case UPDATE_STATE_APPLYING:
+                yy = wsprintf(buff, L"Firmware verification failed with nodes:");
+                break;
+            }
+            for (xx = 0; xx < (int)len; xx++)
+                yy += wsprintf (&buff[yy], L" 0x%02x", p[xx]);
+            Log (buff);
+            SetUpdateState(UPDATE_STATE_IDLE);
+        }
+        break;
+
     case HCI_CONTROL_EVENT_WICED_TRACE:
         if (len >= 2)
         {
@@ -866,4 +967,220 @@ void ConnectedMesh::OnBnClickedConnMeshIdentify()
 void ConnectedMesh::OnBnClickedConnMeshGetRssi ()
 {
     m_ComHelper->SendWicedCommand (HCI_CONTROL_CONN_MESH_COMMAND_GET_RSSI, NULL, 0);
+}
+
+void ConnectedMesh::OnBnClickedConnMeshUpdateBrowse()
+{
+    static TCHAR BASED_CODE szFilter[] = _T("Manifest Files (*.json)|*.JSON|");
+
+    CFileDialog dlgFile(TRUE, NULL, NULL, OFN_OVERWRITEPROMPT | OFN_NOCHANGEDIR, szFilter);
+    if (dlgFile.DoModal() == IDOK)
+    {
+        SetDlgItemText(IDC_CONN_MESH_UPDATE_FILENAME, dlgFile.GetPathName());
+    }
+}
+
+void ConnectedMesh::OnBnClickedConnMeshUpdateStartStop()
+{
+    if (m_nUpdateState == UPDATE_STATE_IDLE)
+    {
+        if (OnUpdateStart())
+        {
+            SetUpdateState(UPDATE_STATE_STARTING);
+        }
+    }
+    else
+    {
+        OnUpdateStop();
+        SetUpdateState(UPDATE_STATE_IDLE);
+    }
+}
+
+void ConnectedMesh::SetUpdateState(UINT8 state)
+{
+    m_nUpdateState = state;
+
+    if (m_nUpdateState == UPDATE_STATE_STARTING)
+        SetDlgItemText(IDC_CONN_MESH_UPDATE_STARTSTOP, L"Update Stop");
+    else if (m_nUpdateState == UPDATE_STATE_IDLE)
+    {
+        delete[] m_pFirmwareImage;
+        m_pFirmwareImage = NULL;
+        SetDlgItemText(IDC_CONN_MESH_UPDATE_STARTSTOP, L"Update Start");
+    }
+}
+
+BOOL ConnectedMesh::OnUpdateStart()
+{
+    CString sFilePath;
+
+    // Check file name
+    GetDlgItemText(IDC_CONN_MESH_UPDATE_FILENAME, sFilePath);
+    if (sFilePath.IsEmpty())
+    {
+        OnBnClickedConnMeshUpdateBrowse();
+        GetDlgItemText(IDC_CONN_MESH_UPDATE_FILENAME, sFilePath);
+        if (sFilePath.IsEmpty())
+            return FALSE;
+    }
+
+    // Check file extension
+    CString sFileExt = sFilePath.Right(5);
+    if (sFileExt.CompareNoCase(CString(L".json")) != 0)
+    {
+        MessageBox(L"Please choose correct manifest file (.json)", L"Error", MB_OK);
+        return FALSE;
+    }
+
+    // Read manifest file
+    if (!ReadFirmwareManifestFile(sFilePath))
+    {
+        MessageBox(L"Failed to read from manifest file", L"Error", MB_OK);
+        return FALSE;
+    }
+
+    // Read firmware file
+    FILE *fFw;
+    if (_wfopen_s(&fFw, m_sFirmwareFilePath, L"rb"))
+    {
+        MessageBox(L"Failed to open the FW image file", L"Error", MB_OK);
+        return FALSE;
+    }
+    fseek(fFw, 0, SEEK_END);
+    m_nFirmwareSize = ftell(fFw);
+    rewind(fFw);
+    m_pFirmwareImage = (LPBYTE)new BYTE[m_nFirmwareSize];
+    m_nFirmwareSize = (DWORD)fread(m_pFirmwareImage, 1, m_nFirmwareSize, fFw);
+    fclose(fFw);
+
+    CProgressCtrl *p_progress = (CProgressCtrl*)GetDlgItem(IDC_CONN_MESH_UPDATE_PROGRESS);
+    p_progress->SetRange32(0, 100);
+    p_progress->SetPos(0);
+
+    // Get nodes info to create an update node list
+    OnBnClickedConnMeshGetNodesInfo();
+    return TRUE;
+}
+
+void ConnectedMesh::OnUpdateStop()
+{
+    m_ComHelper->SendWicedCommand(HCI_CONTROL_CONN_MESH_COMMAND_OTA_CANCEL, NULL, 0);
+}
+
+void ConnectedMesh::OnBnClickedConnMeshGetNodesInfo()
+{
+    m_nTotalNodes = m_nUpdateNodes = 0;
+    m_ComHelper->SendWicedCommand(HCI_CONTROL_CONN_MESH_COMMAND_APP_INFO_GET, NULL, 0);
+}
+
+int ConnectedMesh::SendFirmwareData()
+{
+    int nSendSize = m_nFirmwareSize - (m_pDataSendPtr - m_pFirmwareImage);
+    if (nSendSize > m_nUpdateMtu)
+        nSendSize = m_nUpdateMtu;
+    if (nSendSize > 0)
+    {
+        m_ComHelper->SendWicedCommand(HCI_CONTROL_CONN_MESH_COMMAND_OTA_DATA, m_pDataSendPtr, nSendSize);
+        m_pDataSendPtr += nSendSize;
+
+        CProgressCtrl *p_progress = (CProgressCtrl*)GetDlgItem(IDC_CONN_MESH_UPDATE_PROGRESS);
+        p_progress->SetPos((m_pDataSendPtr - m_pFirmwareImage) * 100 / m_nFirmwareSize);
+    }
+    return nSendSize;
+}
+
+#define MAX_TAG_NAME                                32
+#define MAX_FILE_NAME                               256
+
+extern "C"
+{
+    char skip_space(FILE* fp);
+    int mesh_json_read_tag_name(FILE* fp, char* tagname, int len);
+    int mesh_json_read_string(FILE* fp, char prefix, char* buffer, int len);
+}
+
+int mesh_json_read_next_level_tag(FILE* fp, char* tagname, int len)
+{
+    int tag_len = 0;
+
+    if (skip_space(fp) != '{')
+        return 0;
+    if (skip_space(fp) != '\"')
+        return 0;
+    tag_len = mesh_json_read_tag_name(fp, tagname, len);
+    if (skip_space(fp) != ':')
+        return 0;
+    return tag_len;
+}
+
+BOOL ConnectedMesh::ReadFirmwareManifestFile(CString sFilePath)
+{
+    char tagname[MAX_TAG_NAME];
+    char str[MAX_FILE_NAME];
+    char c1;
+    FILE* fp;
+    CString sPath;
+
+    if (_wfopen_s(&fp, sFilePath, L"r"))
+        return FALSE;
+
+    sPath = sFilePath.Left(sFilePath.ReverseFind('\\') + 1);
+    m_nFactoryReset = 0;
+
+    if (mesh_json_read_next_level_tag(fp, tagname, sizeof(tagname)) == 0)
+        goto return_false;
+    if (strcmp(tagname, "manifest") != 0)
+        goto return_false;
+    if (mesh_json_read_next_level_tag(fp, tagname, sizeof(tagname)) == 0)
+        goto return_false;
+    if (strcmp(tagname, "firmware") != 0)
+        goto return_false;
+    if (skip_space(fp) != '{')
+        goto return_false;
+    if (skip_space(fp) != '\"')
+        goto return_false;
+    while (1)
+    {
+        if (mesh_json_read_tag_name(fp, tagname, MAX_TAG_NAME) == 0)
+            break;
+        if (skip_space(fp) != ':')
+            goto return_false;
+        c1 = skip_space(fp);
+        if (!mesh_json_read_string(fp, c1, str, MAX_FILE_NAME))
+            goto return_false;
+        if (strcmp(tagname, "firmware_file") == 0)
+        {
+            m_sFirmwareFilePath = sPath;
+            m_sFirmwareFilePath.AppendFormat(L"%S", str);
+        }
+        else if (strcmp(tagname, "firmware_id") == 0)
+        {
+            if (strlen(str) > MAX_FIRMWARE_ID_LEN * 2)
+                goto return_false;
+            char* p = str;
+            int i = 0;
+            while ((size_t)(p - str) < strlen(str))
+            {
+                unsigned int value;
+                sscanf(p, "%02x", &value);
+                m_FirmwareId.id[i++] = (uint8_t)value;
+                p += 2;
+            }
+            m_FirmwareId.length = i;
+        }
+        else if (strcmp(tagname, "factory_reset") == 0)
+            sscanf(str, "%d", &m_nFactoryReset);
+
+        if (skip_space(fp) != ',')
+            break;
+        if (skip_space(fp) != '\"')
+            break;
+    }
+
+    fclose(fp);
+    return TRUE;
+
+return_false:
+    fclose(fp);
+    return FALSE;
 }

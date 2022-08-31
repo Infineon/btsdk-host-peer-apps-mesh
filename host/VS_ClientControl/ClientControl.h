@@ -44,6 +44,10 @@
 
 #include "resource.h"        // main symbols
 
+#if defined(MESH_AUTOMATION_ENABLED) && (MESH_AUTOMATION_ENABLED == TRUE)
+#include "mesh_client_script.h"
+#endif
+
 
 // CClientControlApp:
 // See ClientControl.cpp for the implementation of this class

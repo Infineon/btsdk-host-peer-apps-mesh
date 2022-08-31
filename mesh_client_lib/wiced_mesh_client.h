@@ -482,6 +482,11 @@ typedef void(*mesh_client_hsl_status_t)(const char *device_name, uint16_t lightn
 typedef void(*mesh_client_ctl_status_t)(const char *device_name, uint16_t present_lightness, uint16_t present_temperature, uint16_t target_lightness, uint16_t target_temperature, uint32_t remaining_time);
 
 /*
+ * XYL light state callback is executed as a result of the Get/Set operation or when state of the light is changed locally
+ */
+typedef void(*mesh_client_xyl_status_t)(const char* device_name, uint16_t present_lightness, uint16_t x, uint16_t y, uint32_t remaining_time);
+
+/*
  * Sensor state callback is executed as a result of the Get/Set operation or when state of the sensor is changed locally
  */
 typedef void(*mesh_client_sensor_status_t)(const char *device_name, int property_id, uint8_t length, uint8_t *value);
@@ -510,6 +515,16 @@ int mesh_client_ctl_get(const char *device_name);
  * Set state of CTL light
  */
 int mesh_client_ctl_set(const char *device_name, uint16_t lightness, uint16_t temperature, uint16_t delta_uv, wiced_bool_t reliable, uint32_t transition_time, uint16_t delay);
+
+/*
+ * Get current state of XYL light
+ */
+int mesh_client_xyl_get(const char* device_name);
+
+/*
+ * Set state of xyL light
+ */
+int mesh_client_xyl_set(const char* device_name, uint16_t lightness, uint16_t x, uint16_t y, wiced_bool_t reliable, uint32_t transition_time, uint16_t delay);
 
 /*
  * Set Mesh core ADV Tx Power
@@ -590,12 +605,12 @@ typedef void(*mesh_client_light_lc_mode_status_t)(const char* device_name, int m
 /*
  * Gets the value Light LC Mode (manual/automatic)
  */
-int mesh_client_light_lc_mode_get(const char *device_name, mesh_client_light_lc_mode_status_t p_lc_mode_status);
+int mesh_client_light_lc_mode_get(const char *device_name);
 
 /*
  * Sets the Light LC Mode.  If mode is set to true, the device is operating in the automated mode.
  */
-int mesh_client_light_lc_mode_set(const char* device_name, int mode, mesh_client_light_lc_mode_status_t p_lc_mode_status);
+int mesh_client_light_lc_mode_set(const char* device_name, int mode);
 
 /*
  * LC Occupancy Mode status callback is executed as a result of the Get/Set operation
@@ -605,12 +620,12 @@ typedef void(*mesh_client_light_lc_occupancy_mode_status_t)(const char* device_n
 /*
  * Gets the value of the property with specified property id
  */
-int mesh_client_light_lc_occupancy_mode_get(const char* device_name, mesh_client_light_lc_occupancy_mode_status_t p_lc_mode_status);
+int mesh_client_light_lc_occupancy_mode_get(const char* device_name);
 
 /*
  * Sets the Light LC Occupancy Mode.  If mode is set to true, the device is operating in the automated mode.
  */
-int mesh_client_light_lc_occupancy_mode_set(const char* device_name, int mode, mesh_client_light_lc_occupancy_mode_status_t p_lc_mode_status);
+int mesh_client_light_lc_occupancy_mode_set(const char* device_name, int mode);
 
 /*
  * Property status callback is executed as a result of the Get/Set operation
@@ -621,13 +636,13 @@ typedef void(*mesh_client_light_lc_property_status_t)(const char* device_name, i
  * Property Get.
  * If operation is successful, the callback will be executed when reply from the peer is received.
  */
-int mesh_client_light_lc_property_get(const char* device_name, int property_id, mesh_client_light_lc_property_status_t p_property_status_callback);
+int mesh_client_light_lc_property_get(const char* device_name, int property_id);
 
 /*
  * Property Set
  * If operation is successful, the callback will be executed when reply from the peer is received.
  */
-int mesh_client_light_lc_property_set(const char* device_name, int property_id, int value, mesh_client_light_lc_property_status_t p_property_status_callback);
+int mesh_client_light_lc_property_set(const char* device_name, int property_id, int value);
 
 /*
  * Set Light Controller On/Off state of a device
@@ -659,6 +674,11 @@ typedef struct
     mesh_client_ctl_status_t ctl_changed_callback;
     mesh_client_sensor_status_t sensor_changed_callback;
     mesh_client_vendor_specific_data_t vendor_specific_data_callback;
+    mesh_client_xyl_status_t xyl_changed_callback;
+    mesh_client_light_lc_mode_status_t lc_mode_status_callback;
+    mesh_client_light_lc_occupancy_mode_status_t lc_occupancy_mode_status_callback;
+    mesh_client_light_lc_property_status_t lc_property_status_callback;
+
 } mesh_client_init_t;
 
 void mesh_client_init(mesh_client_init_t *p_callbacks);

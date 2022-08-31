@@ -81,7 +81,8 @@ extern void ods(char * fmt_str, ...);
 //#endif
 
 #define USE_SETUP_APPKEY
-#define USE_VENDOR_APPKEY
+// The separate Application Key for Vendor models can be enabled only if ALL devices in the network support at least 3 app keys
+//#define USE_VENDOR_APPKEY
 #define wiced_bt_get_buffer malloc
 #define wiced_bt_free_buffer free
 
@@ -221,7 +222,7 @@ model_element_t models_configured_for_pub[] =
     { 0, 1, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_GENERIC_BATTERY_CLNT },
     { 0, 1, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_GENERIC_LOCATION_CLNT },
     { 0, 0, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_GENERIC_PROPERTY_CLNT },
-    { 0, 0, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_TIME_CLNT },
+    { 0, 1, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_TIME_CLNT },
     { 0, 0, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_SCENE_CLNT },
     { 0, 0, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_SCHEDULER_CLNT },
     { 0, 1, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_LIGHT_LIGHTNESS_CLNT },
@@ -418,6 +419,7 @@ typedef struct
     mesh_client_lightness_status_t p_lightness_status;
     mesh_client_hsl_status_t p_hsl_status;
     mesh_client_ctl_status_t p_ctl_status;
+    mesh_client_xyl_status_t p_xyl_status;
     mesh_client_sensor_status_t p_sensor_status;
     mesh_client_light_lc_mode_status_t p_light_lc_mode_status;
     mesh_client_light_lc_occupancy_mode_status_t p_light_lc_occupancy_mode_status;
@@ -452,7 +454,6 @@ static void app_key_add(mesh_provision_cb_t* p_cb, uint16_t addr, wiced_bt_mesh_
 static void model_app_bind(mesh_provision_cb_t* p_cb, wiced_bool_t is_local, uint16_t addr, uint16_t company_id, uint16_t model_id, uint16_t app_key_idx);
 static pending_operation_t *configure_pending_operation_dequeue(mesh_provision_cb_t *p_cb);
 static pending_operation_t* configure_pending_operation_remove_from_queue(mesh_provision_cb_t* p_cb, pending_operation_t* p_op);
-static wiced_bool_t configure_event_in_pending_op(mesh_provision_cb_t *p_cb, wiced_bt_mesh_event_t *p_event);
 static void configure_execute_pending_operation(mesh_provision_cb_t *p_cb);
 static void provision_status_notify(mesh_provision_cb_t* p_cb, uint8_t status);
 static model_element_t* model_needs_default_pub(uint16_t company_id, uint16_t model_id);
@@ -552,6 +553,7 @@ static void mesh_process_level_status(wiced_bt_mesh_event_t *p_event, void *p_da
 static void mesh_process_lightness_status(wiced_bt_mesh_event_t *p_event, void *p_data);
 static void mesh_process_hsl_status(wiced_bt_mesh_event_t *p_event, void *p_data);
 static void mesh_process_ctl_status(wiced_bt_mesh_event_t *p_event, void *p_data);
+static void mesh_process_xyl_status(wiced_bt_mesh_event_t* p_event, void* p_data);
 
 static void mesh_process_sensor_descriptor_status(wiced_bt_mesh_event_t* p_event, void* p);
 static void mesh_process_sensor_setting_status(wiced_bt_mesh_event_t* p_event, void* p);
@@ -575,7 +577,9 @@ static wiced_bool_t model_needs_sub(uint16_t model_id, wiced_bt_mesh_db_model_id
 wiced_bt_mesh_event_t *mesh_create_control_event(wiced_bt_mesh_db_mesh_t *p_mesh_db, uint16_t company_id, uint16_t model_id, uint16_t dst, uint16_t app_key_idx);
 static void scan_timer_cb(TIMER_PARAM_TYPE arg);
 static void provision_timer_cb(TIMER_PARAM_TYPE arg);
+#ifdef PRIVATE_PROXY_SUPPORTED
 static void proxy_solicitation_timer_cb(TIMER_PARAM_TYPE arg);
+#endif
 static wiced_bool_t add_filter(mesh_provision_cb_t *p_cb, uint16_t addr);
 wiced_bool_t get_control_method(const char *method_name, uint16_t *company_id, uint16_t *model_id);
 wiced_bool_t get_target_method(const char *method_name, uint16_t *company_id, uint16_t *model_id);
@@ -723,7 +727,6 @@ static int parse_bin_ext(const struct dirent *dir)
 
 int mesh_client_network_delete(const char *provisioner_name, const char *provisioner_uuid, char *mesh_name)
 {
-    size_t len;
     // we might need to init mesh to get UUID to delete RPL file.
     if (p_mesh_db == NULL)
     {
@@ -750,6 +753,7 @@ int mesh_client_network_delete(const char *provisioner_name, const char *provisi
                 long hFile;
         #endif
         struct _finddata_t find_file;
+        size_t len;
 
         if ((hFile = _findfirst("*.json", &find_file)) != -1L)
         {
@@ -769,7 +773,7 @@ int mesh_client_network_delete(const char *provisioner_name, const char *provisi
         if (json_num < 2)
         {
             int ret;
-            char filename[50];
+            char filename[260];
             get_rpl_filename(filename);
             ret = remove(filename);
             if (ret != 0)
@@ -800,6 +804,8 @@ int mesh_client_network_delete(const char *provisioner_name, const char *provisi
         p_mesh_db = NULL;
     }
     return wiced_bt_mesh_db_network_delete(mesh_name) ? MESH_CLIENT_SUCCESS : MESH_CLIENT_ERR_NOT_FOUND;
+    UNUSED_VARIABLE(provisioner_name);
+    UNUSED_VARIABLE(provisioner_uuid);
 }
 
 int mesh_client_network_open(const char *provisioner_name, const char *provisioner_uuid, char *mesh_name, mesh_client_network_opened_t p_opened_callback)
@@ -826,6 +832,8 @@ int mesh_client_network_open(const char *provisioner_name, const char *provision
     provision_cb.proxy_conn_id     = 0;
 
     mesh_application_init();
+
+    clean_pending_op_queue(0);
 
     wiced_init_timer(&provision_cb.op_timer, provision_timer_cb, &provision_cb, WICED_MILLI_SECONDS_TIMER);
 #ifdef PRIVATE_PROXY_SUPPORTED
@@ -919,22 +927,36 @@ int mesh_client_network_open(const char *provisioner_name, const char *provision
     return configure_local_device(p_mesh_db->unicast_addr, 0, p_net_key->index, p_net_key->phase == WICED_BT_MESH_KEY_REFRESH_PHASE_NORMAL ? p_net_key->key : p_net_key->old_key);
 }
 
+#if defined(_WIN32)
+int get_file_path_in_appdata_folder(const char* file, char* buffer, unsigned long bufferLen);
+#endif
+
 char *mesh_client_network_import(const char *provisioner_name, const char *provisioner_uuid, char *json_string, char *ifx_json_string, mesh_client_network_opened_t p_opened_callback)
 {
     mesh_provision_cb_t *p_cb = &provision_cb;
     char *db_name = NULL;
+    char *p_filename = "temp.json";
+    char *p_ifxfilename = "temp.ifx.json";
     FILE *fp;
 
     if (p_cb->state != PROVISION_STATE_IDLE)
         return NULL;
 
-    fp = fopen("temp.json", "w");
+#if defined(_WIN32)
+    char path[260]; // MAX_PATH(260)
+    if (get_file_path_in_appdata_folder(p_filename, path, 260))
+        p_filename = path;
+    char ifxpath[260]; // MAX_PATH(260)
+    if (get_file_path_in_appdata_folder(p_ifxfilename, ifxpath, 260))
+        p_ifxfilename = ifxpath;
+#endif
+    fp = fopen(p_filename, "w");
     if (fp != NULL)
     {
         fwrite(json_string, 1, strlen(json_string), fp);
         fclose(fp);
 
-        if (ifx_json_string && strlen(ifx_json_string) > 0 && (fp = fopen("temp.ifx.json", "w")) != NULL)
+        if (ifx_json_string && strlen(ifx_json_string) > 0 && (fp = fopen(p_ifxfilename, "w")) != NULL)
         {
             fwrite(ifx_json_string, 1, strlen(ifx_json_string), fp);
             fclose(fp);
@@ -945,7 +967,7 @@ char *mesh_client_network_import(const char *provisioner_name, const char *provi
             wiced_bt_mesh_db_store(p_mesh_db);
             db_name = p_mesh_db->name;
         }
-        if (remove("temp.json") != 0 || remove("temp.ifx.json") != 0)
+        if (remove(p_filename) != 0 || remove(p_ifxfilename) != 0)
             Log("failed to remove temp.json errno:%d\n", errno);
     }
     return db_name;
@@ -953,7 +975,6 @@ char *mesh_client_network_import(const char *provisioner_name, const char *provi
 
 char *mesh_client_network_export(char *mesh_name)
 {
-    mesh_provision_cb_t *p_cb = &provision_cb;
     char *json_string;
     char *p_filename;
 
@@ -963,8 +984,14 @@ char *mesh_client_network_export(char *mesh_name)
 
     strcpy(p_filename, mesh_name);
     strcat(p_filename, ".json");
+    const char* filename = p_filename;
+#if defined(_WIN32)
+    char path[260]; // MAX_PATH(260)
+    if (get_file_path_in_appdata_folder(p_filename, path, 260))
+        filename = path;
+#endif
 
-    FILE *fp = fopen(p_filename, "r");
+    FILE *fp = fopen(filename, "r");
     if (fp == NULL)
     {
         wiced_bt_free_buffer(p_filename);
@@ -1131,7 +1158,6 @@ int mesh_client_group_delete(char *p_group_name)
     uint16_t *p_elements_array, *p_element;
     wiced_bt_mesh_db_node_t *p_node;
     wiced_bt_mesh_db_model_id_t *p_models_array;
-    uint32_t total_len = 0;
 
     if (p_mesh_db == NULL)
         return MESH_CLIENT_ERR_NETWORK_CLOSED;
@@ -1264,11 +1290,23 @@ void mesh_client_init(mesh_client_init_t *p)
     p_cb->p_ctl_status = p->ctl_changed_callback;
     p_cb->p_sensor_status = p->sensor_changed_callback;
     p_cb->p_vendor_specific_data = p->vendor_specific_data_callback;
+    p_cb->p_xyl_status = p->xyl_changed_callback;
+
+    p_cb->p_light_lc_mode_status = p->lc_mode_status_callback;
+    p_cb->p_light_lc_occupancy_mode_status = p->lc_occupancy_mode_status_callback;
+    p_cb->p_light_lc_property_status = p->lc_property_status_callback;
 }
 
+// Parameter filename On Windows should point on buffer with sufficient for full path to the rpl file in the %appdata%/Infineon/MeshClient
 void get_rpl_filename(char *filename)
 {
     int i;
+#if defined(_WIN32)
+    // get path to the subfolder Infineon\\MeshClient in the local appdata.
+    // On success update filename to point to the end of got path
+    if (get_file_path_in_appdata_folder(NULL, filename, 260))
+        filename += strlen(filename);
+#endif
 
     strcpy(filename, "rpl");
     for (i = 0; i < 16; i++)
@@ -1281,7 +1319,7 @@ void download_iv(uint32_t *p_iv_idx, uint8_t *p_iv_update)
 {
     FILE                *fp;
     mesh_client_iv_t    iv;
-    char                filename[50];
+    char                filename[260];
 
     // default values for the case when we don't have RPL file
     *p_iv_idx = 0;
@@ -1307,7 +1345,7 @@ void download_rpl_list(void)
     FILE *            fp;
     mesh_client_seq_t entry;
     mesh_client_iv_t  iv;
-    char              filename[50];
+    char              filename[260];
     uint32_t          seq;
 
     get_rpl_filename(filename);
@@ -1322,6 +1360,9 @@ void download_rpl_list(void)
         // Read all SEQ records passing them to the mesh core
         while (fread(&entry, 1, sizeof(entry), fp) == sizeof(entry))
         {
+            // Don't send RPL entries. Send only own SEQ.
+            if (entry.addr != 0)
+                continue;
             seq = entry.seq[0] + (((uint32_t)entry.seq[1]) << 8) + (((uint32_t)entry.seq[2]) << 16);
             wiced_bt_mesh_core_set_seq(entry.addr, seq, entry.previous_iv_idx != 0 ? WICED_TRUE : WICED_FALSE);
         }
@@ -1333,7 +1374,7 @@ void mesh_process_iv_changed(wiced_bt_mesh_core_state_iv_t *p_iv)
 {
     FILE                *fp;
     mesh_client_iv_t    iv;
-    char                filename[50];
+    char                filename[260];
 
     get_rpl_filename(filename);
 
@@ -1355,7 +1396,7 @@ void mesh_process_seq_changed(wiced_bt_mesh_core_state_seq_t *p_seq_changed)
     FILE *fp;
     mesh_client_seq_t entry;
     mesh_client_iv_t    iv;
-    char filename[50];
+    char filename[260];
     uint32_t            seq;
 
     get_rpl_filename(filename);
@@ -1415,7 +1456,7 @@ void mesh_del_seq(uint16_t addr)
     FILE *fp;
     mesh_client_seq_t *p_entry;
     long file_size;
-    char filename[50];
+    char filename[260];
     uint8_t *p_buffer;
 
     get_rpl_filename(filename);
@@ -1438,7 +1479,7 @@ void mesh_del_seq(uint16_t addr)
         return;
     }
     fseek(fp, 0, SEEK_SET);
-    if (fread(p_buffer, 1, file_size, fp) != file_size)
+    if (fread(p_buffer, 1, file_size, fp) != (size_t)file_size)
     {
         wiced_bt_free_buffer(p_buffer);
         fclose(fp);
@@ -1742,7 +1783,6 @@ int mesh_client_is_light_controller(char* component_name)
 
 uint8_t mesh_client_get_component_info(char *component_name, mesh_client_component_info_status_t p_component_info_status_callback)
 {
-    mesh_provision_cb_t *p_cb = &provision_cb;
     uint16_t dst = get_device_addr(component_name);
     wiced_bt_mesh_db_app_key_t *app_key;
     char buf[200];
@@ -1812,7 +1852,6 @@ char *mesh_client_get_group_components(char *p_group_name)
     wiced_bt_mesh_db_node_t *p_node;
     uint16_t *p_elements_array, *p_element;
     char *p_components_array;
-    uint8_t num_components = 0;
     uint32_t total_len = 0;
 
     if (p_mesh_db == NULL)
@@ -2161,7 +2200,7 @@ int mesh_client_set_device_config(const char *device_name, int is_gatt_proxy, in
         }
     }
     if (!wiced_bt_mesh_db_relay_get(p_mesh_db, dst, &state, &count, &interval) ||
-        (state != is_relay) || (count != relay_xmit_count) || (interval != relay_xmit_interval))
+        (state != is_relay) || (count != relay_xmit_count) || (interval != (uint32_t)relay_xmit_interval))
     {
         if ((state != MESH_FEATURE_UNSUPPORTED) &&
             ((p_op = (pending_operation_t *)wiced_bt_get_buffer(sizeof(pending_operation_t))) != NULL))
@@ -2170,7 +2209,7 @@ int mesh_client_set_device_config(const char *device_name, int is_gatt_proxy, in
             p_op->p_event = mesh_client_configure_create_event(dst);
             p_op->uu.relay_set.state = is_relay;
             p_op->uu.relay_set.retransmit_count = relay_xmit_count;
-            p_op->uu.relay_set.retransmit_interval = relay_xmit_interval;
+            p_op->uu.relay_set.retransmit_interval = (uint16_t)relay_xmit_interval;
             configure_pending_operation_queue(p_cb, p_op);
         }
     }
@@ -2394,7 +2433,6 @@ int mesh_client_sensor_setting_set(const char *device_name, int property_id, int
 
 int *mesh_client_sensor_property_list_get(const char *device_name)
 {
-    mesh_provision_cb_t *p_cb = &provision_cb;
     uint16_t element_addr;
 
     if (p_mesh_db == NULL)
@@ -2651,7 +2689,7 @@ int mesh_client_sensor_cadence_get(const char *device_name, int property_id,
     return MESH_CLIENT_SUCCESS;
 }
 
-int mesh_client_light_lc_mode_get(const char* p_name, mesh_client_light_lc_mode_status_t p_lc_mode_status)
+int mesh_client_light_lc_mode_get(const char* p_name)
 {
     uint16_t dst = get_device_addr(p_name);
     wiced_bt_mesh_db_app_key_t* app_key;
@@ -2691,14 +2729,14 @@ int mesh_client_light_lc_mode_get(const char* p_name, mesh_client_light_lc_mode_
         Log("property get no mem\n");
         return MESH_CLIENT_ERR_NO_MEMORY;
     }
-    provision_cb.p_light_lc_mode_status = p_lc_mode_status;
+
 
     Log("Light LC Mode Get addr:%04x app_key_idx:%04x", p_event->dst, p_event->app_key_idx);
     wiced_bt_mesh_model_light_lc_client_send_mode_get(p_event);
     return MESH_CLIENT_SUCCESS;
 }
 
-int mesh_client_light_lc_mode_set(const char* p_name, int mode, mesh_client_light_lc_mode_status_t p_lc_mode_status)
+int mesh_client_light_lc_mode_set(const char* p_name, int mode)
 {
     wiced_bt_mesh_light_lc_mode_set_data_t data;
     uint16_t dst = get_device_addr(p_name);
@@ -2747,14 +2785,14 @@ int mesh_client_light_lc_mode_set(const char* p_name, int mode, mesh_client_ligh
     p_event->reply = WICED_TRUE;
 
     data.mode = mode;
-    provision_cb.p_light_lc_mode_status = p_lc_mode_status;
+
 
     Log("Light LC Mode Set addr:%04x app_key_idx:%04x mode:%d", p_event->dst, p_event->app_key_idx, mode);
     wiced_bt_mesh_model_light_lc_client_send_mode_set(p_event, &data);
     return MESH_CLIENT_SUCCESS;
 }
 
-int mesh_client_light_lc_occupancy_mode_get(const char* p_name, mesh_client_light_lc_occupancy_mode_status_t p_lc_occupancy_mode_status)
+int mesh_client_light_lc_occupancy_mode_get(const char* p_name)
 {
     uint16_t dst = get_device_addr(p_name);
     wiced_bt_mesh_db_app_key_t* app_key;
@@ -2794,14 +2832,14 @@ int mesh_client_light_lc_occupancy_mode_get(const char* p_name, mesh_client_ligh
         Log("property get no mem\n");
         return MESH_CLIENT_ERR_NO_MEMORY;
     }
-    provision_cb.p_light_lc_occupancy_mode_status = p_lc_occupancy_mode_status;
+
 
     Log("Light LC Occupancy Mode Get addr:%04x app_key_idx:%04x", p_event->dst, p_event->app_key_idx);
     wiced_bt_mesh_model_light_lc_client_send_occupancy_mode_get(p_event);
     return MESH_CLIENT_SUCCESS;
 }
 
-int mesh_client_light_lc_occupancy_mode_set(const char* p_name, int mode, mesh_client_light_lc_occupancy_mode_status_t p_lc_occupancy_mode_status)
+int mesh_client_light_lc_occupancy_mode_set(const char* p_name, int mode)
 {
     wiced_bt_mesh_light_lc_occupancy_mode_set_data_t data;
     uint16_t dst = get_device_addr(p_name);
@@ -2850,7 +2888,7 @@ int mesh_client_light_lc_occupancy_mode_set(const char* p_name, int mode, mesh_c
     p_event->reply = WICED_TRUE;
 
     data.mode = mode;
-    provision_cb.p_light_lc_occupancy_mode_status = p_lc_occupancy_mode_status;
+
 
     Log("Light LC Occupancy Mode Set addr:%04x app_key_idx:%04x mode:%d", p_event->dst, p_event->app_key_idx, mode);
     wiced_bt_mesh_model_light_lc_client_send_occupancy_mode_set(p_event, &data);
@@ -2861,7 +2899,7 @@ int mesh_client_light_lc_occupancy_mode_set(const char* p_name, int mode, mesh_c
  * Property Get.
  * If operation is successful, the callback will be executed when reply from the peer is received.
  */
-int mesh_client_light_lc_property_get(const char* p_name, int property_id, mesh_client_light_lc_property_status_t p_property_status_callback)
+int mesh_client_light_lc_property_get(const char* p_name, int property_id)
 {
     uint16_t dst = get_device_addr(p_name);
     wiced_bt_mesh_light_lc_property_get_data_t get_data;
@@ -2911,7 +2949,7 @@ int mesh_client_light_lc_property_get(const char* p_name, int property_id, mesh_
         Log("property get no mem\n");
         return MESH_CLIENT_ERR_NO_MEMORY;
     }
-    provision_cb.p_light_lc_property_status = p_property_status_callback;
+
 
     Log("Light LC Property Get addr:%04x app_key_idx:%04x ID:%04x", p_event->dst, p_event->app_key_idx, property_id);
     wiced_bt_mesh_model_light_lc_client_send_property_get(p_event, &get_data);
@@ -2922,11 +2960,10 @@ int mesh_client_light_lc_property_get(const char* p_name, int property_id, mesh_
  * Property Set
  * If operation is successful, the callback will be executed when reply from the peer is received.
  */
-int mesh_client_light_lc_property_set(const char* p_name, int property_id, int value, mesh_client_light_lc_property_status_t p_property_status_callback)
+int mesh_client_light_lc_property_set(const char* p_name, int property_id, int value)
 {
     uint16_t dst = get_device_addr(p_name);
     wiced_bt_mesh_light_lc_property_set_data_t set_data;
-    uint16_t num_nodes = 0;
     wiced_bt_mesh_db_app_key_t* app_key;
 
     if (p_mesh_db == NULL)
@@ -2983,7 +3020,6 @@ int mesh_client_light_lc_property_set(const char* p_name, int property_id, int v
     }
     p_event->reply = WICED_TRUE;
 
-    provision_cb.p_light_lc_property_status = p_property_status_callback;
 
     Log("Light LC Property Set addr:%04x app_key_idx:%04x ID:%04x", p_event->dst, p_event->app_key_idx, property_id);
     wiced_bt_mesh_model_light_lc_client_send_property_set(p_event, &set_data);
@@ -2995,9 +3031,8 @@ int mesh_client_light_lc_property_set(const char* p_name, int property_id, int v
  */
 int mesh_client_light_lc_on_off_set(const char* p_name, uint8_t on_off, wiced_bool_t reliable, uint32_t transition_time, uint16_t delay)
 {
-    wiced_bt_mesh_onoff_set_data_t set_data;
+    wiced_bt_mesh_light_lc_light_onoff_set_data_t set_data;
     uint16_t dst = get_device_addr(p_name);
-    uint16_t num_nodes = 0;
     wiced_bt_mesh_db_app_key_t* app_key;
 
     if (p_mesh_db == NULL)
@@ -3036,13 +3071,14 @@ int mesh_client_light_lc_on_off_set(const char* p_name, uint8_t on_off, wiced_bo
         return MESH_CLIENT_ERR_NO_MEMORY;
     }
     p_event->reply = reliable;
-    set_data.onoff = on_off;
+    set_data.light_onoff = on_off;
     set_data.transition_time = transition_time;
     set_data.delay = delay;
 
-    Log("OnOff Set addr:%04x app_key_idx:%04x reply:%d onoff:%d transition_time:%d delay:%d", p_event->dst, p_event->app_key_idx, p_event->reply, set_data.onoff, set_data.transition_time, set_data.delay);
+    Log("OnOff Set addr:%04x app_key_idx:%04x reply:%d onoff:%d transition_time:%d delay:%d", p_event->dst, p_event->app_key_idx, p_event->reply, set_data.light_onoff, set_data.transition_time, set_data.delay);
 
-    wiced_bt_mesh_model_onoff_client_send_set(p_event, &set_data);
+    wiced_bt_mesh_model_light_lc_client_send_light_onoff_set(p_event, &set_data);
+
     return MESH_CLIENT_SUCCESS;
 }
 
@@ -3162,8 +3198,6 @@ void scan_timer_cb(TIMER_PARAM_TYPE arg)
 
 uint8_t mesh_client_dev_key_refresh(uint8_t *uuid)
 {
-    uint8_t db_changed = WICED_FALSE;
-    int i = 0;
     mesh_provision_cb_t *p_cb = &provision_cb;
     wiced_bt_mesh_db_node_t* p_node;
 
@@ -3202,7 +3236,6 @@ uint8_t mesh_client_dev_key_refresh(uint8_t *uuid)
 
 uint8_t mesh_client_provision_start(const char* device_name, const char* group_name, uint8_t* uuid, uint8_t identify_duration)
 {
-    uint8_t db_changed = WICED_FALSE;
     int i = 0;
     mesh_provision_cb_t* p_cb = &provision_cb;
     unprovisioned_report_t* p_report, * p_best_report = NULL;
@@ -3454,6 +3487,7 @@ uint8_t mesh_client_connect_component(char *component_name, uint8_t use_proxy, u
     mesh_configure_set_local_device_key(node->unicast_address);
     wiced_bt_mesh_config_node_identity_set(p_event, &set);
     return MESH_CLIENT_SUCCESS;
+    UNUSED_VARIABLE(use_proxy);
 }
 
 /**
@@ -3643,6 +3677,10 @@ void mesh_provision_process_event(uint16_t event, wiced_bt_mesh_event_t *p_event
 
     case WICED_BT_MESH_LIGHT_CTL_STATUS:
         mesh_process_ctl_status(p_event, p_data);
+        return;
+
+    case WICED_BT_MESH_LIGHT_XYL_STATUS:
+        mesh_process_xyl_status(p_event, p_data);
         return;
 
     case WICED_BT_MESH_SENSOR_DESCRIPTOR_STATUS:
@@ -4275,6 +4313,7 @@ void mesh_client_state_connecting_node_wait_disconnect(mesh_provision_cb_t *p_cb
     {
         Log("Event:%d ignored\n", event);
     }
+    UNUSED_VARIABLE(p_event);
 }
 
 void mesh_client_state_connecting_node_wait_connect(mesh_provision_cb_t *p_cb, uint16_t event, wiced_bt_mesh_event_t *p_event, void *p_data)
@@ -4338,9 +4377,13 @@ void mesh_configure_state_key_refresh1(mesh_provision_cb_t *p_cb, uint16_t event
     {
     case WICED_BT_MESH_TX_COMPLETE:
         Log("KR1 Node unreachable:%04x p_event:%p op_event:%p", p_event->dst, p_event, p_cb->p_first != NULL ? p_cb->p_first->p_event : 0);
+#ifndef CLIENTCONTROL
+        // In Mesh Client, the unsuccessfully sent event is returned
         if ((p_cb->p_first == NULL) || (p_cb->p_first->p_event != p_event))
+#else
+        if (p_cb->p_first == NULL)
             break;
-
+#endif
         // Special case when we do not receive response from a LPN
         if (p_event->friend_addr != 0)
         {
@@ -4432,8 +4475,13 @@ void mesh_configure_state_key_refresh2(mesh_provision_cb_t *p_cb, uint16_t event
     {
     case WICED_BT_MESH_TX_COMPLETE:
         Log("KR2 Node unreachable:%04x p_event:%p op_event:%p", p_event->dst, p_event, p_cb->p_first != NULL ? p_cb->p_first->p_event : 0);
+#ifndef CLIENTCONTROL
+        // In Mesh Client, the unsuccessfully sent event is returned
         if ((p_cb->p_first == NULL) || (p_cb->p_first->p_event != p_event))
+#else
+        if (p_cb->p_first == NULL)
             break;
+#endif
 
         // Special case when we do not receive response from a LPN
         if (p_event->friend_addr != 0)
@@ -4511,8 +4559,13 @@ void mesh_configure_state_key_refresh3(mesh_provision_cb_t *p_cb, uint16_t event
     {
     case WICED_BT_MESH_TX_COMPLETE:
         Log("KR3 Node unreachable:%04x p_event:%p op_event:%p", p_event->dst, p_event, p_cb->p_first != NULL ? p_cb->p_first->p_event : 0);
+#ifndef CLIENTCONTROL
+        // In Mesh Client, the unsuccessfully sent event is returned
         if ((p_cb->p_first == NULL) || (p_cb->p_first->p_event != p_event))
+#else
+        if (p_cb->p_first == NULL)
             break;
+#endif
 
         // Special case when we do not receive response from a LPN
         if (p_event->friend_addr != 0)
@@ -4608,6 +4661,7 @@ void mesh_provision_connecting_link_status(mesh_provision_cb_t *p_cb, wiced_bt_m
 
         provision_status_notify(p_cb, MESH_CLIENT_PROVISION_STATUS_FAILED);
     }
+    UNUSED_VARIABLE(p_event);
 }
 
 void mesh_provision_process_device_caps(mesh_provision_cb_t *p_cb, wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_provision_device_capabilities_data_t *p_data)
@@ -5067,6 +5121,7 @@ void mesh_node_connecting_link_status(mesh_provision_cb_t *p_cb, wiced_bt_mesh_e
             provision_status_notify(p_cb, MESH_CLIENT_PROVISION_STATUS_FAILED);
         }
     }
+    UNUSED_VARIABLE(p_event);
 }
 
 void mesh_configure_set_local_device_key(uint16_t addr)
@@ -5158,7 +5213,7 @@ uint8_t composition_data_get_num_elements(uint8_t *p_data, uint16_t len)
         if (len < 4)
             return elem_idx;
 
-        uint16_t location = p_data[0] + (p_data[1] << 8);
+        // uint16_t location = p_data[0] + (p_data[1] << 8);
         uint8_t num_models = p_data[2];
         uint8_t num_vs_models = p_data[3];
 
@@ -5258,6 +5313,7 @@ void mesh_configure_proxy_connection_status(mesh_provision_cb_t *p_cb, wiced_bt_
 
         provision_status_notify(p_cb, MESH_CLIENT_PROVISION_STATUS_FAILED);
     }
+    UNUSED_VARIABLE(p_event);
 }
 
 void mesh_key_refresh_link_status(mesh_provision_cb_t *p_cb, wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_connect_status_data_t *p_data)
@@ -5280,6 +5336,7 @@ void mesh_key_refresh_link_status(mesh_provision_cb_t *p_cb, wiced_bt_mesh_event
     {
         p_cb->state = PROVISION_STATE_IDLE;
     }
+    UNUSED_VARIABLE(p_event);
 }
 
 void clean_pending_op_queue(uint16_t addr)
@@ -5782,7 +5839,6 @@ void mesh_key_refresh_phase3_completed(mesh_provision_cb_t *p_cb, wiced_bt_mesh_
     int app_key_idx;
     uint16_t *node_list;
     int num_nodes_to_update = 0;
-    wiced_bool_t db_updated = WICED_FALSE;
     int node_can_be_removed;
     wiced_bt_mesh_db_net_key_t *net_key1;
     int key_refresh_required = WICED_FALSE;
@@ -6518,6 +6574,7 @@ void mesh_configure_filter_status(mesh_provision_cb_t* p_cb, wiced_bt_mesh_event
     {
         Log("Ignored Filter Status from:%x", p_event->src);
     }
+    UNUSED_VARIABLE(p_data);
 }
 
 void mesh_default_trans_time_status(wiced_bt_mesh_event_t *p_event, void *p)
@@ -6690,6 +6747,7 @@ void mesh_configure_disconnecting_link_status(mesh_provision_cb_t *p_cb, wiced_b
     Log("Configure Disconnecting Link Status provisioner:%x addr:%04x connected:%x over_gatt:%d", p_data->provisioner_addr, p_data->addr, p_data->connected, p_data->over_gatt);
 
     p_cb->state = PROVISION_STATE_IDLE;
+    UNUSED_VARIABLE(p_event);
 }
 
 void mesh_key_refresh_phase2_status(mesh_provision_cb_t *p_cb, wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_config_key_refresh_phase_status_data_t *p_data)
@@ -7138,6 +7196,7 @@ pending_operation_t *configure_pending_operation_dequeue(mesh_provision_cb_t *p_
     return p_op;
 }
 
+#if 0
 pending_operation_t* configure_pending_operation_remove_from_queue(mesh_provision_cb_t* p_cb, pending_operation_t* p_op)
 {
     pending_operation_t* p_cur;
@@ -7156,7 +7215,6 @@ pending_operation_t* configure_pending_operation_remove_from_queue(mesh_provisio
     return NULL;
 }
 
-#if 0
 pending_operation_t* configure_pending_operation_remove_from_lpn_queue(mesh_provision_cb_t* p_cb, pending_operation_t* p_op)
 {
     pending_operation_t* p_cur;
@@ -7677,6 +7735,14 @@ void configure_queue_remote_device_operations(mesh_provision_cb_t *p_cb)
                         p_op->uu.model_pub.app_key_idx = app_key->index;
                         p_op->uu.model_pub.publish_period = 0;              // periodic publication if required will need to be configured separately
                         p_op->uu.model_pub.publish_ttl = p_cb->publish_ttl; // tbd
+                        // nodes with TIME_CLNT model may send TIME_GET on startup if it needs time but time is unknown
+                        // For example the node with SCHEDULER_SRV model if it has configured actions
+                        // It can cause big number of messages on power on.
+                        // Therefore lets use 0 TTL
+                        if (model_id == WICED_BT_MESH_CORE_MODEL_ID_TIME_CLNT)
+                        {
+                            p_op->uu.model_pub.publish_ttl = 0;
+                        }
                         p_op->uu.model_pub.publish_retransmit_count = p_cb->publish_retransmit_count;
                         p_op->uu.model_pub.publish_retransmit_interval = p_cb->publish_retransmit_interval;
                         p_op->uu.model_pub.credential_flag = p_cb->publish_credential_flag;
@@ -7933,17 +7999,6 @@ void configure_queue_remote_device_operations(mesh_provision_cb_t *p_cb)
         }
         configure_pending_operation_queue(p_cb, p_op);
     }
-}
-
-wiced_bool_t configure_event_in_pending_op(mesh_provision_cb_t *p_cb, wiced_bt_mesh_event_t *p_event)
-{
-    pending_operation_t *p_op;
-    for (p_op = p_cb->p_first; p_op != NULL; p_op = p_op->p_next)
-    {
-        if (p_op->p_event == p_event)
-            return WICED_TRUE;
-    }
-    return WICED_FALSE;
 }
 
 void configure_execute_pending_operation(mesh_provision_cb_t *p_cb)
@@ -8227,7 +8282,7 @@ int mesh_client_add_component_to_group(const char *component_name, const char *g
         Log("invalid state:%d\n", p_cb->state);
         return MESH_CLIENT_ERR_INVALID_STATE;
     }
-    if (p_cb->proxy_conn_id == 0)
+    if (!mesh_client_is_proxy_connected())
     {
         Log("not connected\n");
         return MESH_CLIENT_ERR_NOT_CONNECTED;
@@ -8363,7 +8418,7 @@ int mesh_client_remove_component_from_group(const char *component_name, const ch
         Log("invalid state:%d\n", p_cb->state);
         return MESH_CLIENT_ERR_INVALID_STATE;
     }
-    if (p_cb->proxy_conn_id == 0)
+    if (!mesh_client_is_proxy_connected())
     {
         Log("not connected\n");
         return MESH_CLIENT_ERR_NOT_CONNECTED;
@@ -8477,7 +8532,7 @@ int mesh_client_move_component_to_group(const char *component_name, const char *
         Log("invalid state:%d\n", p_cb->state);
         return MESH_CLIENT_ERR_INVALID_STATE;
     }
-    if (p_cb->proxy_conn_id == 0)
+    if (!mesh_client_is_proxy_connected())
     {
         Log("not connected\n");
         return MESH_CLIENT_ERR_NOT_CONNECTED;
@@ -8950,7 +9005,6 @@ const char *mesh_client_get_publication_target(const char *component_name, uint8
     if (component_addr == 0)
         return NULL;
 
-    uint16_t dst = wiced_bt_mesh_db_get_node_addr(p_mesh_db, component_addr);
     if (is_client)
     {
         if (!get_control_method(method, &company_id, &model_id))
@@ -9025,7 +9079,6 @@ int mesh_client_get_publication_period(const char *component_name, uint8_t is_cl
     if (component_addr == 0)
         return 0;
 
-    uint16_t dst = wiced_bt_mesh_db_get_node_addr(p_mesh_db, component_addr);
     if (is_client)
     {
         if (!get_control_method(method, &company_id, &model_id))
@@ -9247,6 +9300,7 @@ int mesh_client_identify(const char *p_name, uint8_t duration)
 uint16_t mesh_client_ota_data_encrypt(const char *component_name, const uint8_t *p_in_data, uint16_t in_data_len, uint8_t *p_out_buf, uint16_t out_buf_len)
 {
     return wiced_bt_mesh_core_crypt(WICED_TRUE, p_in_data, in_data_len, p_out_buf, out_buf_len);
+    UNUSED_VARIABLE(component_name);
 }
 
 /*
@@ -9256,6 +9310,7 @@ uint16_t mesh_client_ota_data_encrypt(const char *component_name, const uint8_t 
 uint16_t mesh_client_ota_data_decrypt(const char *component_name, const uint8_t *p_in_data, uint16_t in_data_len, uint8_t *p_out_buf, uint16_t out_buf_len)
 {
     return wiced_bt_mesh_core_crypt(WICED_FALSE, p_in_data, in_data_len, p_out_buf, out_buf_len);
+    UNUSED_VARIABLE(component_name);
 }
 
 /*
@@ -9264,7 +9319,6 @@ uint16_t mesh_client_ota_data_decrypt(const char *component_name, const uint8_t 
 int mesh_client_on_off_get(const char *p_name)
 {
     uint16_t dst = get_device_addr(p_name);
-    uint16_t num_nodes = 0;
     wiced_bt_mesh_db_app_key_t *app_key;
 
     if (p_mesh_db == NULL)
@@ -9607,7 +9661,6 @@ int mesh_client_level_delta_set(const char *p_name, int32_t delta, wiced_bool_t 
     return MESH_CLIENT_SUCCESS;
 }
 
-
 /*
  * Get current state of light
  */
@@ -9752,7 +9805,6 @@ int mesh_client_lightness_set(const char *p_name, uint16_t lightness, wiced_bool
     wiced_bt_mesh_model_light_lightness_client_send_set(p_event, &set_data);
     return MESH_CLIENT_SUCCESS;
 }
-
 
 /*
  * Get current state of HSL light
@@ -10046,6 +10098,153 @@ int mesh_client_ctl_set(const char *p_name, uint16_t lightness, uint16_t tempera
     return MESH_CLIENT_SUCCESS;
 }
 
+/*
+ * Get current state of XYL light
+ */
+int mesh_client_xyl_get(const char* p_name)
+{
+    uint16_t dst = get_device_addr(p_name);
+    uint16_t num_nodes = 0;
+    uint16_t* group_list = NULL;
+    wiced_bt_mesh_db_app_key_t* app_key;
+
+    if (p_mesh_db == NULL)
+    {
+        Log("Network closed\n");
+        return MESH_CLIENT_ERR_NETWORK_CLOSED;
+    }
+    app_key = wiced_bt_mesh_db_app_key_get_by_name(p_mesh_db, "Generic");
+    if (app_key == NULL)
+    {
+        Log("Key not configured\n");
+        return MESH_CLIENT_ERR_NETWORK_DB;
+    }
+    if (dst != 0)
+    {
+        if (!is_model_present(dst, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_LIGHT_XYL_SRV))
+        {
+            Log("xyl model not present\n");
+            return MESH_CLIENT_ERR_METHOD_NOT_AVAIL;
+        }
+    }
+    else
+    {
+        dst = get_group_addr(p_name);
+        if (dst != 0)
+        {
+            group_list = mesh_get_group_list(dst, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_LIGHT_XYL_SRV, &num_nodes);
+            if (group_list == NULL)
+            {
+                Log("xyl model not present in group\n");
+                return MESH_CLIENT_ERR_METHOD_NOT_AVAIL;
+            }
+            if (num_nodes == 1)
+                dst = group_list[0];
+
+            wiced_bt_free_buffer(group_list);
+        }
+    }
+    if (dst == 0)
+    {
+        Log("device not found in DB\n");
+        return MESH_CLIENT_ERR_NOT_FOUND;
+    }
+    if (!mesh_client_is_proxy_connected())
+    {
+        Log("not connected\n");
+        return MESH_CLIENT_ERR_NOT_CONNECTED;
+    }
+    wiced_bt_mesh_event_t* p_event = mesh_create_control_event(p_mesh_db, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_LIGHT_XYL_CLNT, dst, app_key->index);
+    if (p_event == NULL)
+    {
+        Log("xyl get no mem\n");
+        return MESH_CLIENT_ERR_NO_MEMORY;
+    }
+    p_event->reply = WICED_TRUE;
+
+    Log("XYL Get addr:%04x app_key_idx:%04x", p_event->dst, p_event->app_key_idx);
+
+    wiced_bt_mesh_model_light_xyl_client_send_get(p_event);
+    return MESH_CLIENT_SUCCESS;
+}
+
+/*
+ * Set state of XYL light
+ */
+int mesh_client_xyl_set(const char* p_name, uint16_t lightness, uint16_t x, uint16_t y, wiced_bool_t reliable, uint32_t transition_time, uint16_t delay)
+{
+    wiced_bt_mesh_light_xyl_set_t set_data;
+    uint16_t dst = get_device_addr(p_name);
+    uint16_t num_nodes = 0;
+    uint16_t* group_list = NULL;
+    wiced_bt_mesh_db_app_key_t* app_key;
+
+    if (p_mesh_db == NULL)
+    {
+        Log("Network closed\n");
+        return MESH_CLIENT_ERR_NETWORK_CLOSED;
+    }
+    app_key = wiced_bt_mesh_db_app_key_get_by_name(p_mesh_db, "Generic");
+    if (app_key == NULL)
+    {
+        Log("Key not configured\n");
+        return MESH_CLIENT_ERR_NETWORK_DB;
+    }
+    if (dst != 0)
+    {
+        if (!is_model_present(dst, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_LIGHT_XYL_SRV))
+        {
+            Log("xyl model not present\n");
+            return MESH_CLIENT_ERR_METHOD_NOT_AVAIL;
+        }
+    }
+    else
+    {
+        dst = get_group_addr(p_name);
+        if (dst != 0)
+        {
+            group_list = mesh_get_group_list(dst, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_LIGHT_XYL_SRV, &num_nodes);
+            if (group_list == NULL)
+            {
+                Log("xyl model not present in group\n");
+                return MESH_CLIENT_ERR_METHOD_NOT_AVAIL;
+            }
+            if (num_nodes == 1)
+                dst = group_list[0];
+
+            wiced_bt_free_buffer(group_list);
+        }
+    }
+    if (dst == 0)
+    {
+        Log("device not found in DB\n");
+        return MESH_CLIENT_ERR_NOT_FOUND;
+    }
+    if (!mesh_client_is_proxy_connected())
+    {
+        Log("not connected\n");
+        return MESH_CLIENT_ERR_NOT_CONNECTED;
+    }
+    wiced_bt_mesh_event_t* p_event = mesh_create_control_event(p_mesh_db, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_LIGHT_XYL_CLNT, dst, app_key->index);
+    if (p_event == NULL)
+    {
+        Log("xyl get no mem\n");
+        return MESH_CLIENT_ERR_NO_MEMORY;
+    }
+    p_event->reply = reliable;
+    set_data.target.lightness = lightness;
+    set_data.target.x = x;
+    set_data.target.y = y;
+    set_data.transition_time = transition_time;
+    set_data.delay = delay;
+
+    Log("XYL Set addr:%04x app_key_idx:%04x reply:%d lightness:%d x:%d y:%d transition_time:%d delay:%d",
+        p_event->dst, p_event->app_key_idx, p_event->reply, set_data.target.lightness, set_data.target.x, set_data.target.y, set_data.transition_time, set_data.delay);
+
+    wiced_bt_mesh_model_light_xyl_client_send_set(p_event, &set_data);
+    return MESH_CLIENT_SUCCESS;
+}
+
 int mesh_client_core_adv_tx_power_set(uint8_t adv_tx_power)
 {
     Log("mesh_client_core_adv_tx_power_set called. tx_power:%d\n", adv_tx_power);
@@ -10082,8 +10281,8 @@ int mesh_client_add_vendor_model(uint16_t company_id, uint16_t model_id, uint8_t
     model_app_bind(p_cb, WICED_TRUE, p_cb->unicast_addr, company_id, model_id, app_key->index);
     configure_execute_pending_operation(p_cb);
     return MESH_CLIENT_SUCCESS;
+    UNUSED_VARIABLE(data_len);
 }
-
 
 int mesh_client_vendor_data_set(const char *device_name, uint16_t company_id, uint16_t model_id, uint8_t opcode, wiced_bool_t disable_ntwk_retransmit, uint8_t *buffer, uint16_t data_len)
 {
@@ -10161,10 +10360,9 @@ int mesh_client_vendor_data_set(const char *device_name, uint16_t company_id, ui
     return MESH_CLIENT_SUCCESS;
 }
 
-
 model_element_t* model_needs_default_pub(uint16_t company_id, uint16_t model_id)
 {
-    int i;
+    uint32_t i;
     for (i = 0; i < sizeof(models_configured_for_pub) / sizeof(models_configured_for_pub[0]); i++)
     {
         if ((models_configured_for_pub[i].company_id == company_id) &&
@@ -10178,7 +10376,7 @@ model_element_t* model_needs_default_pub(uint16_t company_id, uint16_t model_id)
 
 model_element_t* model_needs_default_sub(uint16_t company_id, uint16_t model_id)
 {
-    int i;
+    uint32_t i;
     for (i = 0; i < sizeof(models_configured_for_sub) / sizeof(models_configured_for_sub[0]); i++)
     {
         if ((models_configured_for_sub[i].company_id == company_id) &&
@@ -10192,7 +10390,6 @@ model_element_t* model_needs_default_sub(uint16_t company_id, uint16_t model_id)
 
 void mesh_process_health_attention_status(wiced_bt_mesh_event_t *p_event, void *p)
 {
-    mesh_provision_cb_t *p_cb = &provision_cb;
     wiced_bt_mesh_health_attention_status_data_t *p_data = (wiced_bt_mesh_health_attention_status_data_t *)p;
 
     Log("Attention Status from:%x AppKeyIdx:%x Element:%x timer:%d\n", p_event->src, p_event->app_key_idx, p_event->element_idx, p_data->timer);
@@ -10202,7 +10399,6 @@ void mesh_process_health_attention_status(wiced_bt_mesh_event_t *p_event, void *
 void mesh_process_properties_status(wiced_bt_mesh_event_t *p_event, void *p)
 {
     char buf[200];
-    mesh_provision_cb_t *p_cb = &provision_cb;
     wiced_bt_mesh_properties_status_data_t *p_data = (wiced_bt_mesh_properties_status_data_t *)p;
     int i;
 
@@ -10217,7 +10413,6 @@ void mesh_process_properties_status(wiced_bt_mesh_event_t *p_event, void *p)
 void mesh_process_property_status(wiced_bt_mesh_event_t *p_event, void *p)
 {
     char buf[200];
-    mesh_provision_cb_t *p_cb = &provision_cb;
     wiced_bt_mesh_property_status_data_t *p_data = (wiced_bt_mesh_property_status_data_t *)p;
     int i;
 
@@ -10364,6 +10559,7 @@ void mesh_process_scan_status(mesh_provision_cb_t *p_cb, wiced_bt_mesh_event_t *
     node->scanning_state = (p_data->state == WICED_BT_MESH_REMOTE_PROVISIONING_SERVER_NO_SCANNING) ? SCANNING_STATE_IDLE : SCANNING_STATE_SCANNING;
 
     wiced_bt_mesh_release_event(p_event);
+    UNUSED_VARIABLE(p_cb);
 }
 
 void mesh_process_scan_report(mesh_provision_cb_t *p_cb, wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_provision_scan_report_data_t *p_data)
@@ -10404,28 +10600,36 @@ void mesh_process_scan_report(mesh_provision_cb_t *p_cb, wiced_bt_mesh_event_t *
             {
 #if PROVISION_BY_LOCAL_IF_POSSIBLE
                 if (p_event->src == p_cb->unicast_addr)
+                {
 #endif
 #if PROVISION_BY_REMOTE_IF_POSSIBLE
-                if (p_event->src != p_cb->unicast_addr)
+                    if (p_event->src != p_cb->unicast_addr)
+                    {
 #endif
 #if PROVISION_BY_BEST_RSSI
-                // use new provisioner if original report was from local device or the report was with worse RSSI
-                if ((p_report->provisioner_addr == p_cb->unicast_addr) || (p_data->rssi > p_report->rssi))
+                        // use new provisioner if original report was from local device or the report was with worse RSSI
+                        if ((p_report->provisioner_addr == p_cb->unicast_addr) || (p_data->rssi > p_report->rssi))
 #endif
-                {
-                    p_report->provisioner_addr = p_event->src;
-                    p_report->oob = p_data->oob;
-                    p_report->uri_hash = p_data->uri_hash;
-                    p_report->rssi = p_data->rssi;
-                    Log("ScanReport from:%x rssi:%d\n", p_event->src, p_data->rssi);
-                    wiced_bt_mesh_release_event(p_event);
-                    return;
-                }
-                else
-                    Log("ScanReport from:%x rssi:%d worse\n", p_event->src, p_data->rssi);
+                        {
+                            p_report->provisioner_addr = p_event->src;
+                            p_report->oob = p_data->oob;
+                            p_report->uri_hash = p_data->uri_hash;
+                            p_report->rssi = p_data->rssi;
+                            Log("ScanReport from:%x rssi:%d\n", p_event->src, p_data->rssi);
+                            wiced_bt_mesh_release_event(p_event);
+                            return;
+                        }
+                        else
+                            Log("ScanReport from:%x rssi:%d worse\n", p_event->src, p_data->rssi);
 
-                wiced_bt_mesh_release_event(p_event);
-                return;
+                        wiced_bt_mesh_release_event(p_event);
+                        return;
+#if PROVISION_BY_REMOTE_IF_POSSIBLE
+                    }
+#endif
+#if PROVISION_BY_LOCAL_IF_POSSIBLE
+                }
+#endif
             }
         }
         p_temp = p_cb->p_first_unprovisioned;
@@ -10491,7 +10695,6 @@ void mesh_process_scan_extended_report(mesh_provision_cb_t *p_cb, wiced_bt_mesh_
 
 void mesh_process_on_off_status(wiced_bt_mesh_event_t *p_event, void *p)
 {
-    mesh_provision_cb_t *p_cb = &provision_cb;
     wiced_bt_mesh_onoff_status_data_t *p_data = (wiced_bt_mesh_onoff_status_data_t *)p;
 
     Log("OnOff Status from:%x AppKeyIdx:%x Element:%x Present:%d Target:%d RemainingTime:%d", p_event->src, p_event->app_key_idx, p_event->element_idx, p_data->present_onoff, p_data->target_onoff, p_data->remaining_time);
@@ -10505,7 +10708,6 @@ void mesh_process_on_off_status(wiced_bt_mesh_event_t *p_event, void *p)
 
 void mesh_process_level_status(wiced_bt_mesh_event_t *p_event, void *p)
 {
-    mesh_provision_cb_t *p_cb = &provision_cb;
     wiced_bt_mesh_level_status_data_t *p_data = (wiced_bt_mesh_level_status_data_t *)p;
 
     Log("Level Status from:%x AppKeyIdx:%x Element:%x Present:%d Target:%d RemainingTime:%d", p_event->src, p_event->app_key_idx, p_event->element_idx, p_data->present_level, p_data->target_level, p_data->remaining_time);
@@ -10519,7 +10721,6 @@ void mesh_process_level_status(wiced_bt_mesh_event_t *p_event, void *p)
 
 void mesh_process_lightness_status(wiced_bt_mesh_event_t *p_event, void *p)
 {
-    mesh_provision_cb_t *p_cb = &provision_cb;
     wiced_bt_mesh_light_lightness_status_data_t *p_data = (wiced_bt_mesh_light_lightness_status_data_t *)p;
 
     Log("Lightness Status from:%x AppKeyIdx:%x idx:%d Present:%d Target:%d RemainingTime:%d", p_event->src, p_event->app_key_idx, p_event->element_idx, p_data->present, p_data->target, p_data->remaining_time);
@@ -10533,7 +10734,6 @@ void mesh_process_lightness_status(wiced_bt_mesh_event_t *p_event, void *p)
 
 void mesh_process_hsl_status(wiced_bt_mesh_event_t *p_event, void *p)
 {
-    mesh_provision_cb_t *p_cb = &provision_cb;
     wiced_bt_mesh_light_hsl_status_data_t *p_data = (wiced_bt_mesh_light_hsl_status_data_t *)p;
 
     Log("HSL Status from:%x AppKeyIdx:%x idx:%d Present L:%d H:%d S:%d RemainingTime:%d", p_event->src, p_event->app_key_idx, p_event->element_idx, p_data->present.lightness, p_data->present.hue, p_data->present.saturation, p_data->remaining_time);
@@ -10547,7 +10747,6 @@ void mesh_process_hsl_status(wiced_bt_mesh_event_t *p_event, void *p)
 
 void mesh_process_ctl_status(wiced_bt_mesh_event_t *p_event, void *p)
 {
-    mesh_provision_cb_t *p_cb = &provision_cb;
     wiced_bt_mesh_light_ctl_status_data_t *p_data = (wiced_bt_mesh_light_ctl_status_data_t *)p;
 
     Log("CTL Status from:%x AppKeyIdx:%x idx:%d Present L:%d T:%d Target L:%d T:%d RemainingTime:%d", p_event->src, p_event->app_key_idx, p_event->element_idx, p_data->present.lightness, p_data->present.temperature, p_data->target.lightness, p_data->target.temperature, p_data->remaining_time);
@@ -10558,6 +10757,20 @@ void mesh_process_ctl_status(wiced_bt_mesh_event_t *p_event, void *p)
     }
     wiced_bt_mesh_release_event(p_event);
 }
+
+void mesh_process_xyl_status(wiced_bt_mesh_event_t* p_event, void* p)
+{
+    wiced_bt_mesh_light_xyl_status_data_t* p_data = (wiced_bt_mesh_light_xyl_status_data_t*)p;
+
+    Log("XYL Status from:%x AppKeyIdx:%x idx:%d Present L:%d x:%d y:%d RemainingTime:%d", p_event->src, p_event->app_key_idx, p_event->element_idx, p_data->present.lightness, p_data->present.x, p_data->present.y, p_data->remaining_time);
+
+    if (provision_cb.p_xyl_status != NULL)
+    {
+        provision_cb.p_xyl_status(wiced_bt_mesh_db_get_element_name(p_mesh_db, p_event->src), p_data->present.lightness, p_data->present.x, p_data->present.y,  p_data->remaining_time);
+    }
+    wiced_bt_mesh_release_event(p_event);
+}
+
 
 wiced_bool_t model_needs_sub(uint16_t model_id, wiced_bt_mesh_db_model_id_t *p_models_array)
 {
@@ -10656,24 +10869,29 @@ wiced_bool_t is_core_model(uint16_t company_id, uint16_t model_id)
 
 wiced_bool_t is_secondary_element(uint16_t element_addr)
 {
+    if (is_model_present(element_addr, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_SENSOR_SRV) ||
+        is_model_present(element_addr, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_LIGHT_HSL_SRV) ||
+        is_model_present(element_addr, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_LIGHT_CTL_SRV) ||
+        is_model_present(element_addr, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_LIGHT_XYL_SRV) ||
+        is_model_present(element_addr, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_GENERIC_ONOFF_CLNT) ||
+        is_model_present(element_addr, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_GENERIC_LEVEL_CLNT) ||
+        is_model_present(element_addr, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_LIGHT_LIGHTNESS_CLNT) ||
+        is_model_present(element_addr, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_LIGHT_HSL_CLNT) ||
+        is_model_present(element_addr, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_LIGHT_CTL_CLNT) ||
+        is_model_present(element_addr, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_LIGHT_XYL_CLNT) ||
+        is_model_present(element_addr, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_GENERIC_POWER_LEVEL_CLNT) ||
+        is_model_present(element_addr, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_GENERIC_LOCATION_CLNT) ||
+        is_model_present(element_addr, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_GENERIC_BATTERY_CLNT) ||
+        is_model_present(element_addr, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_SENSOR_CLNT) ||
+        is_model_present(element_addr, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_SCENE_CLNT))
+    {
+        return WICED_FALSE;
+    }
     int i;
-    wiced_bt_mesh_db_model_id_t *p_models_array = wiced_bt_mesh_db_get_all_models_of_element(p_mesh_db, element_addr, 0);
     wiced_bool_t res = WICED_FALSE;
-
+    wiced_bt_mesh_db_model_id_t* p_models_array = wiced_bt_mesh_db_get_all_models_of_element(p_mesh_db, element_addr, 0);
     if (p_models_array != NULL)
     {
-        for (i = 0; p_models_array[i].company_id != MESH_COMPANY_ID_UNUSED; i++)
-        {
-            if (p_models_array[i].company_id == MESH_COMPANY_ID_BT_SIG)
-            {
-                if ((p_models_array[i].id == WICED_BT_MESH_CORE_MODEL_ID_LIGHT_HSL_SRV) ||
-                    (p_models_array[i].id == WICED_BT_MESH_CORE_MODEL_ID_LIGHT_CTL_SRV))
-                {
-                    wiced_bt_free_buffer(p_models_array);
-                    return WICED_FALSE;
-                }
-            }
-        }
         for (i = 0; p_models_array[i].company_id != MESH_COMPANY_ID_UNUSED; i++)
         {
             if (p_models_array[i].company_id == MESH_COMPANY_ID_BT_SIG)
@@ -11360,7 +11578,6 @@ uint32_t wiced_hal_get_pseudo_rand_number(void)
 {
     return wiced_hal_rand_gen_num();
 }
-
 
 uint16_t mesh_client_get_unicast_addr()
 {

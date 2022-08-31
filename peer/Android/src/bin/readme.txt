@@ -101,7 +101,7 @@ Below are the instructions to set up the gateway using the Android application.
 2> The choice of protocol is configurable in the gateway app (Please read the app note for the "bt_internet_gateway/mesh_network" app).
 3> If the user chooses to use MQTT via AWS cloud, then the MeshLightingController expects AWS credentials to be provided in the AWS.conf file placed in the /sdcard
    directory. An example AWS.conf is provided in the current directory.
-4> To add a Mesh gateway, go to the Home screen use setting option and click on "Add BT Internet Gateway".
+4> To add a Mesh gateway, go to the Home screen use setting option and click on "Add Bluetooth Internet Gateway".
 5> If the Mesh gateway is in the unprovisioned state, the user can see the gateway advertising with the name "mesh proxy" select the device.
 6> If the chosen transport is REST, then the user is expected to key-in the IP address of the gateway and also ensure that the phone and the
    gateway are connected to the same Wi-Fi AP (IP address of gateway should be available in gateway's console window).
