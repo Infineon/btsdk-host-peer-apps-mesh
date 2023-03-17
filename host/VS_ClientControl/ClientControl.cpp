@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2022, Cypress Semiconductor Corporation (an Infineon company) or
+ * Copyright 2016-2023, Cypress Semiconductor Corporation (an Infineon company) or
  * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
  *
  * This software, including source code, documentation and related
@@ -44,6 +44,8 @@
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
+
+#define WM_TIMER_CALLBACK               (WM_USER + 110)
 
 int idxPageLight = 0;
 int idxPageMain = 0;
@@ -344,7 +346,7 @@ BOOL CClientControlApp::InitInstance( )
 
     memset(aComPorts, 0, sizeof(aComPorts));
     int numPorts = 0;
-    for (int i = 1; i < 128; i++)
+    for (int i = 1; i < 256; i++)
     {
         WCHAR buf[20];
         wsprintf(buf, L"\\\\.\\COM%d", i);
@@ -499,29 +501,24 @@ BEGIN_MESSAGE_MAP(CClientDialog, CPropertySheet)
     //{{AFX_MSG_MAP(COptions)
     //ON_COMMAND(ID_APPLY_NOW, OnApplyNow)
     //ON_COMMAND(IDOK, OnOK)
+    ON_MESSAGE(WM_TIMER_CALLBACK, OnTimerCallback)
     //}}AFX_MSG_MAP
 END_MESSAGE_MAP()
 
-#include "wiced_timer.h"
+typedef void (TIMER_CBACK)(void *p_tle);
+#define TIMER_PARAM_TYPE    void *
 
-wiced_result_t wiced_init_timer(wiced_timer_t* p_timer, wiced_timer_callback_t TimerCb, TIMER_PARAM_TYPE cBackparam, wiced_timer_type_t type)
+extern "C" void execute_timer_callback(TIMER_CBACK *p_callback, TIMER_PARAM_TYPE arg)
 {
-    return WICED_BT_SUCCESS;
+    CClientDialog *pDlg = (CClientDialog *)theApp.m_pMainWnd;
+    pDlg->PostMessage(WM_TIMER_CALLBACK, (WPARAM)p_callback, (LPARAM)arg);
 }
 
-wiced_result_t wiced_deinit_timer(wiced_timer_t* p)
+LRESULT CClientDialog::OnTimerCallback(WPARAM op, LPARAM lparam)
 {
-    return WICED_BT_SUCCESS;
-}
-
-wiced_result_t wiced_start_timer(wiced_timer_t* wt, uint32_t timeout)
-{
-    return WICED_ERROR;
-}
-
-wiced_result_t wiced_stop_timer(wiced_timer_t* wt)
-{
-    return WICED_ERROR;
+    TIMER_CBACK *p_cback = (TIMER_CBACK *)op;
+    p_cback((TIMER_PARAM_TYPE)lparam);
+    return S_OK;
 }
 
 extern "C" void wiced_bt_mesh_remote_provisioning_connection_state_changed(uint16_t conn_id, uint8_t reason)

@@ -24,6 +24,7 @@ TEMPLATE = app
 //DEFINES += MESH_AUTOMATION_ENABLED
 
 SOURCES += main.cpp mainwindow.cpp serial_port.cpp \
+    qtwicedtimer.cpp \
     sensorcfgdlg.cpp
 
 INCLUDEPATH += .
@@ -128,6 +129,7 @@ HEADERS  += include/data_types.h \
             ../../../../libraries/mesh_client_lib/meshdb.h \
             ../../../../libraries/mesh_client_lib/wiced_bt_mesh_db.h \
             include/win_data_types.h \
+    qtwicedtimer.h \
     sensorcfgdlg.h
 
 FORMS    += mainwindow.ui \
@@ -137,6 +139,7 @@ DEFINES += QT_APP
 DEFINES += CLIENTCONTROL
 DEFINES += BLE_INCLUDED
 DEFINES += WICEDX_LINUX
+#DEFINES += MESH_DFU_ENABLED
 
 unix {
     SOURCES += btspy_ux.c

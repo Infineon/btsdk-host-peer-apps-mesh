@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2022, Cypress Semiconductor Corporation (an Infineon company) or
+ * Copyright 2016-2023, Cypress Semiconductor Corporation (an Infineon company) or
  * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
  *
  * This software, including source code, documentation and related
@@ -45,6 +45,7 @@ extern void HandleHciEvent(BYTE* p_data, DWORD len);
 static char _parityChar[] = "NOEMS";
 static char* _stopBits[] = { "1", "1.5", "2" };
 
+static bool isKp3 = FALSE;
 
 static int SOCK_PORT_NUM[] = { 12012, 12012, 12013 };
 extern int host_mode_instance;
@@ -61,11 +62,14 @@ ComHelper::ComHelper(HWND hWnd) :
     memset(&m_OverlapStateChange, 0, sizeof(m_OverlapStateChange));
     memset(&m_OverlapWrite, 0, sizeof(m_OverlapWrite));
     m_ClientSocket = INVALID_SOCKET;
+
+    InitializeCriticalSection(&m_write_cs);
 }
 
 ComHelper::~ComHelper()
 {
     ClosePort();
+    DeleteCriticalSection(&m_write_cs);
 }
 
 DWORD WINAPI ReadThread(LPVOID lpdwThreadParam)
@@ -228,6 +232,7 @@ BOOL ComHelper::OpenPort(int port, int baudRate)
         serial_config.fOutxDsrFlow = FALSE;
         if (IsKp3Device(lpStr + 4))
         {
+            isKp3 = TRUE;
             serial_config.fRtsControl = RTS_CONTROL_ENABLE;
             serial_config.fDtrControl = DTR_CONTROL_ENABLE;
         }
@@ -418,16 +423,19 @@ DWORD ComHelper::Read(LPBYTE lpBytes, DWORD dwLen)
             }
             else if (dwRet == WAIT_OBJECT_0 + 2)
             {
-                GetCommModemStatus(m_handle, &modemStatusMask);
-                if (!(modemStatusMask & MS_CTS_ON))
+                if (!isKp3)
                 {
-                    m_bResetting = TRUE;
-                    // Log(L"CTS is OFF, dropping RTS for 100ms \n");
-                    EscapeCommFunction(m_handle, CLRRTS);
-                    SetEvent (m_OverlapWrite.hEvent);
-                    Sleep(250);
-                    EscapeCommFunction(m_handle, SETRTS);
-                    m_bResetting = FALSE;
+                    GetCommModemStatus(m_handle, &modemStatusMask);
+                    if (!(modemStatusMask & MS_CTS_ON))
+                    {
+                        m_bResetting = TRUE;
+                        // Log(L"CTS is OFF, dropping RTS for 100ms \n");
+                        EscapeCommFunction(m_handle, CLRRTS);
+                        SetEvent (m_OverlapWrite.hEvent);
+                        Sleep(250);
+                        EscapeCommFunction(m_handle, SETRTS);
+                        m_bResetting = FALSE;
+                    }
                 }
             }
             else if (dwRet != WAIT_OBJECT_0)
@@ -501,6 +509,7 @@ DWORD ComHelper::Write(LPBYTE lpBytes, DWORD dwLen)
         Sleep (1000);
     }
 
+    EnterCriticalSection (&m_write_cs);
     while (Length)
     {
         dwWritten = 0;
@@ -519,6 +528,7 @@ DWORD ComHelper::Write(LPBYTE lpBytes, DWORD dwLen)
             {
                 CancelIo (m_handle);
                 Log (L"ComHelper::Write board is resetting, aborting\n");
+                LeaveCriticalSection (&m_write_cs);
                 return (dwLen);
             }
 
@@ -536,6 +546,9 @@ DWORD ComHelper::Write(LPBYTE lpBytes, DWORD dwLen)
         Length -= dwWritten;
         dwTotalWritten += dwWritten;
     }
+
+    LeaveCriticalSection (&m_write_cs);
+
     return dwTotalWritten;
 }
 

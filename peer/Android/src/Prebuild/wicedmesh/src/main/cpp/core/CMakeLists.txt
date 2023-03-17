@@ -72,10 +72,13 @@ file(GLOB MY_SRC
     "${DEV_KIT_PATH}/libraries/mesh_libs/mesh_models_lib/mesh_model_utils.c"
     "${DEV_KIT_PATH}/libraries/mesh_libs/mesh_models_lib/object_transfer_client.c"
     "${DEV_KIT_PATH}/libraries/mesh_libs/mesh_models_lib/object_transfer_server.c"
+    "${DEV_KIT_PATH}/libraries/mesh_libs/mesh_models_lib/opcodes_aggregator_client.c"
+    "${DEV_KIT_PATH}/libraries/mesh_libs/mesh_models_lib/opcodes_aggregator_server.c"
     "${DEV_KIT_PATH}/libraries/mesh_libs/mesh_models_lib/remote_provision_server.c"
     "${DEV_KIT_PATH}/libraries/mesh_libs/mesh_models_lib/scene_client.c"
     "${DEV_KIT_PATH}/libraries/mesh_libs/mesh_models_lib/sensor_client.c"
     "${DEV_KIT_PATH}/libraries/mesh_libs/mesh_models_lib/sensor_server.c"
+    "${DEV_KIT_PATH}/libraries/mesh_libs/mesh_models_lib/config_server.c"
 
     "${DEV_KIT_PATH}/libraries/mesh_libs/mesh_provisioner_lib/mesh_config_client.c"
     "${DEV_KIT_PATH}/libraries/mesh_libs/mesh_provisioner_lib/mesh_health_client.c"

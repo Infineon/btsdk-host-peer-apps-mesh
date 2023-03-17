@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2022, Cypress Semiconductor Corporation (an Infineon company) or
+ * Copyright 2016-2023, Cypress Semiconductor Corporation (an Infineon company) or
  * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
  *
  * This software, including source code, documentation and related
@@ -224,6 +224,31 @@ void wiced_hal_delete_nvram(uint16_t vs_id, wiced_result_t* p_status);
 uint16_t wiced_hal_write_nvram(uint16_t vs_id, uint16_t data_length, uint8_t* p_data, wiced_result_t* p_status);
 uint16_t wiced_hal_read_nvram(uint16_t vs_id, uint16_t data_length, uint8_t* p_data, wiced_result_t* p_status);
 
+// definitions AES encryption implemented in the aes.c module of the mesh_libs
+#define N_ROW                   4
+#define N_COL                   4
+#define N_BLOCK   (N_ROW * N_COL)
+#define N_MAX_ROUNDS           14
+typedef struct
+{
+    uint8_t ksch[(N_MAX_ROUNDS + 1) * N_BLOCK];
+    uint8_t rnd;
+} aes_context;
+unsigned char aes_set_key(const unsigned char key[],
+    unsigned char keylen,
+    aes_context ctx[1]);
+unsigned char aes_encrypt(const unsigned char in[N_BLOCK],
+    unsigned char out[N_BLOCK],
+    const aes_context ctx[1]);
+
+// AES encryption function
+void mesh_app_aes_encrypt(uint8_t* in_data, uint8_t* out_data, uint8_t* key)
+{
+    aes_context aes[1];
+    aes_set_key(key, WICED_BT_MESH_KEY_LEN, aes);
+    aes_encrypt(in_data, out_data, aes);
+}
+
 wiced_bt_mesh_core_hal_api_t mesh_app_hal_api =
 {
     .rand_gen_num_array = wiced_hal_rand_gen_num_array,
@@ -232,7 +257,8 @@ wiced_bt_mesh_core_hal_api_t mesh_app_hal_api =
     .wdog_reset_system = wiced_hal_wdog_reset_system,
     .delete_nvram = wiced_hal_delete_nvram,
     .write_nvram = wiced_hal_write_nvram,
-    .read_nvram = wiced_hal_read_nvram
+    .read_nvram = wiced_hal_read_nvram,
+    .aes_encrypt = mesh_app_aes_encrypt
 };
 
 static int core_initialized = 0;

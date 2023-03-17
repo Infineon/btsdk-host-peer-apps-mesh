@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2022, Cypress Semiconductor Corporation (an Infineon company) or
+ * Copyright 2016-2023, Cypress Semiconductor Corporation (an Infineon company) or
  * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
  *
  * This software, including source code, documentation and related
@@ -34,6 +34,10 @@
 
 #include "ClientControl.h"
 #include "ControlComm.h"
+#ifdef MESH_DFU_ENABLED
+#include "wiced_bt_mesh_models.h"
+#include "wiced_bt_mesh_dfu.h"
+#endif
 
 // CLightControl dialog
 
@@ -56,7 +60,6 @@ public:
     BOOL        m_scan_started;
     BOOL        m_bConnecting;
     BOOL        m_bScanning;
-    uint8_t     m_dfuMethod;
     BOOL m_bConnected;
 
     void DisplayCurrentGroup();
@@ -84,6 +87,16 @@ public:
     LPBYTE m_pPatch;
     DWORD m_dwPatchSize;
     DWORD m_dwPatchOffset;
+    int m_dfuState;
+    BOOL m_bDfuStarted;
+    BOOL        m_bDfuStatus;
+    CString     m_sDfuImageFilePath;
+#ifdef MESH_DFU_ENABLED
+    BOOL                    m_bUploading;
+    int                     m_DfuMethod;
+    mesh_dfu_fw_id_t        m_DfuFwId;
+    mesh_dfu_metadata_t     m_DfuMetaData;
+#endif
 
     void ProcessUnprovisionedDevice(uint8_t *p_uuid, uint16_t oob, uint8_t *name, uint8_t name_len);
     void LinkStatus(uint8_t is_connected, uint32_t conn_id, uint16_t addr, uint8_t is_over_gatt);
@@ -98,8 +111,16 @@ public:
 
 public:
     void OnOtaUpgradeContinue();
+    void SetDfuStarted(BOOL started);
+    BOOL OnDfuStart();
+    void OnDfuStop();
+#ifdef MESH_DFU_ENABLED
+    BOOL ReadDfuManifestFile(CString sFilePath);
     uint32_t GetDfuImageSize();
     void GetDfuImageChunk(uint8_t *p_data, uint32_t offset, uint16_t data_len);
+    BOOL GetDfuImageInfo(void *p_fw_id, void *p_va_data);
+    void OnDfuStatusCallback(uint8_t state, uint8_t *p_data, uint32_t data_length);
+#endif
 
 protected:
     virtual void DoDataExchange(CDataExchange* pDX);    // DDX/DDV support
@@ -146,25 +167,23 @@ public:
     afx_msg void OnBnClickedLightnessGet();
     afx_msg void OnBnClickedLightnessSet();
 
-    afx_msg void OnBnClickedOtaUpgradeStart();
+    afx_msg void OnBnClickedDfuStartstop();
     afx_msg void OnBnClickedConnectdisconnect();
     afx_msg void OnBnClickedIdentify();
     afx_msg void OnBnClickedReconfigure();
-    afx_msg void OnBnClickedBrowseOta();
+    afx_msg void OnBnClickedBrowseDfu();
     afx_msg void OnCbnSelchangeConfigureControlDevice();
     afx_msg void OnCbnSelchangeConfigureMoveDevice();
     afx_msg void OnBnClickedNetworkImport();
     afx_msg void OnBnClickedNetworkExport();
-    afx_msg void OnBnClickedOtaUpgradeStop();
+    afx_msg void OnBnClickedDfuPauseresume();
     afx_msg void OnBnClickedGetComponentInfo();
-    afx_msg void OnBnClickedOtaUpgradeStatus();
+    afx_msg void OnBnClickedDfuGetStatus();
     afx_msg void OnBnClickedSensorGet();
     afx_msg void OnCbnSelchangeControlDevice();
     afx_msg void OnBnClickedSensorConfigure();
     virtual BOOL OnInitDialog();
     afx_msg void OnBnClickedLcConfigure();
-    afx_msg void OnBnClickedDfuUpload();
-    afx_msg void OnBnClickedDfuUpload2();
     afx_msg void OnBnClickedTraceCoreSet();
     afx_msg void OnBnClickedTraceModelsSet();
     afx_msg void OnBnClickedRssiTestStart();

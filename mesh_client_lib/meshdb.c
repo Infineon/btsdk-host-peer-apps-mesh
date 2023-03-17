@@ -1,5 +1,5 @@
 /*
-* Copyright 2016-2022, Cypress Semiconductor Corporation (an Infineon company) or
+* Copyright 2016-2023, Cypress Semiconductor Corporation (an Infineon company) or
 * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
 *
 * This software, including source code, documentation and related
@@ -504,6 +504,20 @@ int mesh_json_read_tag_name(FILE *fp, char *tagname, int len)
         tagname[i] = c;
     }
     return 0;
+}
+
+int mesh_json_read_next_level_tag(FILE* fp, char* tagname, int len)
+{
+    int tag_len = 0;
+
+    if (skip_space(fp) != '{')
+        return 0;
+    if (skip_space(fp) != '\"')
+        return 0;
+    tag_len = mesh_json_read_tag_name(fp, tagname, len);
+    if (skip_space(fp) != ':')
+        return 0;
+    return tag_len;
 }
 
 int mesh_json_read_string(FILE *fp, char prefix, char *buffer, int len)

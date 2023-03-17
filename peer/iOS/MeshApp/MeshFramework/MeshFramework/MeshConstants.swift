@@ -1,5 +1,5 @@
 /*
- * Copyright 2022, Cypress Semiconductor Corporation (an Infineon company) or
+ * Copyright 2023, Cypress Semiconductor Corporation (an Infineon company) or
  * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
  *
  * This software, including source code, documentation and related
@@ -917,7 +917,7 @@ public struct MeshPropertyId {
     public static func parseAmbientTemperatureValue(_ value: Data) -> Double? {
         if value.count == 1 {
             guard UInt8(value[0]) != 0xFF else { return nil }
-            let rawValue = Int8(UInt8(value[0]))
+            let rawValue = Int8(bitPattern: UInt8(value[0]))
             return (Double(rawValue) / 2)
         } else if value.count == 2 {
             let temperature = value.withUnsafeBytes { (bytes: UnsafeRawBufferPointer) -> Int16 in

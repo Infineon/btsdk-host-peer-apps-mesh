@@ -387,6 +387,10 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='AutomationDebug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="..\..\mesh_client_lib\wiced_main.c">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="ClientControl.cpp" />
     <ClCompile Include="ClientControlDlg.cpp" />
     <ClCompile Include="Config.cpp" />

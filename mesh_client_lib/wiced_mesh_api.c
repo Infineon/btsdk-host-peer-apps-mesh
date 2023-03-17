@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2022, Cypress Semiconductor Corporation (an Infineon company) or
+ * Copyright 2016-2023, Cypress Semiconductor Corporation (an Infineon company) or
  * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
  *
  * This software, including source code, documentation and related
@@ -43,8 +43,17 @@
 #include "wiced_bt_mesh_models.h"
 #include "wiced_bt_mesh_provision.h"
 #include "wiced_bt_mesh_app.h"
+#ifdef LARGE_COMPOSITION_DATA_SUPPORTED
+#include "wiced_bt_mesh_lcd.h"
+#endif
 #ifdef PRIVATE_PROXY_SUPPORTED
 #include "wiced_bt_mesh_private_proxy.h"
+#endif
+#ifdef OPCODES_AGGREGATOR_SUPPORTED
+#include "wiced_bt_mesh_agg.h"
+#endif
+#ifdef MESH_DFU_ENABLED
+#include "wiced_bt_mesh_dfu.h"
 #endif
 
 //#define MIBLE
@@ -83,6 +92,9 @@ static void process_provision_link_report(uint8_t *p_buffer, uint16_t len);
 static void process_provision_device_capabilities(uint8_t *p_buffer, uint16_t len);
 static void process_provision_oob_data(uint8_t *p_buffer, uint16_t len);
 static void process_composition_data_status(uint8_t *p_buffer, uint16_t len);
+#ifdef LARGE_COMPOSITION_DATA_SUPPORTED
+static void process_large_compos_data_status(uint8_t *p_buffer, uint16_t len);
+#endif
 static void process_net_key_status(uint8_t *p_buffer, uint16_t len);
 static void process_app_key_status(uint8_t *p_buffer, uint16_t len);
 static void process_key_refresh_phase_status(uint8_t *p_buffer, uint16_t len);
@@ -115,7 +127,19 @@ static void process_vendor_data(uint8_t *p_buffer, uint16_t len);
 static void process_provision_record_list(uint8_t *p_buffer, uint16_t len);
 static void process_provision_record_response(uint8_t *p_buffer, uint16_t len);
 #endif
-
+#ifdef OPCODES_AGGREGATOR_SUPPORTED
+static void process_opcodes_aggregator_add_status(uint8_t *p_buffer, uint16_t len);
+#endif
+#ifdef PRIVATE_PROXY_SUPPORTED
+static void process_private_gatt_proxy_status(uint8_t *p_buffer, uint16_t len);
+static void process_private_beacon_status(uint8_t *p_buffer, uint16_t len);
+static void process_private_node_identity_status(uint8_t *p_buffer, uint16_t len);
+static void process_on_demand_private_proxy_status(uint8_t *p_buffer, uint16_t len);
+#endif
+#ifdef MESH_DFU_ENABLED
+static void process_fw_distribution_status(uint8_t *p_buffer, uint16_t len);
+static void process_fw_update_metadata_status(uint8_t* p_buffer, uint16_t len);
+#endif
 
 extern void mesh_provision_process_event(uint16_t event, wiced_bt_mesh_event_t *p_event, void *p_data);
 
@@ -174,6 +198,11 @@ void wiced_hci_process_data(uint16_t opcode, uint8_t *p_buffer, uint16_t len)
     case HCI_CONTROL_MESH_EVENT_COMPOSITION_DATA_STATUS:
         process_composition_data_status(p_buffer, len);
         break;
+#ifdef LARGE_COMPOSITION_DATA_SUPPORTED
+    case HCI_CONTROL_MESH_EVENT_LARGE_COMPOS_DATA_STATUS:
+        process_large_compos_data_status(p_buffer, len);
+        break;
+#endif
     case HCI_CONTROL_MESH_EVENT_NETKEY_STATUS:
         process_net_key_status(p_buffer, len);
         break;
@@ -261,6 +290,33 @@ void wiced_hci_process_data(uint16_t opcode, uint8_t *p_buffer, uint16_t len)
         break;
     case HCI_CONTROL_MESH_EVENT_PROVISION_RECORD_RESPONSE:
         process_provision_record_response(p_buffer, len);
+        break;
+#endif
+#ifdef OPCODES_AGGREGATOR_SUPPORTED
+    case HCI_CONTROL_MESH_EVENT_OPCODES_AGGREGATOR_ADD_STATUS:
+        process_opcodes_aggregator_add_status(p_buffer, len);
+        break;
+#endif
+#ifdef PRIVATE_PROXY_SUPPORTED
+    case HCI_CONTROL_MESH_EVENT_PRIVATE_BEACON_STATUS:
+        process_private_beacon_status(p_buffer, len);
+        break;
+    case HCI_CONTROL_MESH_EVENT_PRIVATE_GATT_PROXY_STATUS:
+        process_private_gatt_proxy_status(p_buffer, len);
+        break;
+    case HCI_CONTROL_MESH_EVENT_ON_DEMAND_PRIVATE_PROXY_STATUS:
+        process_on_demand_private_proxy_status(p_buffer, len);
+        break;
+    case HCI_CONTROL_MESH_EVENT_PRIVATE_NODE_IDENTITY_STATUS:
+        process_private_node_identity_status(p_buffer, len);
+        break;
+#endif
+#ifdef MESH_DFU_ENABLED
+    case HCI_CONTROL_MESH_EVENT_FW_DISTRIBUTION_STATUS:
+        process_fw_distribution_status(p_buffer, len);
+        break;
+    case HCI_CONTROL_MESH_EVENT_FW_UPDATE_METADATA_STATUS:
+        process_fw_update_metadata_status(p_buffer, len);
         break;
 #endif
     default:
@@ -504,6 +560,55 @@ void process_provision_record_response(uint8_t *p_buffer, uint16_t len)
 }
 #endif
 
+#ifdef MESH_DFU_ENABLED
+void process_fw_distribution_status(uint8_t *p_buffer, uint16_t len)
+{
+    wiced_bt_mesh_fw_distribution_status_data_t *p_data;
+    wiced_bt_mesh_event_t *p_event = wiced_bt_mesh_event_from_hci_header(&p_buffer, &len);
+    uint16_t num_nodes;
+
+    if (p_event == NULL)
+        return;
+
+    num_nodes = p_buffer[5] + ((uint16_t)p_buffer[6] << 8);
+    p_data = (wiced_bt_mesh_fw_distribution_status_data_t*)wiced_bt_get_buffer(sizeof(wiced_bt_mesh_fw_distribution_status_data_t) + (num_nodes - 1) * sizeof(wiced_bt_mesh_fw_distribution_details_t));
+    if (!p_data)
+    {
+        wiced_bt_mesh_release_event(p_event);
+        return;
+    }
+
+    p_data->state = p_buffer[0];
+    p_data->list_size = p_buffer[1] + ((uint16_t)p_buffer[2] << 8);
+    p_data->node_index = p_buffer[3] + ((uint16_t)p_buffer[4] << 8);
+    p_data->num_nodes = num_nodes;
+    for (int i = 0; i < p_data->num_nodes; i++)
+    {
+        uint8_t *p = &p_buffer[7] + i * 4;
+        p_data->node[i].unicast_address = p[0] + ((uint16_t)p[1] << 8);
+        p_data->node[i].phase = p[2];
+        p_data->node[i].progress = p[3];
+    }
+
+    mesh_provision_process_event(WICED_BT_MESH_FW_DISTRIBUTION_STATUS, p_event, p_data);
+    wiced_bt_free_buffer(p_data);
+}
+
+void process_fw_update_metadata_status(uint8_t *p_buffer, uint16_t len)
+{
+    wiced_bt_mesh_dfu_metadata_status_data_t data;
+    wiced_bt_mesh_event_t *p_event = wiced_bt_mesh_event_from_hci_header(&p_buffer, &len);
+    if (p_event == NULL)
+        return;
+
+    data.status = p_buffer[0];
+    data.add_info = p_buffer[1];
+    data.index = p_buffer[2];
+
+    mesh_provision_process_event(WICED_BT_MESH_FW_UPDATE_METADATA_STATUS, p_event, &data);
+}
+#endif
+
 void process_tx_complete(uint8_t *p_buffer, uint16_t len)
 {
     uint16_t hci_opcode;
@@ -553,6 +658,24 @@ void process_composition_data_status(uint8_t *p_buffer, uint16_t len)
 
     mesh_provision_process_event(WICED_BT_MESH_CONFIG_COMPOSITION_DATA_STATUS, p_event, p_comp_data);
 }
+
+#ifdef LARGE_COMPOSITION_DATA_SUPPORTED
+void process_large_compos_data_status(uint8_t *p_buffer, uint16_t len)
+{
+    wiced_bt_mesh_config_large_compos_data_status_data_t data;
+    wiced_bt_mesh_event_t *p_event = wiced_bt_mesh_event_from_hci_header(&p_buffer, &len);
+    if (p_event == NULL)
+        return;
+
+    STREAM_TO_UINT8(data.page, p_buffer);
+    STREAM_TO_UINT16(data.offset, p_buffer);
+    STREAM_TO_UINT16(data.total_size, p_buffer);
+    data.data_len = len - 5;
+    data.p_data = p_buffer;
+
+    mesh_provision_process_event(WICED_BT_MESH_CONFIG_LARGE_COMPOS_DATA_STATUS, p_event, &data);
+}
+#endif
 
 void process_net_key_status(uint8_t *p_buffer, uint16_t len)
 {
@@ -1291,6 +1414,29 @@ wiced_bool_t wiced_bt_mesh_config_composition_data_get(wiced_bt_mesh_event_t *p_
     return WICED_TRUE;
 }
 
+#ifdef LARGE_COMPOSITION_DATA_SUPPORTED
+wiced_bool_t wiced_bt_mesh_config_large_compos_data_get(wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_config_large_compos_data_get_data_t *p_get)
+{
+    uint8_t buffer[128];
+    uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    if (p == NULL)
+    {
+        wiced_bt_mesh_release_event(p_event);
+        return WICED_FALSE;
+    }
+
+    UINT8_TO_STREAM(p, p_get->page);
+    UINT16_TO_STREAM(p, p_get->offset);
+
+    Log("Large Composition Data Get addr:0x%04x page_number:%d offset:%d", p_event->dst, p_get->page, p_get->offset);
+
+    wiced_hci_send(HCI_CONTROL_MESH_COMMAND_CONFIG_LARGE_COMPOS_DATA_GET, buffer, (uint16_t)(p - buffer));
+    wiced_bt_mesh_release_event(p_event);
+    return WICED_TRUE;
+}
+#endif
+
 wiced_bool_t wiced_bt_mesh_config_netkey_change(wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_config_netkey_change_data_t *p_data)
 {
     uint8_t buffer[128];
@@ -1815,30 +1961,169 @@ wiced_bool_t wiced_bt_mesh_provision_scan_extended_start(wiced_bt_mesh_event_t *
     return WICED_TRUE;
 }
 
+#ifdef OPCODES_AGGREGATOR_SUPPORTED
+static wiced_bt_mesh_agg_item_add_callback_t p_mesh_agg_item_add_callback = NULL;
+
+wiced_bool_t wiced_bt_mesh_opcodes_aggregator_start(uint16_t dst_addr, uint8_t dst_elem_idx, uint16_t app_key_idx, wiced_bool_t is_command, uint16_t element_addr, wiced_bt_mesh_agg_item_add_callback_t p_callback)
+{
+    uint8_t buffer[20], *p = buffer;
+
+    UINT16_TO_STREAM(p, dst_addr);
+    UINT8_TO_STREAM(p, dst_elem_idx);
+    UINT16_TO_STREAM(p, app_key_idx);
+    UINT8_TO_STREAM(p, is_command);
+    UINT16_TO_STREAM(p, element_addr);
+
+    p_mesh_agg_item_add_callback = p_callback;
+
+    wiced_hci_send(HCI_CONTROL_MESH_COMMAND_OPCODES_AGGREGATOR_START, buffer, (uint16_t)(p - buffer));
+    return WICED_TRUE;
+}
+
+wiced_bool_t wiced_bt_mesh_opcodes_aggregator_finish_and_send(uint8_t status)
+{
+    uint8_t buffer[20], *p = buffer;
+
+    UINT8_TO_STREAM(p, status);
+
+    p_mesh_agg_item_add_callback = NULL;
+
+    wiced_hci_send(HCI_CONTROL_MESH_COMMAND_OPCODES_AGGREGATOR_FINISH, buffer, (uint16_t)(p - buffer));
+    return WICED_TRUE;
+}
+
+void process_opcodes_aggregator_add_status(uint8_t *p_buffer, uint16_t len)
+{
+    if (!p_buffer || len != 1)
+        return;
+
+    if (p_mesh_agg_item_add_callback)
+        p_mesh_agg_item_add_callback(*p_buffer);
+}
+#endif
+
 #ifdef MESH_DFU_ENABLED
 /*
- * The application can call this function to get the state of the current firmware distribution process.
- * The function may register a callback which will be executed when reply from the distributor is received.
- */
-wiced_bool_t wiced_bt_mesh_fw_provider_get_status(wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_fw_provider_callback_t *p_callback)
+* Application can call this function to check node metadata.
+*/
+wiced_bool_t wiced_bt_mesh_dfu_metadata_check(wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_dfu_metadata_check_data_t *p_data, wiced_bt_mesh_fw_provider_callback_t *p_callback)
 {
-    return WICED_FALSE;
+    uint8_t  buffer[300];
+    uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
+
+    if (p == NULL)
+        return WICED_FALSE;
+
+    UINT8_TO_STREAM(p, p_data->index);
+    memcpy(p, p_data->metadata.data, p_data->metadata.len);
+    p += p_data->metadata.len;
+
+    wiced_hci_send(HCI_CONTROL_MESH_COMMAND_FW_UPDATE_METADATA_CHECK, buffer, (uint16_t)(p - buffer));
+    return WICED_TRUE;
 }
 
 /*
  * The application can call this function to start firmware distribution procedure.
  */
-wiced_bool_t wiced_bt_mesh_fw_provider_start(wiced_bt_mesh_event_t* p_event, wiced_bt_mesh_fw_distribution_start_data_t* p_data, wiced_bt_mesh_fw_provider_callback_t* p_callback)
+wiced_bool_t wiced_bt_mesh_fw_provider_start(wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_fw_distribution_start_data_t *p_data, wiced_bt_mesh_fw_provider_callback_t *p_callback)
 {
-    return WICED_FALSE;
+    uint8_t buffer[1024];
+    uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
+
+    if (p == NULL)
+        return WICED_FALSE;
+
+    UINT8_TO_STREAM(p, p_data->firmware_id.fw_id_len);
+    memcpy(p, p_data->firmware_id.fw_id, p_data->firmware_id.fw_id_len);
+    p += p_data->firmware_id.fw_id_len;
+    UINT8_TO_STREAM(p, p_data->metadata.len);
+    memcpy(p, p_data->metadata.data, p_data->metadata.len);
+    p += p_data->metadata.len;
+    UINT32_TO_STREAM(p, p_data->firmware_size);
+    UINT16_TO_STREAM(p, p_data->proxy_addr);
+    UINT16_TO_STREAM(p, p_data->group_addr);
+    UINT16_TO_STREAM(p, p_data->group_size);
+    for (int i = 0; i < p_data->group_size; i++)
+    {
+        UINT16_TO_STREAM(p, p_data->update_nodes[i].addr);
+        UINT8_TO_STREAM(p, p_data->update_nodes[i].low_power);
+    }
+
+    wiced_hci_send(HCI_CONTROL_MESH_COMMAND_FW_DISTRIBUTION_START, buffer, (uint16_t)(p - buffer));
+    return WICED_TRUE;
 }
 
 /*
- * The application can call this function to terminate firmware distribution procedure.
- */
+* The application can call this function to suspend firmware distribution procedure.
+*/
+wiced_bool_t wiced_bt_mesh_fw_provider_suspend(wiced_bt_mesh_event_t *p_event)
+{
+    uint8_t buffer[128];
+    uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
+
+    if (p == NULL)
+        return WICED_FALSE;
+
+    wiced_hci_send(HCI_CONTROL_MESH_COMMAND_FW_DISTRIBUTION_SUSPEND, buffer, (uint16_t)(p - buffer));
+    return WICED_TRUE;
+}
+
+/*
+* The application can call this function to resume firmware distribution procedure.
+*/
+wiced_bool_t wiced_bt_mesh_fw_provider_resume(wiced_bt_mesh_event_t *p_event)
+{
+    uint8_t buffer[128];
+    uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
+
+    if (p == NULL)
+        return WICED_FALSE;
+
+    wiced_hci_send(HCI_CONTROL_MESH_COMMAND_FW_DISTRIBUTION_RESUME, buffer, (uint16_t)(p - buffer));
+    return WICED_TRUE;
+}
+
+/*
+* The application can call this function to terminate firmware distribution procedure.
+*/
 wiced_bool_t wiced_bt_mesh_fw_provider_stop(wiced_bt_mesh_event_t *p_event)
 {
-    return WICED_FALSE;
+    uint8_t buffer[128];
+    uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
+
+    if (p == NULL)
+        return WICED_FALSE;
+
+    wiced_hci_send(HCI_CONTROL_MESH_COMMAND_FW_DISTRIBUTION_STOP, buffer, (uint16_t)(p - buffer));
+    return WICED_TRUE;
+}
+
+/*
+* The application can call this function to get the state of the current firmware distribution process.
+* The function may register a callback which will be executed when reply from the distributor is received.
+*/
+wiced_bool_t wiced_bt_mesh_fw_provider_get_status(wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_fw_provider_callback_t *p_callback)
+{
+    uint8_t buffer[128];
+    uint8_t *p = wiced_bt_mesh_hci_header_from_event(p_event, buffer, sizeof(buffer));
+
+    wiced_bt_mesh_release_event(p_event);
+
+    if (p == NULL)
+        return WICED_FALSE;
+
+    wiced_hci_send(HCI_CONTROL_MESH_COMMAND_FW_DISTRIBUTION_GET_STATUS, buffer, (uint16_t)(p - buffer));
+    return WICED_TRUE;
 }
 
 /*

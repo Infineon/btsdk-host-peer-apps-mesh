@@ -830,16 +830,6 @@
      <string>Set</string>
     </property>
    </widget>
-   <widget class="QLineEdit" name="progress">
-    <property name="geometry">
-     <rect>
-      <x>740</x>
-      <y>670</y>
-      <width>121</width>
-      <height>22</height>
-     </rect>
-    </property>
-   </widget>
    <widget class="QPushButton" name="btnIdentity">
     <property name="geometry">
      <rect>
@@ -866,12 +856,12 @@
      <string>Get Info</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="btn_dfu_start">
+   <widget class="QPushButton" name="btnDfuStartStop">
     <property name="geometry">
      <rect>
-      <x>870</x>
+      <x>850</x>
       <y>670</y>
-      <width>81</width>
+      <width>91</width>
       <height>28</height>
      </rect>
     </property>
@@ -882,34 +872,37 @@
    <widget class="QLineEdit" name="edFileName">
     <property name="geometry">
      <rect>
-      <x>110</x>
+      <x>90</x>
       <y>670</y>
       <width>341</width>
       <height>22</height>
      </rect>
     </property>
    </widget>
-   <widget class="QComboBox" name="cbPushMethod">
+   <widget class="QComboBox" name="cbDfuMethod">
     <property name="geometry">
      <rect>
-      <x>540</x>
+      <x>520</x>
       <y>670</y>
-      <width>191</width>
+      <width>161</width>
       <height>22</height>
      </rect>
     </property>
    </widget>
-   <widget class="QPushButton" name="btn_dfu_stop">
+   <widget class="QPushButton" name="btnDfuPauseResume">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
     <property name="geometry">
      <rect>
-      <x>960</x>
+      <x>950</x>
       <y>670</y>
-      <width>81</width>
+      <width>91</width>
       <height>28</height>
      </rect>
     </property>
     <property name="text">
-     <string>DFU Stop</string>
+     <string>DFU Pause</string>
     </property>
    </widget>
    <widget class="QListWidget" name="lstTrace">
@@ -1314,25 +1307,28 @@
      <string>Node Reset</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="btnGetStatus">
+   <widget class="QPushButton" name="btnGetDfuStatus">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
     <property name="geometry">
      <rect>
-      <x>1050</x>
+      <x>1048</x>
       <y>670</y>
-      <width>89</width>
+      <width>91</width>
       <height>28</height>
      </rect>
     </property>
     <property name="text">
-     <string>Get Status</string>
+     <string>Get DFU Status</string>
     </property>
    </widget>
    <widget class="QPushButton" name="btnFindDfuFile">
     <property name="geometry">
      <rect>
-      <x>468</x>
+      <x>440</x>
       <y>670</y>
-      <width>61</width>
+      <width>71</width>
       <height>28</height>
      </rect>
     </property>
@@ -1408,17 +1404,23 @@
    <widget class="QProgressBar" name="pbDfu">
     <property name="geometry">
      <rect>
-      <x>740</x>
+      <x>690</x>
       <y>670</y>
-      <width>121</width>
+      <width>151</width>
       <height>23</height>
      </rect>
     </property>
     <property name="value">
-     <number>24</number>
+     <number>0</number>
+    </property>
+    <property name="textVisible">
+     <bool>false</bool>
     </property>
    </widget>
-   <widget class="QLabel" name="label_3">
+   <widget class="QLabel" name="label_dfu">
+    <property name="enabled">
+     <bool>true</bool>
+    </property>
     <property name="geometry">
      <rect>
       <x>20</x>

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2022, Cypress Semiconductor Corporation (an Infineon company) or
+ * Copyright 2016-2023, Cypress Semiconductor Corporation (an Infineon company) or
  * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
  *
  * This software, including source code, documentation and related
@@ -68,11 +68,17 @@
 #if ( defined(DIRECTED_FORWARDING_SERVER_SUPPORTED) || defined(NETWORK_FILTER_SERVER_SUPPORTED))
 #include "wiced_bt_mesh_mdf.h"
 #endif
+#ifdef LARGE_COMPOSITION_DATA_SUPPORTED
+#include "wiced_bt_mesh_lcd.h"
+#endif
 #ifdef PRIVATE_PROXY_SUPPORTED
 #include "wiced_bt_mesh_private_proxy.h"
 #endif
 #ifdef CERTIFICATE_BASED_PROVISIONING_SUPPORTED
 #include "mesh_bt_cert.h"
+#endif
+#ifdef OPCODES_AGGREGATOR_SUPPORTED
+#include "wiced_bt_mesh_agg.h"
 #endif
 
 //#ifndef CLIENTCONTROL
@@ -146,10 +152,15 @@ extern void ods(char * fmt_str, ...);
 #define NODE_IDENTITY_SCAN_DURATION         8
 #define VENDOR_ID_LEN                       8
 
+#define CONFIG_OPERATION_AGGREGATED         0x01
+
 typedef struct t_pending_operation
 {
     struct t_pending_operation *p_next;
     uint8_t operation;
+#ifdef OPCODES_AGGREGATOR_SUPPORTED
+    uint8_t aggr_flag;
+#endif
     union
     {
         wiced_bt_mesh_set_dev_key_data_t set_dev_key;
@@ -239,6 +250,9 @@ model_element_t models_configured_for_pub[] =
 // sense for a client by default to process the messages.
 model_element_t models_configured_for_sub[] =
 {
+#ifdef OPCODES_AGGREGATOR_SUPPORTED
+    { 0, 0, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_OPCODES_AGGREGATOR_SRV },
+#endif
     { 0, 1, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_GENERIC_ONOFF_SRV },
     { 0, 1, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_GENERIC_LEVEL_SRV },
     { 0, 0, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_GENERIC_DEFTT_SRV },
@@ -404,6 +418,7 @@ typedef struct
     uint8_t     publish_retransmit_count;      ///< Number of retransmissions for each published message
     uint16_t    publish_retransmit_interval;   ///< Interval in milliseconds between retransmissions
     uint8_t     publish_credential_flag;       ///< Value of the Friendship Credential Flag
+    uint16_t    remote_compos_data_buf_size;
     wiced_bt_mesh_config_composition_data_status_data_t *p_remote_composition_data;
     wiced_bt_mesh_config_composition_data_status_data_t *p_local_composition_data;
     mesh_client_network_opened_t p_opened_callback;
@@ -440,6 +455,9 @@ typedef struct
     } pubkey;
     mesh_provisioning_records_t* p_provisioning_records;
 #endif
+#ifdef OPCODES_AGGREGATOR_SUPPORTED
+    pending_operation_t *p_agg_op;
+#endif
 } mesh_provision_cb_t;
 
 mesh_provision_cb_t provision_cb = { 0 };
@@ -455,6 +473,9 @@ static void model_app_bind(mesh_provision_cb_t* p_cb, wiced_bool_t is_local, uin
 static pending_operation_t *configure_pending_operation_dequeue(mesh_provision_cb_t *p_cb);
 static pending_operation_t* configure_pending_operation_remove_from_queue(mesh_provision_cb_t* p_cb, pending_operation_t* p_op);
 static void configure_execute_pending_operation(mesh_provision_cb_t *p_cb);
+#ifdef OPCODES_AGGREGATOR_SUPPORTED
+static void configure_start_aggregated_operations(mesh_provision_cb_t *p_cb);
+#endif
 static void provision_status_notify(mesh_provision_cb_t* p_cb, uint8_t status);
 static model_element_t* model_needs_default_pub(uint16_t company_id, uint16_t model_id);
 static model_element_t* model_needs_default_sub(uint16_t company_id, uint16_t model_id);
@@ -511,6 +532,10 @@ static void mesh_configure_gatt_proxy_status(mesh_provision_cb_t *p_cb, wiced_bt
 static void mesh_configure_beacon_status(mesh_provision_cb_t *p_cb, wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_config_beacon_status_data_t *p_data);
 #ifdef DIRECTED_FORWARDING_SERVER_SUPPORTED
 static void mesh_df_control_status(mesh_provision_cb_t* p_cb, wiced_bt_mesh_event_t* p_event, wiced_bt_mesh_df_directed_control_status_data_t* p_data);
+#endif
+#ifdef LARGE_COMPOSITION_DATA_SUPPORTED
+static void mesh_configure_large_compos_data_get(mesh_provision_cb_t *p_cb, uint8_t page, uint16_t offset);
+static void mesh_configure_large_compos_data_status(mesh_provision_cb_t *p_cb, wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_config_large_compos_data_status_data_t *p_data);
 #endif
 #ifdef PRIVATE_PROXY_SUPPORTED
 static void mesh_configure_private_beacon_status(mesh_provision_cb_t* p_cb, wiced_bt_mesh_event_t* p_event, wiced_bt_mesh_config_private_beacon_status_data_t* p_data);
@@ -584,7 +609,7 @@ static wiced_bool_t add_filter(mesh_provision_cb_t *p_cb, uint16_t addr);
 wiced_bool_t get_control_method(const char *method_name, uint16_t *company_id, uint16_t *model_id);
 wiced_bool_t get_target_method(const char *method_name, uint16_t *company_id, uint16_t *model_id);
 void download_iv(uint32_t *p_iv_idx, uint8_t *p_iv_update);
-static uint16_t get_device_addr(const char *p_dev_name);
+uint16_t get_device_addr(const char *p_dev_name);
 static uint16_t *mesh_get_group_list(uint16_t group_addr, uint16_t company_id, uint16_t model_id, uint16_t *num);
 static uint16_t get_group_addr(const char *p_dev_name);
 static wiced_bt_mesh_event_t* mesh_client_configure_create_event(uint16_t dst);
@@ -597,6 +622,11 @@ extern void mesh_advertising_stop(void);
 extern wiced_bool_t mesh_adv_publish_start(void);
 
 wiced_bt_mesh_db_mesh_t *p_mesh_db = NULL;
+
+#ifdef MESH_DFU_ENABLED
+typedef wiced_bool_t(*mesh_fw_update_process_sub_status_t)(wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_config_model_subscription_status_data_t *p_status_data);
+mesh_fw_update_process_sub_status_t p_fw_update_process_sub_status = NULL;
+#endif
 
 char *mesh_new_string(const char *name)
 {
@@ -3397,6 +3427,7 @@ uint8_t mesh_client_connect_network(uint8_t use_proxy, uint8_t scan_duration)
     if (use_proxy)
     {
 #ifdef PRIVATE_PROXY_SUPPORTED
+#ifndef CLIENTCONTROL
         // Send proxy solicitation advertisement if there are private proxy nodes
         for (int i = 0; i < p_mesh_db->num_nodes; i++)
         {
@@ -3410,6 +3441,7 @@ uint8_t mesh_client_connect_network(uint8_t use_proxy, uint8_t scan_duration)
                 break;
             }
         }
+#endif
 #endif
         mesh_client_connect_proxy(p_cb, CONNECT_TYPE_NET_ID, scan_duration);
     }
@@ -3626,6 +3658,10 @@ void mesh_provision_process_event(uint16_t event, wiced_bt_mesh_event_t *p_event
 #ifdef MESH_DFU_ENABLED
     case WICED_BT_MESH_FW_DISTRIBUTION_STATUS:
         mesh_process_fw_distribution_status(p_event, p_data);
+        return;
+
+    case WICED_BT_MESH_FW_UPDATE_METADATA_STATUS:
+        mesh_process_fw_update_metadata_status(p_event, p_data);
         return;
 #endif
 
@@ -4007,6 +4043,12 @@ void mesh_configure_state_getting_remote_composition_data(mesh_provision_cb_t *p
     case WICED_BT_MESH_CONFIG_COMPOSITION_DATA_STATUS:
         mesh_configure_composition_data_status(p_cb, p_event, (wiced_bt_mesh_config_composition_data_status_data_t *)p_data);
         break;
+
+#ifdef LARGE_COMPOSITION_DATA_SUPPORTED
+    case WICED_BT_MESH_CONFIG_LARGE_COMPOS_DATA_STATUS:
+        mesh_configure_large_compos_data_status(p_cb, p_event, (wiced_bt_mesh_config_large_compos_data_status_data_t *)p_data);
+        break;
+#endif
 
     default:
         Log("Event:%d ignored\n", event);
@@ -5172,6 +5214,20 @@ void mesh_configure_composition_data_get(mesh_provision_cb_t *p_cb, uint8_t is_l
     }
 }
 
+#ifdef LARGE_COMPOSITION_DATA_SUPPORTED
+void mesh_configure_large_compos_data_get(mesh_provision_cb_t *p_cb, uint8_t page, uint16_t offset)
+{
+    wiced_bt_mesh_event_t *p_event = mesh_client_configure_create_event(p_cb->addr);
+    if (p_event != NULL)
+    {
+        wiced_bt_mesh_config_large_compos_data_get_data_t data;
+        data.page = page;
+        data.offset = offset;
+        wiced_bt_mesh_config_large_compos_data_get(p_event, &data);
+    }
+}
+#endif
+
 void mesh_process_tx_complete(mesh_provision_cb_t *p_cb, wiced_bt_mesh_event_t *p_event)
 {
     pending_operation_t *p_op = p_cb->p_first;
@@ -5231,6 +5287,18 @@ uint8_t composition_data_get_num_elements(uint8_t *p_data, uint16_t len)
     return elem_idx;
 }
 
+static void mesh_configure_remote_device(mesh_provision_cb_t *p_cb)
+{
+    p_cb->state = PROVISION_STATE_CONFIGURATION;
+
+    configure_queue_remote_device_operations(p_cb);
+#ifdef OPCODES_AGGREGATOR_SUPPORTED
+    if (is_model_present(p_cb->addr, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_OPCODES_AGGREGATOR_SRV))
+        configure_start_aggregated_operations(p_cb);
+#endif
+    configure_execute_pending_operation(p_cb);
+}
+
 void mesh_configure_composition_data_status(mesh_provision_cb_t *p_cb, wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_config_composition_data_status_data_t *p_data)
 {
     Log("Composition Data: from:%x page:%x CID:%x PID:%x VID:%x CRPL:%x Features:%x", p_event->src,
@@ -5275,14 +5343,114 @@ void mesh_configure_composition_data_status(mesh_provision_cb_t *p_cb, wiced_bt_
         return;
     }
     p_cb->p_remote_composition_data = p_data;
+    p_cb->remote_compos_data_buf_size = p_data->data_len + sizeof(wiced_bt_mesh_config_composition_data_status_data_t) - 1;
 
-    p_cb->state = PROVISION_STATE_CONFIGURATION;
+#ifdef LARGE_COMPOSITION_DATA_SUPPORTED
+    // check if remote has Large Composition Data server (if it does means it has more composition data)
+    wiced_bt_mesh_db_node_t *p_node = wiced_bt_mesh_db_node_get_by_addr(p_mesh_db, p_event->src);
+    if (p_node && mesh_client_find_node_model(p_node, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_LARGE_COMPOS_DATA_SRV))
+    {
+        // get next chunk of composition data
+        mesh_configure_large_compos_data_get(p_cb, p_data->page_number, p_data->data_len);
+    }
+    else
+#endif
+    {
+        wiced_bt_mesh_db_store(p_mesh_db);
 
-    wiced_bt_mesh_db_store(p_mesh_db);
-
-    configure_queue_remote_device_operations(p_cb);
-    configure_execute_pending_operation(p_cb);
+        mesh_configure_remote_device(p_cb);
+    }
 }
+
+#ifdef LARGE_COMPOSITION_DATA_SUPPORTED
+void mesh_configure_large_compos_data_status(mesh_provision_cb_t *p_cb, wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_config_large_compos_data_status_data_t *p_data)
+{
+    uint16_t buf_size = p_data->total_size + sizeof(wiced_bt_mesh_config_composition_data_status_data_t) - 1;
+
+    Log("Large Composition Data: from:%x page:%d offset:%d len:%d total:%d", p_event->src, p_data->page, p_data->offset, p_data->data_len, p_data->total_size);
+
+    // sanity check
+    if (p_data->offset + p_data->data_len > p_data->total_size)
+    {
+        Log("Large compos size error\n");
+        provision_status_notify(p_cb, MESH_CLIENT_PROVISION_STATUS_FAILED);
+        return;
+    }
+
+    // check the current buffer and prepare for copying composition data
+    if (p_data->offset == 0)
+    {
+        // the first chunk of composition data, allocate buffer
+        if (p_cb->p_remote_composition_data)
+            wiced_bt_free_buffer(p_cb->p_remote_composition_data);
+        p_cb->p_remote_composition_data = (wiced_bt_mesh_config_composition_data_status_data_t *)wiced_bt_get_buffer(buf_size);
+        if (p_cb->p_remote_composition_data)
+        {
+            p_cb->p_remote_composition_data->page_number = p_data->page;
+            p_cb->p_remote_composition_data->data_len = 0;
+        }
+    }
+    else
+    {
+        // check if parameters match current composition data
+        if (p_cb->p_remote_composition_data == NULL ||
+            p_cb->p_remote_composition_data->page_number != p_data->page ||
+            p_cb->p_remote_composition_data->data_len != p_data->offset)
+        {
+            Log("Large compos data error\n");
+            provision_status_notify(p_cb, MESH_CLIENT_PROVISION_STATUS_FAILED);
+            return;
+        }
+        // reallocate buffer if it is too small
+        if (p_cb->remote_compos_data_buf_size < buf_size)
+        {
+            wiced_bt_mesh_config_composition_data_status_data_t *p_temp = p_cb->p_remote_composition_data;
+            p_cb->p_remote_composition_data = (wiced_bt_mesh_config_composition_data_status_data_t *)wiced_bt_get_buffer(buf_size);
+            if (p_cb->p_remote_composition_data)
+            {
+                p_cb->p_remote_composition_data->page_number = p_temp->page_number;
+                p_cb->p_remote_composition_data->data_len = p_temp->data_len;
+                memcpy(p_cb->p_remote_composition_data->data, p_temp->data, p_temp->data_len);
+            }
+            wiced_bt_free_buffer(p_temp);
+        }
+    }
+    if (p_cb->p_remote_composition_data == NULL)
+    {
+        Log("Large compos mem alloc error\n");
+        provision_status_notify(p_cb, MESH_CLIENT_PROVISION_STATUS_FAILED);
+        return;
+    }
+
+    // copy composition data
+    p_cb->remote_compos_data_buf_size = buf_size;
+    memcpy(&p_cb->p_remote_composition_data->data[p_data->offset], p_data->p_data, p_data->data_len);
+    p_cb->p_remote_composition_data->data_len += p_data->data_len;
+
+    provision_status_notify(p_cb, MESH_CLIENT_PROVISION_STATUS_CONFIGURING);
+
+    // check if received all composition data
+    if (p_cb->p_remote_composition_data->data_len == p_data->total_size)
+    {
+        // setup mesh db with composition data
+        if (!wiced_bt_mesh_db_node_set_composition_data(p_mesh_db, p_event->src, p_cb->p_remote_composition_data->data, p_cb->p_remote_composition_data->data_len))
+        {
+            Log("comp failed\n");
+            provision_status_notify(p_cb, MESH_CLIENT_PROVISION_STATUS_FAILED);
+            return;
+        }
+        wiced_bt_mesh_db_store(p_mesh_db);
+
+        // configure remote device
+        mesh_configure_remote_device(p_cb);
+    }
+    else
+    {
+        // get next chunk of composition data
+        mesh_configure_large_compos_data_get(p_cb, p_data->page, p_cb->p_remote_composition_data->data_len);
+    }
+}
+#endif
 
 void mesh_configure_proxy_connection_status(mesh_provision_cb_t *p_cb, wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_connect_status_data_t *p_data)
 {
@@ -5427,6 +5595,18 @@ void start_next_op(mesh_provision_cb_t *p_cb)
         wiced_bt_free_buffer(p_op);
     }
 
+#ifdef OPCODES_AGGREGATOR_SUPPORTED
+    if (p_cb->p_first != NULL)
+    {
+        // Skip next op if it is already aggregated
+        if (p_cb->p_first->aggr_flag == CONFIG_OPERATION_AGGREGATED)
+            return;
+
+        // Start aggregation if remote supports it
+        if (is_model_present(p_cb->p_first->p_event->dst, MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_OPCODES_AGGREGATOR_SRV))
+            configure_start_aggregated_operations(p_cb);
+    }
+#endif
     configure_execute_pending_operation(p_cb);
 
     if (p_cb->p_first == NULL)
@@ -6210,8 +6390,15 @@ void mesh_configure_model_app_bind_status(mesh_provision_cb_t *p_cb, wiced_bt_me
 
 void mesh_configure_model_sub_status(mesh_provision_cb_t *p_cb, wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_config_model_subscription_status_data_t *p_data)
 {
-    // Check that this is not reply to a retransmission
     pending_operation_t *p_op = p_cb->p_first;
+
+#ifdef MESH_DFU_ENABLED
+    if (p_fw_update_process_sub_status != NULL)
+        if (p_fw_update_process_sub_status(p_event, p_data))
+            return;
+#endif
+
+    // Check that this is not reply to a retransmission
     if ((p_op == NULL) || (p_op->p_event == NULL) || (p_op->p_event->dst != p_event->src) ||
         (p_op->operation != CONFIG_OPERATION_MODEL_SUBSCRIBE) ||
         (p_op->uu.model_sub.element_addr != p_data->element_addr) ||
@@ -8051,6 +8238,49 @@ void configure_execute_pending_operation(mesh_provision_cb_t *p_cb)
     }
 }
 
+#ifdef OPCODES_AGGREGATOR_SUPPORTED
+void opcodes_aggregator_item_add_callback(uint8_t status)
+{
+    mesh_provision_cb_t *p_cb = &provision_cb;
+
+    // Check if the aggregator item was added successfully
+    if (status == WICED_BT_MESH_AGG_ITEM_ADD_SUCCEEDED)
+    {
+        pending_operation_t *p_op = p_cb->p_agg_op->p_next;
+
+        // Mark the operation item as aggregated
+        p_cb->p_agg_op->aggr_flag = CONFIG_OPERATION_AGGREGATED;
+
+        // Add next item if following requirements are met
+        if (p_op != NULL &&
+            p_op->p_event->app_key_idx == p_cb->p_agg_op->p_event->app_key_idx &&
+            p_op->p_event->dst == p_cb->p_agg_op->p_event->dst)
+        {
+            p_cb->p_agg_op = p_op;
+            configure_execute_pending_operation(&provision_cb);
+            return;
+        }
+    }
+
+    // Otherwise send the aggregated sequence
+    p_cb->p_agg_op = NULL;
+    wiced_bt_mesh_opcodes_aggregator_finish_and_send(0);
+}
+
+void configure_start_aggregated_operations(mesh_provision_cb_t *p_cb)
+{
+    pending_operation_t *p_op = p_cb->p_first;
+
+    if (!p_op || !p_op->p_event)
+        return;
+
+    wiced_bt_mesh_opcodes_aggregator_start(p_op->p_event->dst, p_op->p_event->element_idx,
+        p_op->p_event->app_key_idx, WICED_TRUE, p_op->p_event->dst + p_op->p_event->element_idx,
+        opcodes_aggregator_item_add_callback);
+    p_cb->p_agg_op = p_op;
+}
+#endif
+
 void provision_status_notify(mesh_provision_cb_t* p_cb, uint8_t status)
 {
     if (!p_cb->provision_completed_sent && (p_cb->p_provision_status != NULL))
@@ -8080,6 +8310,11 @@ void provision_timer_cb(TIMER_PARAM_TYPE arg)
 
     if (p_op == NULL)
         return;
+
+#ifdef OPCODES_AGGREGATOR_SUPPORTED
+    if (p_cb->p_agg_op != NULL)
+        p_op = p_cb->p_agg_op;
+#endif
 
     if (p_op->p_event == NULL)
     {
@@ -8212,7 +8447,9 @@ void provision_timer_cb(TIMER_PARAM_TYPE arg)
 #ifdef PRIVATE_PROXY_SUPPORTED
 void proxy_solicitation_timer_cb(TIMER_PARAM_TYPE arg)
 {
+#ifndef CLIENTCONTROL
     mesh_advertising_stop();
+#endif
 }
 #endif
 

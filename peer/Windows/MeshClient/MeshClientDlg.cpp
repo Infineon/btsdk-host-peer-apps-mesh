@@ -1,5 +1,5 @@
 ﻿/*
-* Copyright 2016-2022, Cypress Semiconductor Corporation (an Infineon company) or
+* Copyright 2016-2023, Cypress Semiconductor Corporation (an Infineon company) or
 * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
 *
 * This software, including source code, documentation and related
@@ -145,6 +145,8 @@ WCHAR *dfuMethods[] = {
 extern wiced_bool_t mesh_adv_scanner_open();
 extern void mesh_adv_scanner_close(void);
 extern "C" void mesh_client_advert_report(uint8_t *bd_addr, uint8_t addr_type, int8_t rssi, uint8_t *adv_data);
+extern "C" uint16_t get_device_addr(const char *p_dev_name);
+extern "C" uint16_t mesh_client_get_unicast_addr();
 
 char provisioner_uuid[50];
 
@@ -767,6 +769,7 @@ BOOL CMeshClientDlg::OnInitDialog()
 
     SetDlgItemText(IDC_DFU_START_STOP, L"DFU Start");
     GetDlgItem(IDC_DFU_PAUSE_RESUME)->ShowWindow(SW_SHOW);
+    GetDlgItem(IDC_DFU_PAUSE_RESUME)->EnableWindow(FALSE);
     GetDlgItem(IDC_DFU_GET_STATUS)->ShowWindow(SW_SHOW);
 #endif
 
@@ -1762,7 +1765,7 @@ void sensor_status(const char *device_name, int property_id, uint8_t value_len, 
 
     WCHAR   msg[1002];
     if (property_id == WICED_BT_MESH_PROPERTY_PRESENT_AMBIENT_TEMPERATURE)
-        swprintf_s(msg, sizeof(msg) / 2, L"Sensor data from:%s Ambient Temperature %d degrees Celsius", szDevName, value[0] / 2);
+        swprintf_s(msg, sizeof(msg) / 2, L"Sensor data from:%s Ambient Temperature %d degrees Celsius", szDevName, ((int8_t)value[0]) / 2);
     else if (property_id == WICED_BT_MESH_PROPERTY_PRESENCE_DETECTED)
         swprintf_s(msg, sizeof(msg) / 2, L"Sensor data from:%s Presense detected %s", szDevName, value[0] != 0 ? L"true" : L"false");
     else if (property_id == WICED_BT_MESH_PROPERTY_PRESENT_AMBIENT_LIGHT_LEVEL)
@@ -2339,21 +2342,8 @@ extern "C"
 {
     char skip_space(FILE* fp);
     int mesh_json_read_tag_name(FILE* fp, char* tagname, int len);
+    int mesh_json_read_next_level_tag(FILE* fp, char* tagname, int len);
     int mesh_json_read_string(FILE* fp, char prefix, char* buffer, int len);
-}
-
-int mesh_json_read_next_level_tag(FILE* fp, char* tagname, int len)
-{
-    int tag_len = 0;
-
-    if (skip_space(fp) != '{')
-        return 0;
-    if (skip_space(fp) != '\"')
-        return 0;
-    tag_len = mesh_json_read_tag_name(fp, tagname, len);
-    if (skip_space(fp) != ':')
-        return 0;
-    return tag_len;
 }
 
 #ifdef MESH_DFU_ENABLED
@@ -2476,6 +2466,7 @@ void CMeshClientDlg::SetDfuStarted(BOOL started)
     {
 #ifdef MESH_DFU_ENABLED
         SetDlgItemText(IDC_DFU_START_STOP, L"DFU Start");
+        GetDlgItem(IDC_DFU_PAUSE_RESUME)->EnableWindow(FALSE);
 #else
         SetDlgItemText(IDC_DFU_START_STOP, L"OTA Start");
 #endif
@@ -2526,16 +2517,17 @@ BOOL CMeshClientDlg::OnDfuStart()
         m_Progress.SetPos(0);
 
         int result;
-        BOOL self_distributor = dfu_method == DFU_METHOD_PROXY_TO_ALL ? FALSE : TRUE;
+        uint16_t distributor_addr = 0;
+        char name[80];
+        GetDlgItemTextA(m_hWnd, IDC_CONTROL_DEVICE, name, sizeof(name));
+        if (dfu_method == DFU_METHOD_PROXY_TO_ALL)
+            distributor_addr = get_device_addr(name);
+        else if (dfu_method == DFU_METHOD_APP_TO_ALL)
+            distributor_addr = mesh_client_get_unicast_addr();
         EnterCriticalSection(&cs);
-        result = mesh_client_dfu_start(m_DfuFwId.fw_id, m_DfuFwId.fw_id_len, m_DfuMetaData.data, m_DfuMetaData.len, TRUE, self_distributor);
+        result = mesh_client_dfu_start(m_DfuFwId.fw_id, m_DfuFwId.fw_id_len, m_DfuMetaData.data, m_DfuMetaData.len, GetDfuImageSize(), distributor_addr, fw_distribution_status);
         LeaveCriticalSection(&cs);
-        if (result == MESH_CLIENT_SUCCESS)
-        {
-            m_bDfuStatus = FALSE;
-            OnBnClickedDfuGetStatus();
-        }
-        else
+        if (result != MESH_CLIENT_SUCCESS)
             return FALSE;
     }
     else
@@ -2670,14 +2662,13 @@ void CMeshClientDlg::OnBnClickedDfuPauseresume()
     {
         mesh_client_dfu_resume();
         dfu_paused = FALSE;
-        SetDlgItemText(IDC_DFU_PAUSE_RESUME, L"DFU Pause");
     }
     else if (mesh_client_dfu_suspend() == MESH_CLIENT_SUCCESS)
     {
         dfu_paused = TRUE;
-        SetDlgItemText(IDC_DFU_PAUSE_RESUME, L"DFU Resume");
     }
     LeaveCriticalSection(&cs);
+    SetDlgItemText(IDC_DFU_PAUSE_RESUME, dfu_paused ? L"DFU Resume" : L"DFU Pause");
 #endif
 }
 
@@ -2699,16 +2690,11 @@ void CMeshClientDlg::OnBnClickedDfuGetStatus()
 
     EnterCriticalSection(&cs);
     if (m_bDfuStatus)
-    {
         mesh_client_dfu_get_status(fw_distribution_status, DISTRIBUTION_STATUS_TIMEOUT);
-        SetDlgItemText(IDC_DFU_GET_STATUS, L"Stop DFU Status");
-    }
     else
-    {
         mesh_client_dfu_get_status(NULL, 0);
-        SetDlgItemText(IDC_DFU_GET_STATUS, L"Get DFU Status");
-    }
     LeaveCriticalSection(&cs);
+    SetDlgItemText(IDC_DFU_GET_STATUS, m_bDfuStatus ? L"Stop DFU Status" : L"Get DFU Status");
 #endif
 }
 
@@ -2734,11 +2720,13 @@ void CMeshClientDlg::OnDfuStatusCallback(uint8_t state, uint8_t* p_data, uint32_
         {
             progress = (int)p_data[0];
             Log(L"DFU upload progress %d%%\n", progress);
-            m_Progress.SetPos(progress / 2);
+            m_Progress.SetPos(progress);
         }
         else
         {
             Log(L"DFU uploading firmware to the Distributor\n");
+            if (!m_bDfuStatus)
+                OnBnClickedDfuGetStatus();
         }
         break;
     case WICED_BT_MESH_DFU_STATE_DISTRIBUTE:
@@ -2772,11 +2760,19 @@ void CMeshClientDlg::OnDfuStatusCallback(uint8_t state, uint8_t* p_data, uint32_
                 progress = 0;
             Log(L"DFU distribution progress %d%%\n", progress);
 
-            m_Progress.SetPos(progress / 2 + 50);
+            m_Progress.SetPos(progress);
         }
         else
         {
             Log(L"DFU Distributor distributing firmware to nodes\n");
+            GetDlgItem(IDC_DFU_PAUSE_RESUME)->EnableWindow(TRUE);
+            if (!m_bDfuStatus)
+                OnBnClickedDfuGetStatus();
+        }
+        if (!m_bDfuStarted)
+        {
+            SetDfuStarted(TRUE);
+            GetDlgItem(IDC_DFU_PAUSE_RESUME)->EnableWindow(TRUE);
         }
         break;
     case WICED_BT_MESH_DFU_STATE_APPLY:

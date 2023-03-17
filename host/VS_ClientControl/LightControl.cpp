@@ -1,5 +1,5 @@
 ﻿/*
- * Copyright 2016-2022, Cypress Semiconductor Corporation (an Infineon company) or
+ * Copyright 2016-2023, Cypress Semiconductor Corporation (an Infineon company) or
  * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
  *
  * This software, including source code, documentation and related
@@ -41,6 +41,9 @@
 #include "afxdialogex.h"
 #include "resource.h"
 #include "wiced_mesh_client.h"
+#ifdef MESH_DFU_ENABLED
+#include "wiced_mesh_client_dfu.h"
+#endif
 #include "hci_control_api.h"
 #include "wiced_bt_mesh_model_defs.h"
 #include "wiced_bt_mesh_provision.h"
@@ -58,6 +61,8 @@ BOOL  provision_test_bScanning;
 
 extern "C" uint8_t * wiced_bt_mesh_format_hci_header(uint16_t dst, uint16_t app_key_idx, uint8_t element_idx, uint8_t reliable, uint8_t send_segmented, uint8_t ttl, uint8_t retransmit_count, uint8_t retransmit_interval, uint8_t reply_timeout, uint16_t num_in_group, uint16_t * group_list, uint8_t * p_buffer, uint16_t len);
 extern "C" wiced_bt_mesh_event_t * wiced_bt_mesh_event_from_hci_header(uint8_t * *p_buffer, uint16_t * len);
+extern "C" uint16_t get_device_addr(const char *p_dev_name);
+extern "C" uint16_t mesh_client_get_unicast_addr();
 
 extern ClsStopWatch thesw;
 
@@ -119,13 +124,16 @@ void network_opened(uint8_t status);
 /*extern "C" */ void xyl_status(const char* device_name, uint16_t present_lightness, uint16_t x, uint16_t y, uint32_t remaining_time);
 /*extern "C" */ void sensor_status(const char *device_name, int property_id, uint8_t value_len, uint8_t *value);
 /*extern "C" */ void vendor_specific_data(const char *device_name, uint16_t company_id, uint16_t model_id, uint8_t opcode, uint8_t ttl, uint8_t *p_data, uint16_t data_len);
-/*extern "C" */ void fw_distribution_status(uint8_t status, uint8_t progress);
+/*extern "C" */ void fw_distribution_status(uint8_t state, uint8_t *p_data, uint32_t data_length);
 
+#ifdef MESH_DFU_ENABLED
 WCHAR *dfuMethods[] = {
     L"Proxy DFU to all",
     L"App DFU to all",
-    L"App OTA to device",
 };
+#endif
+
+#define DISTRIBUTION_STATUS_TIMEOUT     10
 
 extern wiced_bool_t mesh_adv_scanner_open();
 extern void mesh_adv_scanner_close(void);
@@ -244,6 +252,7 @@ CLightControl::~CLightControl()
 void CLightControl::DoDataExchange(CDataExchange* pDX)
 {
 	CPropertyPage::DoDataExchange(pDX);
+    DDX_Control(pDX, IDC_PROGRESS, m_Progress);
 }
 
 BEGIN_MESSAGE_MAP(CLightControl, CPropertyPage)
@@ -284,16 +293,15 @@ BEGIN_MESSAGE_MAP(CLightControl, CPropertyPage)
     ON_CBN_SELCHANGE(IDC_CONFIGURE_CONTROL_DEVICE, &CLightControl::OnCbnSelchangeConfigureControlDevice)
     ON_BN_CLICKED(IDC_NETWORK_IMPORT, &CLightControl::OnBnClickedNetworkImport)
     ON_BN_CLICKED(IDC_NETWORK_EXPORT, &CLightControl::OnBnClickedNetworkExport)
-    ON_BN_CLICKED(IDC_BROWSE_OTA, &CLightControl::OnBnClickedBrowseOta)
-    ON_BN_CLICKED(IDC_OTA_UPGRADE_STOP, &CLightControl::OnBnClickedOtaUpgradeStop)
-    // ON_BN_CLICKED(IDC_OTA_UPGRADE_STATUS, &CLightControl::OnBnClickedOtaUpgradeStatus)
+    ON_BN_CLICKED(IDC_BROWSE_DFU, &CLightControl::OnBnClickedBrowseDfu)
+    ON_BN_CLICKED(IDC_DFU_START_STOP, &CLightControl::OnBnClickedDfuStartstop)
+    ON_BN_CLICKED(IDC_DFU_PAUSE_RESUME, &CLightControl::OnBnClickedDfuPauseresume)
+    ON_BN_CLICKED(IDC_DFU_GET_STATUS, &CLightControl::OnBnClickedDfuGetStatus)
     ON_BN_CLICKED(IDC_SENSOR_GET, &CLightControl::OnBnClickedSensorGet)
     ON_CBN_SELCHANGE(IDC_CONTROL_DEVICE, &CLightControl::OnCbnSelchangeControlDevice)
     ON_BN_CLICKED(IDC_SENSOR_CONFIGURE, &CLightControl::OnBnClickedSensorConfigure)
     ON_BN_CLICKED(IDC_GET_COMPONENT_INFO, &CLightControl::OnBnClickedGetComponentInfo)
     ON_BN_CLICKED(IDC_LC_CONFIGURE, &CLightControl::OnBnClickedLcConfigure)
-    ON_BN_CLICKED(IDC_DFU_UPLOAD, &CLightControl::OnBnClickedDfuUpload)
-    ON_BN_CLICKED(IDC_DFU_UPLOAD2, &CLightControl::OnBnClickedDfuUpload2)
     ON_BN_CLICKED(IDC_TRACE_CORE_SET, &CLightControl::OnBnClickedTraceCoreSet)
     ON_BN_CLICKED(IDC_TRACE_MODELS_SET, &CLightControl::OnBnClickedTraceModelsSet)
     ON_BN_CLICKED(IDC_RSSI_TEST_START, &CLightControl::OnBnClickedRssiTestStart)
@@ -370,7 +378,7 @@ BOOL CLightControl::OnSetActive()
     ((CButton *)GetDlgItem(IDC_STATIC_OOB_DATA))->SetCheck(bUseStaticOobData);
 
     CString sFwManifestFile = theApp.GetProfileString(L"LightControl", L"FwManifestFile", L"");
-    SetDlgItemText(IDC_FILENAME_UPLOAD, sFwManifestFile);
+    SetDlgItemText(IDC_FILENAME_DFU, sFwManifestFile);
 
     WCHAR szHostName[128];
     DWORD dw = 128;
@@ -419,6 +427,29 @@ BOOL CLightControl::OnSetActive()
 
     mesh_client_init(&mesh_client_init_callbacks);
     free(p_networks);
+
+#ifdef MESH_DFU_ENABLED
+    m_dfuState = WICED_BT_MESH_DFU_STATE_INIT;
+    m_bDfuStatus = FALSE;
+    m_bDfuStarted = FALSE;
+    m_bUploading = FALSE;
+
+    CComboBox *pCb = (CComboBox *)GetDlgItem(IDC_DFU_METHOD);
+    pCb->ShowWindow(SW_SHOW);
+    for (int i = 0; i < ((sizeof(dfuMethods)) / sizeof(dfuMethods[0])); i++)
+        pCb->AddString(dfuMethods[i]);
+    pCb->SetCurSel(0);
+
+    GetDlgItem(IDC_FILENAME_DFU)->ShowWindow(SW_SHOW);
+    GetDlgItem(IDC_BROWSE_DFU)->ShowWindow(SW_SHOW);
+    GetDlgItem(IDC_PROGRESS)->ShowWindow(SW_SHOW);
+    GetDlgItem(IDC_DFU_START_STOP)->ShowWindow(SW_SHOW);
+    GetDlgItem(IDC_DFU_PAUSE_RESUME)->ShowWindow(SW_SHOW);
+    GetDlgItem(IDC_DFU_PAUSE_RESUME)->EnableWindow(FALSE);
+    GetDlgItem(IDC_DFU_GET_STATUS)->ShowWindow(SW_SHOW);
+    GetDlgItem(IDC_DFU_GET_STATUS)->EnableWindow(FALSE);
+#endif
+
     return TRUE;  // return TRUE unless you set the focus to a control
 }
 
@@ -1397,7 +1428,7 @@ void sensor_status(const char *device_name, int property_id, uint8_t value_len, 
 
     WCHAR   msg[1002];
     if (property_id == WICED_BT_MESH_PROPERTY_PRESENT_AMBIENT_TEMPERATURE)
-        swprintf_s(msg, sizeof(msg) / 2, L"Sensor data from:%s Ambient Temperature %d degrees Celsius", szDevName, value[0] / 2);
+        swprintf_s(msg, sizeof(msg) / 2, L"Sensor data from:%s Ambient Temperature %d degrees Celsius", szDevName, ((int8_t)value[0]) / 2);
     else if (property_id == WICED_BT_MESH_PROPERTY_PRESENCE_DETECTED)
         swprintf_s(msg, sizeof(msg) / 2, L"Sensor data from:%s Presense detected %s", szDevName, value[0] != 0 ? L"true" : L"false");
     else if (property_id == WICED_BT_MESH_PROPERTY_PRESENT_AMBIENT_LIGHT_LEVEL)
@@ -1939,35 +1970,6 @@ void CLightControl::OnBnClickedGetComponentInfo()
     mesh_client_get_component_info(name, component_info_status_callback);
 }
 
-void CLightControl::OnBnClickedOtaUpgradeStart()
-{
-    char name[80];
-    GetDlgItemTextA(m_hWnd, IDC_CONTROL_DEVICE, name, sizeof(name));
-    int dfu_method = ((CComboBox *)GetDlgItem(IDC_DFU_METHOD))->GetCurSel();
-
-    // Regardless of what are we trying to do, need to connect to a specific component
-    // then OtaUpgradeContinue will be executed
-    mesh_client_connect_component(name, 1, 10);
-}
-
-void CLightControl::OnBnClickedOtaUpgradeStop()
-{
-#if 0
-    mesh_client_dfu_stop();
-#endif
-}
-
-void fw_distribution_status(uint8_t status, int current_block_num, int total_blocks)
-{
-}
-
-#if 0
-void CLightControl::OnBnClickedOtaUpgradeStatus()
-{
-    mesh_client_dfu_get_status(NULL, 0, NULL, 0, &fw_distribution_status);
-}
-#endif
-
 void CLightControl::OnOtaUpgradeContinue()
 {
 #if 0
@@ -2146,14 +2148,14 @@ LRESULT CLightControl::OnMeshDeviceDisconnected(WPARAM Instance, LPARAM lparam)
     return S_OK;
 }
 
-void CLightControl::OnBnClickedBrowseOta()
+void CLightControl::OnBnClickedBrowseDfu()
 {
     static TCHAR BASED_CODE szFilter[] = _T("JSON Files (*.json)|*.*|");
 
     CFileDialog dlgFile(TRUE, NULL, NULL, OFN_OVERWRITEPROMPT | OFN_NOCHANGEDIR, szFilter);
     if (dlgFile.DoModal() == IDOK)
     {
-        SetDlgItemText(IDC_FILENAME_UPLOAD, dlgFile.GetPathName());
+        SetDlgItemText(IDC_FILENAME_DFU, dlgFile.GetPathName());
     }
 }
 
@@ -2315,15 +2317,459 @@ void CLightControl::OnBnClickedLcConfigure()
         dlg.DoModal();
 }
 
+#ifdef MESH_DFU_ENABLED
+#define MAX_TAG_NAME                                32
+#define MAX_FILE_NAME                               256
+
+extern "C"
+{
+    char skip_space(FILE* fp);
+    int mesh_json_read_tag_name(FILE* fp, char* tagname, int len);
+    int mesh_json_read_next_level_tag(FILE* fp, char* tagname, int len);
+    int mesh_json_read_string(FILE* fp, char prefix, char* buffer, int len);
+}
+
+BOOL CLightControl::ReadDfuManifestFile(CString sFilePath)
+{
+    char tagname[MAX_TAG_NAME];
+    char filename[MAX_FILE_NAME];
+    char c1;
+    FILE* fp;
+    CString sPath;
+
+    if (_wfopen_s(&fp, sFilePath, L"r"))
+        return FALSE;
+
+    sPath = sFilePath.Left(sFilePath.ReverseFind('\\') + 1);
+
+    if (mesh_json_read_next_level_tag(fp, tagname, sizeof(tagname)) == 0)
+        goto return_false;
+    if (strcmp(tagname, "manifest") != 0)
+        goto return_false;
+    if (mesh_json_read_next_level_tag(fp, tagname, sizeof(tagname)) == 0)
+        goto return_false;
+    if (strcmp(tagname, "firmware") != 0)
+        goto return_false;
+    if (skip_space(fp) != '{')
+        goto return_false;
+    if (skip_space(fp) != '\"')
+        goto return_false;
+    while (1)
+    {
+        if (mesh_json_read_tag_name(fp, tagname, MAX_TAG_NAME) == 0)
+            break;
+        if (skip_space(fp) != ':')
+            goto return_false;
+        c1 = skip_space(fp);
+        if (strcmp(tagname, "firmware_file") == 0)
+        {
+            if (!mesh_json_read_string(fp, c1, filename, MAX_FILE_NAME))
+                goto return_false;
+
+            m_sDfuImageFilePath = sPath;
+            m_sDfuImageFilePath.AppendFormat(L"%S", filename);
+        }
+        else if (strcmp(tagname, "metadata_file") == 0)
+        {
+            if (!mesh_json_read_string(fp, c1, filename, MAX_FILE_NAME))
+                goto return_false;
+
+            CString sMetaFilePath = sPath;
+            sMetaFilePath.AppendFormat(L"%S", filename);
+
+            FILE* fpMeta;
+            if (_wfopen_s(&fpMeta, sMetaFilePath, L"rb"))
+                goto return_false;
+
+            int c = 0, i = 0;
+            while (fread(&c, 1, 1, fpMeta) > 0)
+            {
+                m_DfuMetaData.data[i++] = (uint8_t)c;
+            }
+            m_DfuMetaData.len = (uint8_t)i;
+            fclose(fpMeta);
+        }
+        else if (strcmp(tagname, "firmware_id") == 0)
+        {
+            if (!mesh_json_read_string(fp, c1, filename, MAX_FILE_NAME))
+                goto return_false;
+            char* p = filename;
+            int i = 0;
+            while ((size_t)(p - filename) < strlen(filename))
+            {
+                unsigned int value;
+                sscanf(p, "%02x", &value);
+                m_DfuFwId.fw_id[i++] = (uint8_t)value;
+                p += 2;
+            }
+            m_DfuFwId.fw_id_len = i;
+        }
+        if (skip_space(fp) != ',')
+            break;
+        if (skip_space(fp) != '\"')
+            break;
+    }
+
+    fclose(fp);
+    return TRUE;
+
+return_false:
+    fclose(fp);
+    return FALSE;
+}
+#endif
+
+void CLightControl::OnBnClickedDfuStartstop()
+{
+    if (m_bDfuStarted)
+    {
+        OnDfuStop();
+        SetDfuStarted(FALSE);
+    }
+    else if (OnDfuStart())
+    {
+        SetDfuStarted(TRUE);
+    }
+}
+
+void CLightControl::SetDfuStarted(BOOL started)
+{
+    m_bDfuStarted = started;
+
+    if (m_bDfuStarted)
+    {
+        SetDlgItemText(IDC_DFU_START_STOP, L"DFU Stop");
+    }
+    else
+    {
+        SetDlgItemText(IDC_DFU_START_STOP, L"DFU Start");
+        GetDlgItem(IDC_DFU_PAUSE_RESUME)->EnableWindow(FALSE);
+        GetDlgItem(IDC_DFU_GET_STATUS)->EnableWindow(FALSE);
+    }
+}
+
+BOOL CLightControl::OnDfuStart()
+{
+    CString sFilePath;
+    GetDlgItemText(IDC_FILENAME_DFU, sFilePath);
+
+#ifdef MESH_DFU_ENABLED
+    if (m_dfuState != WICED_BT_MESH_DFU_STATE_INIT && m_dfuState != WICED_BT_MESH_DFU_STATE_COMPLETE && m_dfuState != WICED_BT_MESH_DFU_STATE_FAILED)
+    {
+        Log(L"DFU already started\n");
+        return FALSE;
+    }
+#endif
+
+    if (sFilePath.IsEmpty())
+    {
+        OnBnClickedBrowseDfu();
+        GetDlgItemText(IDC_FILENAME_DFU, sFilePath);
+        if (sFilePath.IsEmpty())
+            return FALSE;
+    }
+
+#ifdef MESH_DFU_ENABLED
+    m_DfuMethod = ((CComboBox*)GetDlgItem(IDC_DFU_METHOD))->GetCurSel();
+
+    if (m_DfuMethod == DFU_METHOD_PROXY_TO_ALL || m_DfuMethod == DFU_METHOD_APP_TO_ALL)
+    {
+        // DFU
+        CString sFileExt = sFilePath.Right(5);
+        if (sFileExt.CompareNoCase(CString(L".json")) != 0)
+        {
+            MessageBox(L"Please choose correct DFU manifest file (.json)", L"Error", MB_OK);
+            return FALSE;
+        }
+
+        if (!ReadDfuManifestFile(sFilePath))
+        {
+            MessageBox(L"Failed to read from manifest file", L"Error", MB_OK);
+            return FALSE;
+        }
+
+        m_Progress.SetRange32(0, 100);
+        m_Progress.SetPos(0);
+
+        m_dwPatchSize = GetDfuImageSize();
+        m_dwPatchOffset = 0;
+
+        // Start uploading firmware
+        uint8_t buffer[512];
+        LPBYTE p = buffer;
+
+        *p++ = 0x7f;                            // TTL to use in a firmware image upload
+        *p++ = 0;                               // timeout (2 bytes)
+        *p++ = 0;                               // Actual timeout is 10*(Upload Timeout + 1). For upload over UART 10 seconds should be enough
+        memset(p, 0, 8);                        // Blob ID
+        p += 8;
+        *p++ = m_dwPatchSize & 0xff;            // Firmware size in octets
+        *p++ = (m_dwPatchSize >> 8) & 0xff;
+        *p++ = (m_dwPatchSize >> 16) & 0xff;
+        *p++ = (m_dwPatchSize >> 24) & 0xff;
+        *p++ = m_DfuMetaData.len;               // Metadata length size in octets
+        memcpy(p, m_DfuMetaData.data, m_DfuMetaData.len);
+        p += m_DfuMetaData.len;
+        memcpy(p, m_DfuFwId.fw_id, m_DfuFwId.fw_id_len);
+        p += m_DfuFwId.fw_id_len;
+
+        m_ComHelper->SendWicedCommand(HCI_CONTROL_MESH_COMMAND_FW_DISTRIBUTION_UPLOAD_START, buffer, (DWORD)(p - buffer));
+        m_bUploading = TRUE;
+        Log(L"Start uploading\n");
+    }
+#endif
+    return TRUE;
+}
+
+#define FIRMWARE_UPLOAD_BLOCK_SIZE  512
+
+void CLightControl::FwDistributionUploadStatus(LPBYTE p_data, DWORD len)
+{
+#ifdef MESH_DFU_ENABLED
+    uint8_t status = p_data[0];
+    uint8_t phase = p_data[1];
+    uint8_t distribution_status = p_data[2];
+    uint8_t buffer[4 + FIRMWARE_UPLOAD_BLOCK_SIZE];
+    uint8_t* p = buffer;
+    DWORD dwBytes;
+
+    if ((status == 0) && (m_dwPatchSize != 0) && m_bUploading)
+    {
+        if (m_dwPatchOffset == m_dwPatchSize)
+        {
+            m_ComHelper->SendWicedCommand(HCI_CONTROL_MESH_COMMAND_FW_DISTRIBUTION_UPLOAD_FINISH, &status, 1);
+            m_dwPatchOffset = 0xFFFFFFFF;
+            return;
+        }
+        else if (m_dwPatchOffset == 0xFFFFFFFF)
+        {
+            int result;
+            uint16_t distributor_addr = 0;
+            char name[80];
+            GetDlgItemTextA(m_hWnd, IDC_CONTROL_DEVICE, name, sizeof(name));
+            if (m_DfuMethod == DFU_METHOD_PROXY_TO_ALL)
+                distributor_addr = get_device_addr(name);
+            else if (m_DfuMethod == DFU_METHOD_APP_TO_ALL)
+                distributor_addr = mesh_client_get_unicast_addr();
+            m_bUploading = FALSE;
+            //EnterCriticalSection(&cs);
+            result = mesh_client_dfu_start(m_DfuFwId.fw_id, m_DfuFwId.fw_id_len, m_DfuMetaData.data, m_DfuMetaData.len, m_dwPatchSize, distributor_addr, fw_distribution_status);
+            //LeaveCriticalSection(&cs);
+            if (result != MESH_CLIENT_SUCCESS)
+                SetDfuStarted(FALSE);
+        }
+        else
+        {
+            *p++ = m_dwPatchOffset & 0xff;
+            *p++ = (m_dwPatchOffset >> 8) & 0xff;
+            *p++ = (m_dwPatchOffset >> 16) & 0xff;
+            *p++ = (m_dwPatchOffset >> 24) & 0xff;
+            dwBytes = m_dwPatchOffset + FIRMWARE_UPLOAD_BLOCK_SIZE > m_dwPatchSize ? m_dwPatchSize - m_dwPatchOffset : FIRMWARE_UPLOAD_BLOCK_SIZE;
+            GetDfuImageChunk(p, m_dwPatchOffset, (uint16_t)dwBytes);
+
+            m_ComHelper->SendWicedCommand(HCI_CONTROL_MESH_COMMAND_FW_DISTRIBUTION_UPLOAD_DATA, buffer, dwBytes + 4);
+            m_dwPatchOffset += dwBytes;
+            m_Progress.SetPos(m_dwPatchOffset * 100 / m_dwPatchSize);
+        }
+    }
+    else
+    {
+        if (m_bUploading)
+        {
+            Log(L"Upload failed\n");
+            m_bUploading = FALSE;
+        }
+        SetDfuStarted(FALSE);
+    }
+#endif
+}
+
+void CLightControl::OnDfuStop()
+{
+#ifdef MESH_DFU_ENABLED
+    if (m_bUploading)
+    {
+        uint8_t status = 1;
+        m_ComHelper->SendWicedCommand(HCI_CONTROL_MESH_COMMAND_FW_DISTRIBUTION_UPLOAD_FINISH, &status, 1);
+        m_bUploading = FALSE;
+    }
+    else
+    {
+        //EnterCriticalSection(&cs);
+        mesh_client_dfu_stop();
+        //LeaveCriticalSection(&cs);
+    }
+
+    if (m_bDfuStatus)
+        OnBnClickedDfuGetStatus();
+
+    m_dfuState = WICED_BT_MESH_DFU_STATE_INIT;
+    Log(L"DFU stopped\n");
+#endif
+}
+
+void CLightControl::OnBnClickedDfuPauseresume()
+{
+    static BOOL dfu_paused = FALSE;
+
+#ifdef MESH_DFU_ENABLED
+    //EnterCriticalSection(&cs);
+    if (dfu_paused)
+    {
+        mesh_client_dfu_resume();
+        dfu_paused = FALSE;
+        SetDlgItemText(IDC_DFU_PAUSE_RESUME, L"DFU Pause");
+    }
+    else if (mesh_client_dfu_suspend() == MESH_CLIENT_SUCCESS)
+    {
+        dfu_paused = TRUE;
+        SetDlgItemText(IDC_DFU_PAUSE_RESUME, L"DFU Resume");
+    }
+    //LeaveCriticalSection(&cs);
+#endif
+}
+
+#ifdef MESH_DFU_ENABLED
+void fw_distribution_status(uint8_t state, uint8_t *p_data, uint32_t data_length)
+{
+    CClientDialog* pSheet = (CClientDialog*)theApp.m_pMainWnd;
+    CLightControl* pDlg = &pSheet->pageLight;
+    if (!pDlg)
+        return;
+
+    pDlg->OnDfuStatusCallback(state, p_data, data_length);
+}
+#endif
+
+void CLightControl::OnBnClickedDfuGetStatus()
+{
+#ifdef MESH_DFU_ENABLED
+    m_bDfuStatus = !m_bDfuStatus;
+
+    //EnterCriticalSection(&cs);
+    if (m_bDfuStatus)
+        mesh_client_dfu_get_status(fw_distribution_status, DISTRIBUTION_STATUS_TIMEOUT);
+    else
+        mesh_client_dfu_get_status(NULL, 0);
+    //LeaveCriticalSection(&cs);
+    SetDlgItemText(IDC_DFU_GET_STATUS, m_bDfuStatus ? L"Stop DFU Status" : L"Get DFU Status");
+#endif
+}
+
+#ifdef MESH_DFU_ENABLED
+void CLightControl::OnDfuStatusCallback(uint8_t state, uint8_t *p_data, uint32_t data_length)
+{
+    int progress;
+    uint16_t number_nodes, i;
+    uint8_t *p;
+
+    m_dfuState = state;
+
+    switch (state)
+    {
+    case WICED_BT_MESH_DFU_STATE_VALIDATE_NODES:
+        Log(L"DFU finding nodes\n");
+        break;
+    case WICED_BT_MESH_DFU_STATE_GET_DISTRIBUTOR:
+        Log(L"DFU choosing Distributor\n");
+        break;
+    case WICED_BT_MESH_DFU_STATE_UPLOAD:
+        if (p_data && data_length)
+        {
+            progress = (int)p_data[0];
+            Log(L"DFU upload progress %d%%\n", progress);
+            m_Progress.SetPos(progress / 2);
+        }
+        else
+        {
+            Log(L"DFU uploading firmware to the Distributor\n");
+        }
+        break;
+    case WICED_BT_MESH_DFU_STATE_DISTRIBUTE:
+        if (p_data && data_length)
+        {
+            number_nodes = (uint16_t)p_data[0] + ((uint16_t)p_data[1] << 8);
+            if (number_nodes * 4 != data_length - 2)
+            {
+                Log(L"DFU bad distribution data length\n");
+                break;
+            }
+            p = p_data + 2;
+            progress = -1;
+            for (i = 0; i < number_nodes; i++)
+            {
+                //Log(L"DFU distribution src:%02x%02x phase:%d progress:%d\n", p[1], p[0], p[2], p[3]);
+
+                // Node data: 2 bytes address, 1 byte phase, 1 byte progress
+                if (p[2] == WICED_BT_MESH_FW_UPDATE_PHASE_TRANSFER_ACTIVE)
+                {
+                    // Get first progress
+                    if (progress == -1)
+                        progress = (int)p[3];
+                    // Get the lowest progress from all active nodes
+                    else if (progress > (int)p[3])
+                        progress = (int)p[3];
+                }
+                p += 4;
+            }
+            if (progress == -1)
+                progress = 0;
+            Log(L"DFU distribution progress %d%%\n", progress);
+
+            m_Progress.SetPos(progress);
+        }
+        else
+        {
+            Log(L"DFU Distributor distributing firmware to nodes\n");
+            GetDlgItem(IDC_DFU_PAUSE_RESUME)->EnableWindow(TRUE);
+            GetDlgItem(IDC_DFU_GET_STATUS)->EnableWindow(TRUE);
+            if (!m_bDfuStatus)
+                OnBnClickedDfuGetStatus();
+        }
+        break;
+    case WICED_BT_MESH_DFU_STATE_APPLY:
+        Log(L"DFU applying firmware\n");
+        break;
+    case WICED_BT_MESH_DFU_STATE_SUSPENDED:
+        Log(L"DFU paused\n");
+        break;
+    case WICED_BT_MESH_DFU_STATE_COMPLETE:
+        Log(L"DFU completed\n");
+        m_Progress.SetPos(100);
+        if (p_data && data_length)
+        {
+            number_nodes = (uint16_t)p_data[0] + ((uint16_t)p_data[1] << 8);
+            if (number_nodes * 4 != data_length - 2)
+            {
+                Log(L"DFU bad complete data length\n");
+                break;
+            }
+            p = p_data + 2;
+            for (i = 0; i < number_nodes; i++)
+            {
+                Log(L"Node %02x%02x DFU %s\n", p[1], p[0], p[2] == WICED_BT_MESH_FW_UPDATE_PHASE_APPLY_SUCCESS ? L"succeeded" : L"failed");
+                p += 4;
+            }
+        }
+        if (m_bDfuStatus)
+            OnBnClickedDfuGetStatus();
+        SetDfuStarted(FALSE);
+        break;
+    case WICED_BT_MESH_DFU_STATE_FAILED:
+        Log(L"DFU failed\n");
+        if (m_bDfuStatus)
+            OnBnClickedDfuGetStatus();
+        SetDfuStarted(FALSE);
+        break;
+    }
+}
+
 uint32_t CLightControl::GetDfuImageSize()
 {
     uint32_t file_size;
-    CString sFilePath;
-
-    GetDlgItemText(IDC_FILENAME, sFilePath);
 
     FILE *fPatch;
-    if (_wfopen_s(&fPatch, sFilePath, L"rb"))
+    if (_wfopen_s(&fPatch, m_sDfuImageFilePath, L"rb"))
         return 0;
 
     // Load OTA FW file into memory
@@ -2335,12 +2781,8 @@ uint32_t CLightControl::GetDfuImageSize()
 
 void CLightControl::GetDfuImageChunk(uint8_t *p_data, uint32_t offset, uint16_t data_len)
 {
-    CString sFilePath;
-
-    GetDlgItemText(IDC_FILENAME, sFilePath);
-
     FILE *fPatch;
-    if (_wfopen_s(&fPatch, sFilePath, L"rb"))
+    if (_wfopen_s(&fPatch, m_sDfuImageFilePath, L"rb"))
         return;
 
     // Load OTA FW file into memory
@@ -2351,16 +2793,19 @@ void CLightControl::GetDfuImageChunk(uint8_t *p_data, uint32_t offset, uint16_t 
 
 extern "C" uint32_t wiced_bt_get_fw_image_size(uint8_t partition)
 {
-    CLightControl *pDlg = (CLightControl *)theApp.m_pMainWnd;
+    CClientDialog* pSheet = (CClientDialog*)theApp.m_pMainWnd;
+    CLightControl* pDlg = &pSheet->pageLight;
     return (pDlg != NULL) ? pDlg->GetDfuImageSize() : 0;
 }
 
 extern "C" void wiced_bt_get_fw_image_chunk(uint8_t partition, uint32_t offset, uint8_t *p_data, uint16_t data_len)
 {
-    CLightControl *pDlg = (CLightControl *)theApp.m_pMainWnd;
+    CClientDialog* pSheet = (CClientDialog*)theApp.m_pMainWnd;
+    CLightControl* pDlg = &pSheet->pageLight;
     if (pDlg != NULL)
         pDlg->GetDfuImageChunk(p_data, offset, data_len);
 }
+#endif
 
 extern "C" int mesh_client_set_device_config_UI_Ex(const char *device_name, int is_gatt_proxy, int is_friend, int is_relay, int beacon,
     int relay_xmit_count, int relay_xmit_interval, int default_ttl, int net_xmit_count, int net_xmit_interval)
@@ -2471,323 +2916,6 @@ BOOL CLightControl::OnInitDialog()
 
     return TRUE;  // return TRUE unless you set the focus to a control
                   // EXCEPTION: OCX Property Pages should return FALSE
-}
-
-/* This function parses firmware manifest file which should follow following format
-{
-    "manifest": {
-        "firmware": {
-            "firmware_file": "firmware.bin",
-            "metadata_file" : "metadata.bin",
-            "firmware_id" : "010246573A312E332E35"
-        }
-    }
-}
-*/
-#define FIRMWARE_UPLOAD_BLOCK_SIZE  512
-
-#define FIRMWARE_FILE_TAG   "\"firmware_file\""
-#define FIRMWARE_ID_TAG     "\"firmware_id\""
-#define METADATA_FILE_TAG   "\"metadata_file\""
-
-BOOL ParseFwManifestFile(char* p_manifest, char* fw_filename, int filename_len, char* fw_id, int fw_id_len, char* fw_metadata, int metadata_len)
-{
-    char* p = p_manifest;
-    char* p_end;
-    char* p_start;
-    char* p_tag;
-    char* p_out;
-    int i;
-    int out_len;
-
-    while (TRUE)
-    {
-        if ((p = strchr(p, '{')) == NULL)
-            break;
-        p++;
-        if ((p = strstr(p, "\"manifest\"")) == NULL)
-            break;
-        p += strlen("\"manifest\"");
-        if ((p = strchr(p, ':')) == NULL)
-            break;
-        p++;
-        if ((p = strchr(p, '{')) == NULL)
-            break;
-        p++;
-        if ((p = strstr(p, "\"firmware\"")) == NULL)
-            break;
-        p += strlen("\"firmware\"");
-        if ((p = strchr(p, ':')) == NULL)
-            break;
-        p++;
-        if ((p = strchr(p, '{')) == NULL)
-            break;
-        p++;
-        p_start = p;
-        for (i = 0; i < 3; i++)
-        {
-            p = p_start;
-            if (i == 0)
-            {
-                p_tag = FIRMWARE_FILE_TAG;
-                p_out = fw_filename;
-                out_len = filename_len;
-            }
-            else if (i == 1)
-            {
-                p_tag = FIRMWARE_ID_TAG;
-                p_out = fw_id;
-                out_len = fw_id_len;
-            }
-            else
-            {
-                p_tag = METADATA_FILE_TAG;
-                p_out = fw_metadata;
-                out_len = metadata_len;
-            }
-            if ((p = strstr(p, p_tag)) == NULL)
-                break;
-            p += strlen(p_tag);
-            if ((p = strchr(p, ':')) == NULL)
-                break;
-            p++;
-            if ((p = strchr(p, '\"')) == NULL)
-                break;
-            p++;
-            if ((p_end = strchr(p, '\"')) == NULL)
-                break;
-            if (p_end - p >= out_len)
-                break;
-            strncpy(p_out, p, p_end - p);
-            p_out[p_end - p] = 0;
-        }
-        return TRUE;
-    }
-    return FALSE;
-}
-
-uint8_t process_nibble(char n)
-{
-    if ((n >= '0') && (n <= '9'))
-    {
-        n -= '0';
-    }
-    else if ((n >= 'A') && (n <= 'F'))
-    {
-        n = ((n - 'A') + 10);
-    }
-    else if ((n >= 'a') && (n <= 'f'))
-    {
-        n = ((n - 'a') + 10);
-    }
-    else
-    {
-        n = (char)0xff;
-    }
-    return (n);
-}
-
-void CLightControl::OnBnClickedDfuUpload()
-{
-    long filesize, metadata_size;
-    char sFileName[MAX_PATH] = { 0 };
-    int i;
-
-    GetDlgItemTextA(m_hWnd, IDC_FILENAME_UPLOAD, sFileName, MAX_PATH);
-    if (sFileName[0] == 0)
-    {
-        Log(L"Specify valid configuration file and Address");
-        return;
-    }
-    FILE* fp = fopen(sFileName, "r");
-    if (!fp)
-    {
-        Log(L"Failed to open manifest file");
-        return;
-    }
-    fseek(fp, 0L, SEEK_END);
-    filesize = ftell(fp);
-
-    char* p_manifest = (char*)malloc(filesize);
-    if (p_manifest == NULL)
-        return;
-
-    rewind(fp);
-    fread(p_manifest, 1, filesize, fp);
-    fclose(fp);
-
-    char fw_filename[256];
-    char fw_id[32];
-    char fw_metadata[256];
-
-    if (!ParseFwManifestFile(p_manifest, fw_filename, sizeof(fw_filename), fw_id, sizeof(fw_id), fw_metadata, sizeof(fw_metadata)))
-    {
-        Log(L"Invalid FW Manifest File");
-        free(p_manifest);
-        return;
-    }
-    free(p_manifest);
-
-    WCHAR name[512] = { 0 };
-    MultiByteToWideChar(CP_ACP, 0, (const char*)sFileName, strlen(sFileName), name, sizeof(name));
-    BOOL rc = theApp.WriteProfileString(L"LightControl", L"FwManifestFile", name);
-
-    // We will open metadata file in the same directory as .json file
-    // find last / or \ and replace the name.
-    char* pFilename = sFileName;
-    char* p1;
-    while (TRUE)
-    {
-        if ((p1 = strchr(pFilename, '/')) != NULL)
-        {
-            pFilename = p1 + 1;
-            continue;
-        }
-        if ((p1 = strchr(pFilename, '\\')) != NULL)
-        {
-            pFilename = p1 + 1;
-            continue;
-        }
-        break;
-    }
-    strcpy(pFilename, fw_metadata);
-
-    fp = fopen(sFileName, "rb");
-    if (!fp)
-    {
-        Log(L"Failed to open metadata file");
-        return;
-    }
-    fseek(fp, 0L, SEEK_END);
-    metadata_size = ftell(fp);
-
-    if (metadata_size > 255)
-    {
-        Log(L"Metadata longer than 255");
-        return;
-    }
-    uint8_t* p_metadata = (uint8_t*)malloc(metadata_size);
-    if (p_metadata == NULL)
-        return;
-
-    rewind(fp);
-    fread(p_metadata, 1, metadata_size, fp);
-    fclose(fp);
-
-    strcpy(pFilename, fw_filename);
-
-    fp = fopen(sFileName, "rb");
-    if (!fp)
-    {
-        Log(L"Failed to open firmware file");
-        return;
-    }
-    fseek(fp, 0L, SEEK_END);
-    m_dwPatchSize = ftell(fp);
-
-    if (m_pPatch)
-        free(m_pPatch);
-    m_pPatch = (uint8_t*)malloc(m_dwPatchSize);
-    if (m_pPatch == NULL)
-        return;
-
-    rewind(fp);
-    fread(m_pPatch, 1, m_dwPatchSize, fp);
-    fclose(fp);
-
-    uint8_t buffer[512];
-    LPBYTE p = buffer;
-
-#define UPLOAD_TTL          0x7f
-#define UPLOAD_TIMEOUT      0       // Actual timeout is 10*(Upload Timeout + 1). For upload over UART 10 seconds should be enough
-#define UPLOAD_BLOB_ID_LEN  8
-    *p++ = UPLOAD_TTL;                      // TTL to use in a firmward image upload
-    *p++ = UPLOAD_TIMEOUT & 0xff;
-    *p++ = (UPLOAD_TIMEOUT >> 8) & 0xff;    // timeout
-    memset(p, 0, 8);
-    p += 8;
-    *p++ = m_dwPatchSize & 0xff;            // Firmware size in octets
-    *p++ = (m_dwPatchSize >> 8) & 0xff;
-    *p++ = (m_dwPatchSize >> 16) & 0xff;
-    *p++ = (m_dwPatchSize >> 24) & 0xff;
-    *p++ = metadata_size & 0xff;            // Metadata length size in octets
-    memcpy(p, p_metadata, metadata_size);
-    p += metadata_size;
-
-    for (i = 0; i < (int)strlen(fw_id); i += 2)
-    {
-        uint8_t n1 = process_nibble(fw_id[i]);
-        uint8_t n2 = process_nibble(fw_id[i + 1]);
-        if ((n1 == 0xff) || (n2 == 0xff))
-        {
-            Log(L"Bad firmware ID");
-            return;
-        }
-        *p++ = (n1 << 4) + n2;
-    }
-    m_dwPatchOffset = 0;
-    m_ComHelper->SendWicedCommand(HCI_CONTROL_MESH_COMMAND_FW_DISTRIBUTION_UPLOAD_START, buffer, (DWORD)(p - buffer));
-
-/*
-    FILE* fHCD = NULL;
-    LONG  nVeryFirstAddress = 0;
-
-
-    m_fw_download_active = TRUE;
-    rc = FwDownload(sFileName);
-    m_fw_download_active = FALSE;
-    // mesh_client_upload_start
-    */
-}
-
-void CLightControl::FwDistributionUploadStatus(LPBYTE p_data, DWORD len)
-{
-    uint8_t status = p_data[0];
-    uint8_t phase = p_data[1];
-    uint8_t distribution_status = p_data[2];
-    uint8_t buffer[4 + FIRMWARE_UPLOAD_BLOCK_SIZE];
-    uint8_t* p = buffer;
-    DWORD dwBytes;
-    int i;
-
-    Log(L"Upload status:%d phase:%d distribution state:%d offset:%d devices:", status, phase, distribution_status, m_dwPatchOffset);
-    WCHAR buf[200] = {0};
-    for (i = 0; i < (int)(len - 3) / 2; i++)
-        wsprintf(&buf[wcslen(buf)], L"%02x ", p_data[3 + i * 2] + (p_data[4 + i * 2] << 8));
-    Log(buf);
-    Log(L"\n");
-    if ((status == 0) && (m_dwPatchSize != 0))
-    {
-        if (m_dwPatchOffset == m_dwPatchSize)
-        {
-            m_ComHelper->SendWicedCommand(HCI_CONTROL_MESH_COMMAND_FW_DISTRIBUTION_UPLOAD_FINISH, &status, 1);
-            m_dwPatchOffset = 0xFFFFFFFF;
-            return;
-        }
-        else if (m_dwPatchOffset == 0xFFFFFFFF)
-        {
-            if (phase == 4)
-            {
-
-            }
-        }
-        else
-        {
-            *p++ = m_dwPatchOffset & 0xff;
-            *p++ = (m_dwPatchOffset >> 8) & 0xff;
-            *p++ = (m_dwPatchOffset >> 16) & 0xff;
-            *p++ = (m_dwPatchOffset >> 24) & 0xff;
-            dwBytes = m_dwPatchOffset + FIRMWARE_UPLOAD_BLOCK_SIZE > m_dwPatchSize ? m_dwPatchSize - m_dwPatchOffset : FIRMWARE_UPLOAD_BLOCK_SIZE;
-            memcpy(p, &m_pPatch[m_dwPatchOffset], dwBytes);
-            m_ComHelper->SendWicedCommand(HCI_CONTROL_MESH_COMMAND_FW_DISTRIBUTION_UPLOAD_DATA, buffer, dwBytes + 4);
-            m_dwPatchOffset += dwBytes;
-        }
-    }
-}
-
-void CLightControl::OnBnClickedDfuUpload2()
-{
-    m_ComHelper->SendWicedCommand(HCI_CONTROL_MESH_COMMAND_FW_DISTRIBUTION_UPLOAD_GET_STATUS, NULL, 0);
 }
 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2022, Cypress Semiconductor Corporation (an Infineon company) or
+ * Copyright 2016-2023, Cypress Semiconductor Corporation (an Infineon company) or
  * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
  *
  * This software, including source code, documentation and related
@@ -72,6 +72,7 @@ public:
     virtual ~ConnectedMesh();
     void OnCancel();
     void SendData();
+    void UpdateRxTxStats();
 
     CListBox* m_trace;
 #define AUTO_STATE_IDLE                 0
@@ -125,7 +126,6 @@ public:
 
     afx_msg void OnBnClickedConnMeshStartData();
     afx_msg void OnBnClickedConnMeshFactoryReset();
-    afx_msg void OnTimer(UINT_PTR nIDEvent);
     afx_msg void OnBnClickedConnMeshReset();
     afx_msg void OnBnClickedConnMeshGetDataStats();
     afx_msg void OnBnClickedConnMeshIdentify();
@@ -133,6 +133,7 @@ public:
     afx_msg void OnBnClickedConnMeshUpdateBrowse();
     afx_msg void OnBnClickedConnMeshUpdateStartStop();
     afx_msg void OnBnClickedConnMeshGetNodesInfo();
+    afx_msg void OnBnClickedConnMeshGetStats();
 
 private:
 #define UPDATE_STATE_IDLE           0       // Idle

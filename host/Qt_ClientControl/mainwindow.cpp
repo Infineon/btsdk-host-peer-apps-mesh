@@ -1,5 +1,5 @@
 ﻿/*
- * Copyright 2016-2022, Cypress Semiconductor Corporation (an Infineon company) or
+ * Copyright 2016-2023, Cypress Semiconductor Corporation (an Infineon company) or
  * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
  *
  * This software, including source code, documentation and related
@@ -79,6 +79,10 @@ extern "C"
 }
 #endif
 
+#ifdef MESH_DFU_ENABLED
+#include "wiced_mesh_client_dfu.h"
+#endif
+
 typedef unsigned int UINT32;
 #define wiced_bt_free_buffer free
 
@@ -106,18 +110,8 @@ extern "C"
 extern char *mesh_client_get_device_name_(uint8_t *p_uuid);
 extern void TraceHciPkt(BYTE type, BYTE *buffer, USHORT length, USHORT serial_port_index);
 }
-static unsigned int m_dwPatchSize = 0;
-static BYTE * m_pPatch = NULL;
 
-class ProgressBar
-{
-public:
-    void SetPos(int pos);
-    void SetRange32(int l,int h);
-
-};
 char provisioner_uuid[50];
-static ProgressBar m_Progress;
 
 int m_hWnd = 0;
 #define MB_ICONERROR 0
@@ -198,18 +192,14 @@ void network_opened(uint8_t status);
 /*extern "C" */ void lightness_status(const char *device_name, uint16_t present, uint16_t target, uint32_t remaining_time);
 /*extern "C" */ void hsl_status(const char *device_name, uint16_t lightness, uint16_t hue, uint16_t saturation, uint32_t remaining_time);
 /*extern "C" */ void ctl_status(const char *device_name, uint16_t present_lightness, uint16_t present_temperature, uint16_t target_lightness, uint16_t target_temperature, uint32_t remaining_time);
-/*extern "C" */ void fw_distribution_status(uint8_t status, uint16_t current_block_num);
+/*extern "C" */ void fw_distribution_status(uint8_t state, uint8_t *p_data, uint32_t data_length);
 
-#define DFU_METHOD_PROXY_TO_ALL                     0
-#define DFU_METHOD_APP_TO_ALL                       1
-#define DFU_METHOD_APP_TO_DEVICE                    2
-
-const WCHAR *dfuMethods[] = {
-    L"Proxy DFU to all",
-    L"Proxy DFU to device",
-    L"App DFU to all",
-    L"App DFU to device",
+const char *dfuMethods[] = {
+    "Proxy DFU to all",
+    "App DFU to all",
 };
+
+#define DISTRIBUTION_STATUS_TIMEOUT     10
 
 extern wiced_bool_t mesh_adv_scanner_open();
 extern void mesh_adv_scanner_close(void);
@@ -247,23 +237,13 @@ void TraceHciPkt(BYTE type, BYTE *buffer, USHORT length, USHORT serial_port=1);
 extern int FwDownload(char *sHCDFileName);
 void FwDownloadProcessEvent(LPBYTE p_data, DWORD len);
 extern "C" void wiced_hci_process_data(uint16_t opcode, uint8_t *p_buffer, uint16_t len);
+extern "C" uint16_t get_device_addr(const char *p_dev_name);
+extern "C" uint16_t mesh_client_get_unicast_addr();
 
 static CommHelper gComHelper;
 CommHelper * m_ComHelper = &gComHelper;
 MainWindow * gMainWindow=NULL;
 FILE *g_fpLogFile = NULL;
-
-void ProgressBar::SetPos(int pos)
-{
-    if (gMainWindow)
-        gMainWindow->ui->pbDfu->setValue(pos);
-}
-
-void ProgressBar::SetRange32(int l,int h)
-{
-    if (gMainWindow)
-        gMainWindow->ui->pbDfu->setRange(l,h);
-}
 
 unsigned long GetTickCount();
 
@@ -401,7 +381,6 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->btnReConfig, SIGNAL(clicked()), this, SLOT(on_btnReConfig()));
     connect(ui->btnConfigSub, SIGNAL(clicked()), this, SLOT(on_btnConfigSub()));
     connect(ui->btnConfigPub, SIGNAL(clicked()), this, SLOT(on_btnConfigPub()));
-    connect(ui->btnGetStatus, SIGNAL(clicked()), this, SLOT(on_btnGetStatus()));
     connect(ui->btnGetColor, SIGNAL(clicked()), this, SLOT(on_btnGetColor()));
     connect(ui->btnGetHue, SIGNAL(clicked()), this, SLOT(on_btnGetHue()));
     connect(ui->btnGetInfo, SIGNAL(clicked()), this, SLOT(on_btnGetInfo()));
@@ -414,10 +393,13 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->btnSetLight, SIGNAL(clicked()), this, SLOT(on_btnSetLight()));
     connect(ui->btnSetOnOff, SIGNAL(clicked()), this, SLOT(on_btnSetOnOff()));
     connect(ui->btnSetVen, SIGNAL(clicked()), this, SLOT(on_btnSetVen()));
-    connect(ui->btn_dfu_start, SIGNAL(clicked()), this, SLOT(on_btnDfuStart()));
-    connect(ui->btn_dfu_stop, SIGNAL(clicked()), this, SLOT(on_btnDfuStop()));
-    connect(ui->btn_clear_trace, SIGNAL(clicked()), this, SLOT(on_btnClearTrace()));
+#ifdef MESH_DFU_ENABLED
     connect(ui->btnFindDfuFile, SIGNAL(clicked()), this ,SLOT(on_btnFindDfuFile()));
+    connect(ui->btnDfuStartStop, SIGNAL(clicked()), this, SLOT(on_btnDfuStartStop()));
+    connect(ui->btnDfuPauseResume, SIGNAL(clicked()), this, SLOT(on_btnDfuPauseResume()));
+    connect(ui->btnGetDfuStatus, SIGNAL(clicked()), this, SLOT(on_btnGetDfuStatus()));
+#endif
+    connect(ui->btn_clear_trace, SIGNAL(clicked()), this, SLOT(on_btnClearTrace()));
     connect(ui->btnConnectComm, SIGNAL(clicked()), this, SLOT(on_btnConnectComm()));
     connect(ui->btnNodeReset, SIGNAL(clicked()), this, SLOT(on_btnNodeReset()));
     connect(ui->btnIdentity, SIGNAL(clicked()), this, SLOT(on_btnIdentify()));
@@ -425,11 +407,24 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->btnGetSensor, SIGNAL(clicked()), this, SLOT(on_btnSensorGet()));
     connect(ui->btnConfigSensor, SIGNAL(clicked()), this, SLOT(on_btnConfigSensor()));
 
-    ui->cbPushMethod->addItem("Proxy DFU to all");
-    ui->cbPushMethod->addItem("Proxy DFU to device");
-    ui->cbPushMethod->addItem("App DFU to all");
-    ui->cbPushMethod->addItem("App DFU to device");
+#ifdef MESH_DFU_ENABLED
+    m_dfuState = WICED_BT_MESH_DFU_STATE_INIT;
+    m_bDfuStatus = FALSE;
+    m_bDfuStarted = FALSE;
+    m_bUploading = FALSE;
 
+    for (unsigned int i = 0; i < ((sizeof(dfuMethods)) / sizeof(dfuMethods[0])); i++)
+        ui->cbDfuMethod->addItem(dfuMethods[i]);
+#else
+    ui->label_dfu->hide();
+    ui->edFileName->hide();
+    ui->btnFindDfuFile->hide();
+    ui->cbDfuMethod->hide();
+    ui->pbDfu->hide();
+    ui->btnDfuStartStop->hide();
+    ui->btnDfuPauseResume->hide();
+    ui->btnGetDfuStatus->hide();
+#endif
     ui->cbPubModel->addItem("Flooding Security");
     ui->cbPubModel->addItem("Friendship Security");
     ui->cbPubModel->setCurrentIndex(0);
@@ -441,7 +436,6 @@ MainWindow::MainWindow(QWidget *parent) :
     ui->cbOnOff->addItem("On");
     ui->cbOnOff->addItem("Off");
     m_szCurrentGroup[0] = 0;
-    m_fw_download_active = FALSE;
     m_bScanning = FALSE;
 
     FILE *fp = fopen("NetParameters.bin", "rb");
@@ -457,13 +451,10 @@ MainWindow::MainWindow(QWidget *parent) :
     setActive();
     m_scan_started = FALSE;
     m_bConnecting = FALSE;
-    m_dfuMethod = 0;
     m_bConnected = FALSE;
     m_received_evt_len = 0;
     m_event = 0;
     m_state = STATE_IDLE;
-    m_pPatch = NULL;
-    m_dwPatchSize = 0;
 
     // Move to group is not implemented yet. Hide all related controls(widgets)
     ui->label_6->setVisible(false);
@@ -553,14 +544,6 @@ void MainWindow::on_btnNodeReset()
 {
     mesh_client_reset_device(STR_TO_CHAR(ui->cbControl->currentText()));
     DisplayCurrentGroup();
-}
-
-void MainWindow::on_btnFindDfuFile()
-{
-    QString fileName = QFileDialog::getOpenFileName(this,tr("OTA/BIN File"), "", tr("OTA Files (*.ota *.bin);;All files (*.*)"));
-    if (fileName.length() == 0)
-        return;
-    ui->edFileName->setText(fileName);
 }
 
 void MainWindow::on_btnIdentify()
@@ -653,6 +636,12 @@ void MainWindow::ProcessData(DWORD opcode, LPBYTE p_data, DWORD len)
         ProcessScanReport(p_data, (uint16_t)len);
         wiced_hci_process_data((uint16_t)opcode, p_data, (uint16_t)len);
     }
+#ifdef MESH_DFU_ENABLED
+    else if (opcode == HCI_CONTROL_MESH_EVENT_FW_DISTRIBUTION_UPLOAD_STATUS)
+    {
+        FwDistributionUploadStatus(p_data, len);
+    }
+#endif
     else
     {
         wiced_hci_process_data((uint16_t)opcode, p_data, (uint16_t)len);
@@ -1261,16 +1250,6 @@ void MainWindow::on_btnConfigPub()
     mesh_client_configure_publication(STR_TO_CHAR(szDevName), client_control, publish_method, szPublishToName, publish_period);
 }
 
-void fw_distribution_status(uint8_t status, int current_block_num, int total_blocks)
-{
-}
-
-
-void MainWindow::on_btnGetStatus()
-{
-    //mesh_client_dfu_get_status(NULL, 0, NULL, 0, &fw_distribution_status);
-}
-
 void MainWindow::on_btnGetColor()
 {
     mesh_client_ctl_get(STR_TO_CHAR(ui->cbControl->currentText()));
@@ -1474,23 +1453,474 @@ void MainWindow::onCbControlIndexChanged(int ndx)
         ui->cbSensor->setCurrentIndex(0);
 }
 
+#ifdef MESH_DFU_ENABLED
+#define MAX_TAG_NAME                                32
+#define MAX_FILE_NAME                               256
 
-#include "qthread.h"
-void mssleep(int ms)
+extern "C"
 {
-    QThread::msleep(ms);
-}
-void MainWindow::on_btnDfuStart()
-{
-    // Regardless of what are we trying to do, need to connect to a specific component
-    // then OtaUpgradeContinue will be executed
-    mesh_client_connect_component(STR_TO_CHAR(ui->cbControl->currentText()), 1, 10);
+    char skip_space(FILE* fp);
+    int mesh_json_read_tag_name(FILE* fp, char* tagname, int len);
+    int mesh_json_read_next_level_tag(FILE* fp, char* tagname, int len);
+    int mesh_json_read_string(FILE* fp, char prefix, char* buffer, int len);
 }
 
-void MainWindow::on_btnDfuStop()
+BOOL MainWindow::ReadDfuManifestFile(QString sFilePath)
 {
-    //mesh_client_dfu_stop();
+    char tagname[MAX_TAG_NAME];
+    char filename[MAX_FILE_NAME];
+    char c1;
+    FILE* fp;
+    QString sPath;
+
+    fp = fopen(STR_TO_CHAR(sFilePath), "r");
+    if (fp == NULL)
+        return FALSE;
+
+    sPath = sFilePath.left(sFilePath.lastIndexOf("/") + 1);
+
+    if (mesh_json_read_next_level_tag(fp, tagname, sizeof(tagname)) == 0)
+        goto return_false;
+    if (strcmp(tagname, "manifest") != 0)
+        goto return_false;
+    if (mesh_json_read_next_level_tag(fp, tagname, sizeof(tagname)) == 0)
+        goto return_false;
+    if (strcmp(tagname, "firmware") != 0)
+        goto return_false;
+    if (skip_space(fp) != '{')
+        goto return_false;
+    if (skip_space(fp) != '\"')
+        goto return_false;
+    while (1)
+    {
+        if (mesh_json_read_tag_name(fp, tagname, MAX_TAG_NAME) == 0)
+            break;
+        if (skip_space(fp) != ':')
+            goto return_false;
+        c1 = skip_space(fp);
+        if (strcmp(tagname, "firmware_file") == 0)
+        {
+            if (!mesh_json_read_string(fp, c1, filename, MAX_FILE_NAME))
+                goto return_false;
+
+            m_sDfuImageFilePath = sPath;
+            m_sDfuImageFilePath.append(filename);
+        }
+        else if (strcmp(tagname, "metadata_file") == 0)
+        {
+            if (!mesh_json_read_string(fp, c1, filename, MAX_FILE_NAME))
+                goto return_false;
+
+            QString sMetaFilePath = sPath;
+            sMetaFilePath.append(filename);
+
+            FILE* fpMeta = fopen(STR_TO_CHAR(sMetaFilePath), "rb");
+            if (fpMeta == NULL)
+                goto return_false;
+
+            int c = 0, i = 0;
+            while (fread(&c, 1, 1, fpMeta) > 0)
+            {
+                m_DfuMetaData.data[i++] = (uint8_t)c;
+            }
+            m_DfuMetaData.len = (uint8_t)i;
+            fclose(fpMeta);
+        }
+        else if (strcmp(tagname, "firmware_id") == 0)
+        {
+            if (!mesh_json_read_string(fp, c1, filename, MAX_FILE_NAME))
+                goto return_false;
+            char* p = filename;
+            int i = 0;
+            while ((size_t)(p - filename) < strlen(filename))
+            {
+                unsigned int value;
+                sscanf(p, "%02x", &value);
+                m_DfuFwId.fw_id[i++] = (uint8_t)value;
+                p += 2;
+            }
+            m_DfuFwId.fw_id_len = i;
+        }
+        if (skip_space(fp) != ',')
+            break;
+        if (skip_space(fp) != '\"')
+            break;
+    }
+
+    fclose(fp);
+    return TRUE;
+
+return_false:
+    fclose(fp);
+    return FALSE;
 }
+
+void MainWindow::on_btnFindDfuFile()
+{
+    QString fileName = QFileDialog::getOpenFileName(this,tr("DFU File"), "", tr("JSON Files (*.json);;All files (*.*)"));
+    if (fileName.length() == 0)
+        return;
+    ui->edFileName->setText(fileName);
+}
+
+void MainWindow::on_btnDfuStartStop()
+{
+    if (m_bDfuStarted)
+    {
+        OnDfuStop();
+        SetDfuStarted(FALSE);
+    }
+    else if (OnDfuStart())
+    {
+        SetDfuStarted(TRUE);
+    }
+}
+
+void MainWindow::SetDfuStarted(BOOL started)
+{
+    m_bDfuStarted = started;
+
+    if (m_bDfuStarted)
+    {
+        ui->btnDfuStartStop->setText("DFU Stop");
+    }
+    else
+    {
+        ui->btnDfuStartStop->setText("DFU Start");
+        ui->btnDfuPauseResume->setEnabled(FALSE);
+        ui->btnGetDfuStatus->setEnabled(FALSE);
+    }
+}
+
+BOOL MainWindow::OnDfuStart()
+{
+    QString sFilePath = ui->edFileName->text();
+
+    if (m_dfuState != WICED_BT_MESH_DFU_STATE_INIT && m_dfuState != WICED_BT_MESH_DFU_STATE_COMPLETE && m_dfuState != WICED_BT_MESH_DFU_STATE_FAILED)
+    {
+        Log("DFU already started\n");
+        return FALSE;
+    }
+
+    if (sFilePath.isEmpty())
+    {
+        on_btnFindDfuFile();
+        sFilePath = ui->edFileName->text();
+        if (sFilePath.isEmpty())
+            return FALSE;
+    }
+
+    m_DfuMethod = ui->cbDfuMethod->currentIndex();
+
+    if (m_DfuMethod == DFU_METHOD_PROXY_TO_ALL &&
+        get_device_addr(STR_TO_CHAR(ui->cbControl->currentText())) == 0)
+    {
+        Log("Please select Proxy device\n");
+        return FALSE;
+    }
+
+    if (m_DfuMethod == DFU_METHOD_PROXY_TO_ALL || m_DfuMethod == DFU_METHOD_APP_TO_ALL)
+    {
+        // DFU
+        QString sFileExt = sFilePath.right(5);
+        if (sFileExt.compare(QString(".json"), Qt::CaseInsensitive) != 0)
+        {
+            messageBox(0, "Please choose correct DFU manifest file (.json)", "Error", MB_OK);
+            return FALSE;
+        }
+
+        if (!ReadDfuManifestFile(sFilePath))
+        {
+            messageBox(0, "Failed to read from manifest file", "Error", MB_OK);
+            return FALSE;
+        }
+
+        ui->pbDfu->setValue(0);
+
+        m_dwPatchSize = GetDfuImageSize();
+        m_dwPatchOffset = 0;
+
+        // Start uploading firmware
+        uint8_t buffer[512];
+        LPBYTE p = buffer;
+
+        *p++ = 0x7f;                            // TTL to use in a firmware image upload
+        *p++ = 0;                               // timeout (2 bytes)
+        *p++ = 0;                               // Actual timeout is 10*(Upload Timeout + 1). For upload over UART 10 seconds should be enough
+        memset(p, 0, 8);                        // Blob ID
+        p += 8;
+        *p++ = m_dwPatchSize & 0xff;            // Firmware size in octets
+        *p++ = (m_dwPatchSize >> 8) & 0xff;
+        *p++ = (m_dwPatchSize >> 16) & 0xff;
+        *p++ = (m_dwPatchSize >> 24) & 0xff;
+        *p++ = m_DfuMetaData.len;               // Metadata length size in octets
+        memcpy(p, m_DfuMetaData.data, m_DfuMetaData.len);
+        p += m_DfuMetaData.len;
+        memcpy(p, m_DfuFwId.fw_id, m_DfuFwId.fw_id_len);
+        p += m_DfuFwId.fw_id_len;
+
+        m_ComHelper->SendWicedCommand(HCI_CONTROL_MESH_COMMAND_FW_DISTRIBUTION_UPLOAD_START, buffer, (DWORD)(p - buffer));
+        m_bUploading = TRUE;
+        Log("Loading firmware image\n");
+    }
+    return TRUE;
+}
+
+#define FIRMWARE_UPLOAD_BLOCK_SIZE  512
+
+void MainWindow::FwDistributionUploadStatus(LPBYTE p_data, DWORD len)
+{
+    uint8_t status = p_data[0];
+    uint8_t phase = p_data[1];
+    uint8_t distribution_status = p_data[2];
+    uint8_t buffer[4 + FIRMWARE_UPLOAD_BLOCK_SIZE];
+    uint8_t* p = buffer;
+    DWORD dwBytes;
+
+    if ((status == 0) && (m_dwPatchSize != 0) && m_bUploading)
+    {
+        if (m_dwPatchOffset == m_dwPatchSize)
+        {
+            m_ComHelper->SendWicedCommand(HCI_CONTROL_MESH_COMMAND_FW_DISTRIBUTION_UPLOAD_FINISH, &status, 1);
+            m_dwPatchOffset = 0xFFFFFFFF;
+            return;
+        }
+        else if (m_dwPatchOffset == 0xFFFFFFFF)
+        {
+            int result;
+            uint16_t distributor_addr = 0;
+            if (m_DfuMethod == DFU_METHOD_PROXY_TO_ALL)
+                distributor_addr = get_device_addr(STR_TO_CHAR(ui->cbControl->currentText()));
+            else if (m_DfuMethod == DFU_METHOD_APP_TO_ALL)
+                distributor_addr = mesh_client_get_unicast_addr();
+            m_bUploading = FALSE;
+            //EnterCriticalSection(&cs);
+            result = mesh_client_dfu_start(m_DfuFwId.fw_id, m_DfuFwId.fw_id_len, m_DfuMetaData.data, m_DfuMetaData.len, m_dwPatchSize, distributor_addr, fw_distribution_status);
+            //LeaveCriticalSection(&cs);
+            if (result != MESH_CLIENT_SUCCESS)
+                SetDfuStarted(FALSE);
+        }
+        else
+        {
+            *p++ = m_dwPatchOffset & 0xff;
+            *p++ = (m_dwPatchOffset >> 8) & 0xff;
+            *p++ = (m_dwPatchOffset >> 16) & 0xff;
+            *p++ = (m_dwPatchOffset >> 24) & 0xff;
+            dwBytes = m_dwPatchOffset + FIRMWARE_UPLOAD_BLOCK_SIZE > m_dwPatchSize ? m_dwPatchSize - m_dwPatchOffset : FIRMWARE_UPLOAD_BLOCK_SIZE;
+            GetDfuImageChunk(p, m_dwPatchOffset, (uint16_t)dwBytes);
+
+            m_ComHelper->SendWicedCommand(HCI_CONTROL_MESH_COMMAND_FW_DISTRIBUTION_UPLOAD_DATA, buffer, dwBytes + 4);
+            m_dwPatchOffset += dwBytes;
+            ui->pbDfu->setValue(m_dwPatchOffset * 100 / m_dwPatchSize);
+        }
+    }
+    else
+    {
+        if (m_bUploading)
+        {
+            Log("Firmware load failed\n");
+            m_bUploading = FALSE;
+        }
+        SetDfuStarted(FALSE);
+    }
+}
+
+void MainWindow::OnDfuStop()
+{
+    if (m_bUploading)
+    {
+        uint8_t status = 1;
+        m_ComHelper->SendWicedCommand(HCI_CONTROL_MESH_COMMAND_FW_DISTRIBUTION_UPLOAD_FINISH, &status, 1);
+        m_bUploading = FALSE;
+    }
+    else
+    {
+        //EnterCriticalSection(&cs);
+        mesh_client_dfu_stop();
+        //LeaveCriticalSection(&cs);
+    }
+
+    if (m_bDfuStatus)
+        on_btnGetDfuStatus();
+
+    m_dfuState = WICED_BT_MESH_DFU_STATE_INIT;
+    Log("DFU stopped\n");
+}
+
+void MainWindow::on_btnDfuPauseResume()
+{
+    static BOOL dfu_paused = FALSE;
+
+    //EnterCriticalSection(&cs);
+    if (dfu_paused)
+    {
+        mesh_client_dfu_resume();
+        dfu_paused = FALSE;
+        ui->btnDfuPauseResume->setText("DFU Pause");
+    }
+    else if (mesh_client_dfu_suspend() == MESH_CLIENT_SUCCESS)
+    {
+        dfu_paused = TRUE;
+        ui->btnDfuPauseResume->setText("DFU Resume");
+    }
+    //LeaveCriticalSection(&cs);
+}
+
+void fw_distribution_status(uint8_t state, uint8_t *p_data, uint32_t data_length)
+{
+    if (gMainWindow)
+        gMainWindow->OnDfuStatusCallback(state, p_data, data_length);
+}
+
+void MainWindow::on_btnGetDfuStatus()
+{
+    m_bDfuStatus = !m_bDfuStatus;
+
+    //EnterCriticalSection(&cs);
+    if (m_bDfuStatus)
+        mesh_client_dfu_get_status(fw_distribution_status, DISTRIBUTION_STATUS_TIMEOUT);
+    else
+        mesh_client_dfu_get_status(NULL, 0);
+    //LeaveCriticalSection(&cs);
+    ui->btnGetDfuStatus->setText(m_bDfuStatus ? "Stop DFU Status" : "Get DFU Status");
+}
+
+void MainWindow::OnDfuStatusCallback(uint8_t state, uint8_t *p_data, uint32_t data_length)
+{
+    int progress;
+    uint16_t number_nodes, i;
+    uint8_t *p;
+
+    m_dfuState = state;
+
+    switch (state)
+    {
+    case WICED_BT_MESH_DFU_STATE_VALIDATE_NODES:
+        Log("DFU finding nodes\n");
+        break;
+    case WICED_BT_MESH_DFU_STATE_GET_DISTRIBUTOR:
+        Log("DFU choosing Distributor\n");
+        break;
+    case WICED_BT_MESH_DFU_STATE_UPLOAD:
+        if (p_data && data_length)
+        {
+            progress = (int)p_data[0];
+            Log("DFU upload progress %d%%\n", progress);
+            ui->pbDfu->setValue(progress);
+        }
+        else
+        {
+            Log("DFU uploading firmware to the Distributor\n");
+            if (!m_bDfuStatus)
+                on_btnGetDfuStatus();
+        }
+        break;
+    case WICED_BT_MESH_DFU_STATE_DISTRIBUTE:
+        if (p_data && data_length)
+        {
+            number_nodes = (uint16_t)p_data[0] + ((uint16_t)p_data[1] << 8);
+            if (number_nodes * 4 != data_length - 2)
+            {
+                Log("DFU bad distribution data length\n");
+                break;
+            }
+            p = p_data + 2;
+            progress = -1;
+            for (i = 0; i < number_nodes; i++)
+            {
+                //Log(L"DFU distribution src:%02x%02x phase:%d progress:%d\n", p[1], p[0], p[2], p[3]);
+
+                // Node data: 2 bytes address, 1 byte phase, 1 byte progress
+                if (p[2] == WICED_BT_MESH_FW_UPDATE_PHASE_TRANSFER_ACTIVE)
+                {
+                    // Get first progress
+                    if (progress == -1)
+                        progress = (int)p[3];
+                    // Get the lowest progress from all active nodes
+                    else if (progress > (int)p[3])
+                        progress = (int)p[3];
+                }
+                p += 4;
+            }
+            if (progress == -1)
+                progress = 0;
+            Log("DFU distribution progress %d%%\n", progress);
+
+            ui->pbDfu->setValue(progress);
+        }
+        else
+        {
+            Log("DFU Distributor distributing firmware to nodes\n");
+            ui->btnDfuPauseResume->setEnabled(TRUE);
+            ui->btnGetDfuStatus->setEnabled(TRUE);
+            if (!m_bDfuStatus)
+                on_btnGetDfuStatus();
+        }
+        break;
+    case WICED_BT_MESH_DFU_STATE_APPLY:
+        Log("DFU applying firmware\n");
+        break;
+    case WICED_BT_MESH_DFU_STATE_SUSPENDED:
+        Log("DFU paused\n");
+        break;
+    case WICED_BT_MESH_DFU_STATE_COMPLETE:
+        Log("DFU completed\n");
+        ui->pbDfu->setValue(100);
+        if (p_data && data_length)
+        {
+            number_nodes = (uint16_t)p_data[0] + ((uint16_t)p_data[1] << 8);
+            if (number_nodes * 4 != data_length - 2)
+            {
+                Log("DFU bad complete data length\n");
+                break;
+            }
+            p = p_data + 2;
+            for (i = 0; i < number_nodes; i++)
+            {
+                Log("Node %02x%02x DFU %s\n", p[1], p[0], p[2] == WICED_BT_MESH_FW_UPDATE_PHASE_APPLY_SUCCESS ? "succeeded" : "failed");
+                p += 4;
+            }
+        }
+        if (m_bDfuStatus)
+            on_btnGetDfuStatus();
+        SetDfuStarted(FALSE);
+        break;
+    case WICED_BT_MESH_DFU_STATE_FAILED:
+        Log("DFU failed\n");
+        if (m_bDfuStatus)
+            on_btnGetDfuStatus();
+        SetDfuStarted(FALSE);
+        break;
+    }
+}
+
+uint32_t MainWindow::GetDfuImageSize()
+{
+    uint32_t file_size;
+
+    FILE *fPatch = fopen(STR_TO_CHAR(m_sDfuImageFilePath), "rb");
+    if (fPatch == NULL)
+        return 0;
+
+    // Load OTA FW file into memory
+    fseek(fPatch, 0, SEEK_END);
+    file_size = (int)ftell(fPatch);
+    fclose(fPatch);
+    return file_size;
+}
+
+void MainWindow::GetDfuImageChunk(uint8_t *p_data, uint32_t offset, uint16_t data_len)
+{
+    FILE *fPatch = fopen(STR_TO_CHAR(m_sDfuImageFilePath), "rb");
+    if (fPatch == NULL)
+        return;
+
+    // Load OTA FW file into memory
+    fseek(fPatch, offset, SEEK_SET);
+    fread(p_data, 1, data_len, fPatch);
+    fclose(fPatch);
+}
+#endif
 
 void MainWindow::on_btnClearTrace()
 {
@@ -1944,28 +2374,6 @@ void MainWindow::DisplayCurrentGroup()
         }
     }
     free(p_components);
-}
-
-#define wiced_timer_callback_fp wiced_timer_callback_t // TODO: remove. Only for backward compatability
-// stubs for building in BSA repo
-wiced_result_t wiced_init_timer(wiced_timer_t* p_timer, wiced_timer_callback_fp TimerCb, TIMER_PARAM_TYPE cBackparam, wiced_timer_type_t type)
-{
-    return WICED_BT_SUCCESS;
-}
-
-wiced_result_t wiced_deinit_timer(wiced_timer_t* p)
-{
-    return WICED_BT_SUCCESS;
-}
-
-wiced_result_t wiced_start_timer(wiced_timer_t* wt, uint32_t timeout)
-{
-    return WICED_ERROR;
-}
-
-wiced_result_t wiced_stop_timer(wiced_timer_t* wt)
-{
-    return WICED_ERROR;
 }
 
 extern "C" void wiced_bt_mesh_gatt_client_connection_state_changed(uint16_t conn_id, uint16_t mtu)

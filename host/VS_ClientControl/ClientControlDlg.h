@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2022, Cypress Semiconductor Corporation (an Infineon company) or
+ * Copyright 2016-2023, Cypress Semiconductor Corporation (an Infineon company) or
  * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
  *
  * This software, including source code, documentation and related
@@ -340,6 +340,7 @@ protected:
     //{{AFX_MSG(COptions)
     //afx_msg void OnApplyNow();
     //afx_msg void OnOK();
+    LRESULT OnTimerCallback(WPARAM op, LPARAM lparam);
     //}}AFX_MSG
     DECLARE_MESSAGE_MAP()
 };

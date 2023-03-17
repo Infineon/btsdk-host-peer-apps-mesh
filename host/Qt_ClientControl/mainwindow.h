@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2022, Cypress Semiconductor Corporation (an Infineon company) or
+ * Copyright 2016-2023, Cypress Semiconductor Corporation (an Infineon company) or
  * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
  *
  * This software, including source code, documentation and related
@@ -39,6 +39,11 @@
 
 #ifdef BSA
 #include "bsa_mesh_api.h"
+#endif
+
+#ifdef MESH_DFU_ENABLED
+#include "wiced_bt_mesh_models.h"
+#include "wiced_bt_mesh_dfu.h"
 #endif
 
 #include <QMutex>
@@ -94,7 +99,6 @@ signals:
    void HandleTrace(QString *pTrace);
    void ScrollToTop();
    void NodeReset();
-   void DfuProgress(int pos, int param);
 
 public slots:
     void onHandleWicedEvent(unsigned int, unsigned int, unsigned char *);
@@ -114,7 +118,6 @@ public slots:
     void on_btnReConfig();
     void on_btnConfigSub();
     void on_btnConfigPub();
-    void on_btnGetStatus();
     void on_btnGetColor();
     void on_btnGetHue();
     void on_btnGetInfo();
@@ -129,14 +132,17 @@ public slots:
     void on_btnSetVen();
     void on_btnSensorGet();
     void on_btnConfigSensor();
-    void on_btnDfuStart();
-    void on_btnDfuStop();
+#ifdef MESH_DFU_ENABLED
+    void on_btnFindDfuFile();
+    void on_btnDfuStartStop();
+    void on_btnDfuPauseResume();
+    void on_btnGetDfuStatus();
+#endif
     void on_btnClearTrace();
     void onGrpIndexChanged(int);
     void onCbControlIndexChanged(int);
     void on_btnNodeReset();
     void on_btnIdentify();
-    void on_btnFindDfuFile();
     void on_off_tmr_timeout();
     //void on_dfu_timer_timeout();
 
@@ -151,7 +157,6 @@ public:
     BOOL        m_scan_started;
     BOOL        m_bConnecting;
     BOOL        m_bScanning;
-    uint8_t     m_dfuMethod;
     BOOL m_bConnected;
     QStringList m_strComPortsIDs;
 
@@ -164,7 +169,6 @@ public:
 
     char   m_szCurrentGroup[80];
 
-    BOOL    m_fw_download_active;
     BYTE    m_received_evt[261];
     DWORD   m_received_evt_len;
     HANDLE m_event;
@@ -180,13 +184,33 @@ public:
 //    CProgressCtrl m_Progress;
     LRESULT OnProgress(WPARAM completed, LPARAM total);
 //    WSDownloader *m_pDownloader;
-    LPBYTE m_pPatch;
-    DWORD m_dwPatchSize;
+#ifdef MESH_DFU_ENABLED
+    DWORD                   m_dwPatchSize;
+    DWORD                   m_dwPatchOffset;
+    int                     m_dfuState;
+    BOOL                    m_bDfuStarted;
+    BOOL                    m_bDfuStatus;
+    QString                 m_sDfuImageFilePath;
+    BOOL                    m_bUploading;
+    int                     m_DfuMethod;
+    mesh_dfu_fw_id_t        m_DfuFwId;
+    mesh_dfu_metadata_t     m_DfuMetaData;
+#endif
 
     void ProcessUnprovisionedDevice(uint8_t *p_uuid, uint16_t oob, uint8_t *name, uint8_t name_len);
     void LinkStatus(uint8_t is_connected, uint32_t conn_id, uint16_t addr, uint8_t is_over_gatt);
     void ProcessUnprovisionedDevice(LPBYTE p_data, DWORD len);
     void ProcessVendorSpecificData(LPBYTE p_data, DWORD len);
+#ifdef MESH_DFU_ENABLED
+    BOOL OnDfuStart();
+    void OnDfuStop();
+    void SetDfuStarted(BOOL started);
+    BOOL ReadDfuManifestFile(QString sFilePath);
+    uint32_t GetDfuImageSize();
+    void GetDfuImageChunk(uint8_t *p_data, uint32_t offset, uint16_t data_len);
+    void FwDistributionUploadStatus(LPBYTE p_data, DWORD len);
+    void OnDfuStatusCallback(uint8_t state, uint8_t *p_data, uint32_t data_length);
+#endif
 };
 
 

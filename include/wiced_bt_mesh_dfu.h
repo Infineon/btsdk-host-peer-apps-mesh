@@ -1,5 +1,5 @@
 /*
- * Copyright 2016-2022, Cypress Semiconductor Corporation (an Infineon company) or
+ * Copyright 2016-2023, Cypress Semiconductor Corporation (an Infineon company) or
  * an affiliate of Cypress Semiconductor Corporation.  All rights reserved.
  *
  * This software, including source code, documentation and related
@@ -61,13 +61,13 @@ extern "C"
  * @{
  */
 
-#define WICED_BT_MESH_CORE_MODEL_ID_BLOB_TRANSFER_SRV                   0xBF42
-#define WICED_BT_MESH_CORE_MODEL_ID_BLOB_TRANSFER_CLNT                  0xBF43
+#define WICED_BT_MESH_CORE_MODEL_ID_BLOB_TRANSFER_SRV                   0x1400
+#define WICED_BT_MESH_CORE_MODEL_ID_BLOB_TRANSFER_CLNT                  0x1401
 
-#define WICED_BT_MESH_CORE_MODEL_ID_FW_UPDATE_SRV                       0xBF44
-#define WICED_BT_MESH_CORE_MODEL_ID_FW_UPDATE_CLNT                      0xBF45
-#define WICED_BT_MESH_CORE_MODEL_ID_FW_DISTRIBUTION_SRV                 0xBF46
-#define WICED_BT_MESH_CORE_MODEL_ID_FW_DISTRIBUTION_CLNT                0xBF47
+#define WICED_BT_MESH_CORE_MODEL_ID_FW_UPDATE_SRV                       0x1402
+#define WICED_BT_MESH_CORE_MODEL_ID_FW_UPDATE_CLNT                      0x1403
+#define WICED_BT_MESH_CORE_MODEL_ID_FW_DISTRIBUTION_SRV                 0x1404
+#define WICED_BT_MESH_CORE_MODEL_ID_FW_DISTRIBUTION_CLNT                0x1405
 
 /** @} WICED_BT_MESH_MODEL_ID */
 
@@ -79,54 +79,54 @@ extern "C"
  * @{
  */
 
-/* BLOB Transfer */
-#define WICED_BT_MESH_OPCODE_BLOB_TRANSFER_GET                                  0xB701
-#define WICED_BT_MESH_OPCODE_BLOB_TRANSFER_START                                0xB702
-#define WICED_BT_MESH_OPCODE_BLOB_TRANSFER_CANCEL                               0xB703
-#define WICED_BT_MESH_OPCODE_BLOB_TRANSFER_STATUS                               0xB704
-#define WICED_BT_MESH_OPCODE_BLOB_BLOCK_GET                                     0xB707
-#define WICED_BT_MESH_OPCODE_BLOB_BLOCK_START                                   0xB705
-#define WICED_BT_MESH_OPCODE_BLOB_PARTIAL_BLOCK_REPORT                          0x4F
-#define WICED_BT_MESH_OPCODE_BLOB_BLOCK_STATUS                                  0x7E
-#define WICED_BT_MESH_OPCODE_BLOB_CHUNK_TRANSFER                                0x7D
-#define WICED_BT_MESH_OPCODE_BLOB_INFO_GET                                      0xB70A
-#define WICED_BT_MESH_OPCODE_BLOB_INFO_STATUS                                   0xB70B
+ /* BLOB Transfer */
+#define WICED_BT_MESH_OPCODE_BLOB_TRANSFER_GET                                  0x8300
+#define WICED_BT_MESH_OPCODE_BLOB_TRANSFER_START                                0x8301
+#define WICED_BT_MESH_OPCODE_BLOB_TRANSFER_CANCEL                               0x8302
+#define WICED_BT_MESH_OPCODE_BLOB_TRANSFER_STATUS                               0x8303
+#define WICED_BT_MESH_OPCODE_BLOB_BLOCK_GET                                     0x8305
+#define WICED_BT_MESH_OPCODE_BLOB_BLOCK_START                                   0x8304
+#define WICED_BT_MESH_OPCODE_BLOB_PARTIAL_BLOCK_REPORT                          0x65
+#define WICED_BT_MESH_OPCODE_BLOB_BLOCK_STATUS                                  0x67
+#define WICED_BT_MESH_OPCODE_BLOB_CHUNK_TRANSFER                                0x66
+#define WICED_BT_MESH_OPCODE_BLOB_INFO_GET                                      0x8306
+#define WICED_BT_MESH_OPCODE_BLOB_INFO_STATUS                                   0x8307
 
-/* Firmware Update */
-#define WICED_BT_MESH_OPCODE_FW_UPDATE_INFO_GET                                 0xB71B
-#define WICED_BT_MESH_OPCODE_FW_UPDATE_INFO_STATUS                              0xB737
-#define WICED_BT_MESH_OPCODE_FW_UPDATE_FW_METADATA_CHECK                        0xB738
-#define WICED_BT_MESH_OPCODE_FW_UPDATE_FW_METADATA_STATUS                       0xB739
-#define WICED_BT_MESH_OPCODE_FW_UPDATE_GET                                      0xB71C
-#define WICED_BT_MESH_OPCODE_FW_UPDATE_START                                    0xB71D
-#define WICED_BT_MESH_OPCODE_FW_UPDATE_CANCEL                                   0xB71E
-#define WICED_BT_MESH_OPCODE_FW_UPDATE_APPLY                                    0xB71F
-#define WICED_BT_MESH_OPCODE_FW_UPDATE_STATUS                                   0xB72B
+ /* Firmware Update */
+#define WICED_BT_MESH_OPCODE_FW_UPDATE_INFO_GET                                 0x8308
+#define WICED_BT_MESH_OPCODE_FW_UPDATE_INFO_STATUS                              0x8324
+#define WICED_BT_MESH_OPCODE_FW_UPDATE_FW_METADATA_CHECK                        0x8325
+#define WICED_BT_MESH_OPCODE_FW_UPDATE_FW_METADATA_STATUS                       0x8326
+#define WICED_BT_MESH_OPCODE_FW_UPDATE_GET                                      0x8309
+#define WICED_BT_MESH_OPCODE_FW_UPDATE_START                                    0x830A
+#define WICED_BT_MESH_OPCODE_FW_UPDATE_CANCEL                                   0x830B
+#define WICED_BT_MESH_OPCODE_FW_UPDATE_APPLY                                    0x830C
+#define WICED_BT_MESH_OPCODE_FW_UPDATE_STATUS                                   0x8318
 
-/* Firmware Distribution */
-#define WICED_BT_MESH_OPCODE_FW_DISTR_GET                                       0xB724
-#define WICED_BT_MESH_OPCODE_FW_DISTR_START                                     0xB72F
-#define WICED_BT_MESH_OPCODE_FW_DISTR_SUSPEND                                   0xB73A
-#define WICED_BT_MESH_OPCODE_FW_DISTR_CANCEL                                    0xB725
-#define WICED_BT_MESH_OPCODE_FW_DISTR_APPLY                                     0xB726
-#define WICED_BT_MESH_OPCODE_FW_DISTR_STATUS                                    0xB730
-#define WICED_BT_MESH_OPCODE_FW_DISTR_NODES_GET                                 0xB722
-#define WICED_BT_MESH_OPCODE_FW_DISTR_NODES_LIST                                0xB72D
-#define WICED_BT_MESH_OPCODE_FW_DISTR_NODES_ADD                                 0xB72C
-#define WICED_BT_MESH_OPCODE_FW_DISTR_NODES_DELETE_ALL                          0xB720
-#define WICED_BT_MESH_OPCODE_FW_DISTR_NODES_STATUS                              0xB721
-#define WICED_BT_MESH_OPCODE_FW_DISTR_CAPABILITIES_GET                          0xB723
-#define WICED_BT_MESH_OPCODE_FW_DISTR_CAPABILITIES_STATUS                       0xB72E
-#define WICED_BT_MESH_OPCODE_FW_DISTR_UPLOAD_GET                                0xB727
-#define WICED_BT_MESH_OPCODE_FW_DISTR_UPLOAD_START                              0xB731
-#define WICED_BT_MESH_OPCODE_FW_DISTR_UPLOAD_OOB_START                          0xB732
-#define WICED_BT_MESH_OPCODE_FW_DISTR_UPLOAD_CANCEL                             0xB728
-#define WICED_BT_MESH_OPCODE_FW_DISTR_UPLOAD_STATUS                             0xB733
-#define WICED_BT_MESH_OPCODE_FW_DISTR_FW_GET                                    0xB734
-#define WICED_BT_MESH_OPCODE_FW_DISTR_FW_STATUS                                 0xB736
-#define WICED_BT_MESH_OPCODE_FW_DISTR_FW_GET_BY_INDEX                           0xB729
-#define WICED_BT_MESH_OPCODE_FW_DISTR_FW_DELETE                                 0xB735
-#define WICED_BT_MESH_OPCODE_FW_DISTR_FW_DELETE_ALL                             0xB72A
+ /* Firmware Distribution */
+#define WICED_BT_MESH_OPCODE_FW_DISTR_CAPABILITIES_GET                          0x8310
+#define WICED_BT_MESH_OPCODE_FW_DISTR_CAPABILITIES_STATUS                       0x831B
+#define WICED_BT_MESH_OPCODE_FW_DISTR_GET                                       0x8311
+#define WICED_BT_MESH_OPCODE_FW_DISTR_START                                     0x831C
+#define WICED_BT_MESH_OPCODE_FW_DISTR_SUSPEND                                   0x8327
+#define WICED_BT_MESH_OPCODE_FW_DISTR_CANCEL                                    0x8312
+#define WICED_BT_MESH_OPCODE_FW_DISTR_APPLY                                     0x8313
+#define WICED_BT_MESH_OPCODE_FW_DISTR_STATUS                                    0x831D
+#define WICED_BT_MESH_OPCODE_FW_DISTR_NODES_GET                                 0x830F
+#define WICED_BT_MESH_OPCODE_FW_DISTR_NODES_LIST                                0x831A
+#define WICED_BT_MESH_OPCODE_FW_DISTR_NODES_ADD                                 0x8319
+#define WICED_BT_MESH_OPCODE_FW_DISTR_NODES_DELETE_ALL                          0x830D
+#define WICED_BT_MESH_OPCODE_FW_DISTR_NODES_STATUS                              0x830E
+#define WICED_BT_MESH_OPCODE_FW_DISTR_UPLOAD_GET                                0x8314
+#define WICED_BT_MESH_OPCODE_FW_DISTR_UPLOAD_START                              0x831E
+#define WICED_BT_MESH_OPCODE_FW_DISTR_UPLOAD_OOB_START                          0x831F
+#define WICED_BT_MESH_OPCODE_FW_DISTR_UPLOAD_CANCEL                             0x8315
+#define WICED_BT_MESH_OPCODE_FW_DISTR_UPLOAD_STATUS                             0x8320
+#define WICED_BT_MESH_OPCODE_FW_DISTR_FW_GET                                    0x8321
+#define WICED_BT_MESH_OPCODE_FW_DISTR_FW_GET_BY_INDEX                           0x8316
+#define WICED_BT_MESH_OPCODE_FW_DISTR_FW_DELETE                                 0x8322
+#define WICED_BT_MESH_OPCODE_FW_DISTR_FW_DELETE_ALL                             0x8317
+#define WICED_BT_MESH_OPCODE_FW_DISTR_FW_STATUS                                 0x8323
 
 /** @} WICED_BT_MESH_MODEL_OPCODE */
 
@@ -358,6 +358,8 @@ extern "C"
  * @name Definition for messages exchanged between an app and FW Distribution Model
  * @{ */
 #define WICED_BT_MESH_FW_DISTRIBUTION_STATUS                153  /**< Status change event and Get Status response */
+#define WICED_BT_MESH_FW_UPDATE_INFO_STATUS                 154  /**< Get FW Update Info response */
+#define WICED_BT_MESH_FW_UPDATE_METADATA_STATUS             155  /**< Check FW Update metadata response */
 /** @} FW_DISTRIBUTION_EVENT */
 
 
@@ -378,6 +380,12 @@ extern "C"
     { MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_BLOB_TRANSFER_CLNT, wiced_bt_mesh_model_blob_transfer_client_message_handler, NULL, NULL }, \
     { MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_BLOB_TRANSFER_SRV, wiced_bt_mesh_model_blob_transfer_server_message_handler, NULL, NULL }
 
+#define WICED_BT_MESH_MODEL_FW_STANDALONE_UPDATER \
+    { MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_FW_DISTRIBUTION_CLNT, wiced_bt_mesh_model_fw_provider_message_handler, NULL, NULL }, \
+    { MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_FW_DISTRIBUTION_SRV, wiced_bt_mesh_model_fw_distribution_server_message_handler, NULL, NULL }, \
+    { MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_FW_UPDATE_CLNT, wiced_bt_mesh_model_fw_update_client_message_handler, NULL, NULL }, \
+    { MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_BLOB_TRANSFER_CLNT, wiced_bt_mesh_model_blob_transfer_client_message_handler, NULL, NULL }
+
 #define WICED_BT_MESH_MODEL_FW_DISTRIBUTION_CLIENT \
     { MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_FW_DISTRIBUTION_CLNT, wiced_bt_mesh_model_fw_provider_message_handler, NULL, NULL }
 
@@ -387,56 +395,6 @@ extern "C"
 #define WICED_BT_MESH_MODEL_BLOB_TRANSFER_CLIENT \
     { MESH_COMPANY_ID_BT_SIG, WICED_BT_MESH_CORE_MODEL_ID_BLOB_TRANSFER_CLNT, wiced_bt_mesh_model_blob_transfer_client_message_handler, NULL, NULL }
 
-
-/* DFU opcodes */
-typedef struct
-{
-    uint16_t    blob_transfer_get;
-    uint16_t    blob_transfer_start;
-    uint16_t    blob_transfer_cancel;
-    uint16_t    blob_transfer_status;
-    uint16_t    blob_block_get;
-    uint16_t    blob_block_start;
-    uint16_t    blob_partial_block_report;
-    uint16_t    blob_block_status;
-    uint16_t    blob_chunk_transfer;
-    uint16_t    blob_info_get;
-    uint16_t    blob_info_status;
-
-    uint16_t    fw_update_info_get;
-    uint16_t    fw_update_info_status;
-    uint16_t    fw_update_metadata_check;
-    uint16_t    fw_update_metadata_status;
-    uint16_t    fw_update_get;
-    uint16_t    fw_update_start;
-    uint16_t    fw_update_cancel;
-    uint16_t    fw_update_apply;
-    uint16_t    fw_update_status;
-
-    uint16_t    fw_distr_get;
-    uint16_t    fw_distr_start;
-    uint16_t    fw_distr_suspend;
-    uint16_t    fw_distr_cancel;
-    uint16_t    fw_distr_apply;
-    uint16_t    fw_distr_status;
-    uint16_t    fw_distr_nodes_get;
-    uint16_t    fw_distr_nodes_list;
-    uint16_t    fw_distr_nodes_add;
-    uint16_t    fw_distr_nodes_delete_all;
-    uint16_t    fw_distr_nodes_status;
-    uint16_t    fw_distr_capabilities_get;
-    uint16_t    fw_distr_capabilities_status;
-    uint16_t    fw_distr_upload_get;
-    uint16_t    fw_distr_upload_start;
-    uint16_t    fw_distr_upload_oob_start;
-    uint16_t    fw_distr_upload_cancel;
-    uint16_t    fw_distr_upload_status;
-    uint16_t    fw_distr_fw_get;
-    uint16_t    fw_distr_fw_status;
-    uint16_t    fw_distr_fw_get_by_index;
-    uint16_t    fw_distr_fw_delete;
-    uint16_t    fw_distr_fw_delete_all;
-} mesh_dfu_opcodes_t;
 
 /* Firmware distribution firmware ID structure */
 typedef PACKED struct
@@ -577,16 +535,6 @@ typedef struct
     mesh_dfu_fw_apply_t         p_fw_apply_cb;
     mesh_dfu_fw_upload_oob_t    p_fw_upload_oob_cb;
 } mesh_dfu_callbacks_t;
-
-/**
-* \brief Firmware update set opcodes
-* \details Application call this function to pass DFU opcodes to the library
-*
-* @param       p_opcodes    DFU opcodes defined by SIG.
-*
-* @return      None.
-*/
-void wiced_bt_mesh_model_fw_update_set_opcodes(const mesh_dfu_opcodes_t *p_opcodes);
 
 /**
 * \brief Firmware update init
@@ -1098,6 +1046,19 @@ uint8_t wiced_bt_mesh_model_blob_transfer_get_phase();
 /*                      wiced_bt_mesh_provision.h                            */
 /*---------------------------------------------------------------------------*/
 
+typedef PACKED struct
+{
+    uint8_t index;                                              /**< Index of the firmware image in the Firmware Information List state to check */
+    mesh_dfu_metadata_t metadata;                               /**< Vendor-specific metadata */
+} wiced_bt_mesh_dfu_metadata_check_data_t;
+
+typedef PACKED struct
+{
+    uint8_t status;                                             /**< Status Code from the firmware metadata check */
+    uint8_t add_info;                                           /**< Additional Information - whether node needs to be reprovisioned after firmware update */
+    uint8_t index;                                              /**< Index of the firmware image in the Firmware Information List state that was checked */
+} wiced_bt_mesh_dfu_metadata_status_data_t;
+
 /**
  * NOTE: This is preliminary implementation subject to change
  * @anchor FW_DISTRIBUTION_STATE
@@ -1125,6 +1086,7 @@ typedef PACKED struct
 {
     mesh_dfu_fw_id_t firmware_id;                               /**< Firmware ID of the firmware that will be downloaded */
     mesh_dfu_metadata_t metadata;                               /**< Metadata of the firmware that will be downloaded */
+    uint32_t firmware_size;                                     /**< Firmware size */
     uint16_t proxy_addr;                                        /**< Address of the proxy device */
     uint16_t group_addr;                                        /**< Group address to be used for the nodes being updated */
     uint16_t group_size;                                        /**< Number of elements in the update_node_list */
@@ -1186,6 +1148,16 @@ void wiced_bt_mesh_model_fw_provider_init(void);
 wiced_bool_t wiced_bt_mesh_model_fw_provider_message_handler(wiced_bt_mesh_event_t *p_event, uint8_t *p_data, uint16_t data_len);
 
 /**
+* \brief The application can call this function to check metadata on remote device.
+*
+* @param[in]       p_event Mesh event with the remote device address.
+* @param[in]       p_data Pointer to the data to send
+*
+* @return      WICED_TRUE if operation has started successfully
+*/
+wiced_bool_t wiced_bt_mesh_dfu_metadata_check(wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_dfu_metadata_check_data_t *p_data, wiced_bt_mesh_fw_provider_callback_t *p_callback);
+
+/**
  * \brief The application can call this function to get the state of the current firmware distribution process.
  * The function may register a callback which will be executed when reply from the distributor is received.
  *
@@ -1205,6 +1177,24 @@ wiced_bool_t wiced_bt_mesh_fw_provider_get_status(wiced_bt_mesh_event_t *p_event
  * @return      WICED_TRUE if operation has started successfully
  */
 wiced_bool_t wiced_bt_mesh_fw_provider_start(wiced_bt_mesh_event_t *p_event, wiced_bt_mesh_fw_distribution_start_data_t *p_data, wiced_bt_mesh_fw_provider_callback_t *p_callback);
+
+/**
+ * \brief The application can call this function to suspend firmware distribution procedure.
+ *
+ * @param[in]       p_event Mesh event with the distributor address that has been created by the app for unsolicited message.
+ *
+ * @return      WICED_TRUE if operation has started successfully
+ */
+wiced_bool_t wiced_bt_mesh_fw_provider_suspend(wiced_bt_mesh_event_t *p_event);
+
+/**
+ * \brief The application can call this function to resume firmware distribution procedure.
+ *
+ * @param[in]       p_event Mesh event with the distributor address that has been created by the app for unsolicited message.
+ *
+ * @return      WICED_TRUE if operation has started successfully
+ */
+wiced_bool_t wiced_bt_mesh_fw_provider_resume(wiced_bt_mesh_event_t *p_event);
 
 /**
  * \brief The application can call this function to terminate firmware distribution procedure.
