@@ -139,7 +139,8 @@ private:
 #define UPDATE_STATE_IDLE           0       // Idle
 #define UPDATE_STATE_STARTING       1       // Update starting
 #define UPDATE_STATE_UPDATING       2       // Sending image to nodes
-#define UPDATE_STATE_APPLYING       3       // Nodes applying to new firmware image
+#define UPDATE_STATE_VERIFYING      3       // Nodes verifying received firmware image
+#define UPDATE_STATE_APPLYING       4       // Nodes applying to new firmware image
     UINT8 m_nUpdateState;
     CString m_sFirmwareFilePath;
     UINT m_nFirmwareSize;

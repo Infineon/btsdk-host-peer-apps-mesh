@@ -752,10 +752,10 @@ void ConnectedMesh::ProcessData(int port_num, DWORD opcode, LPBYTE p_data, DWORD
             STREAM_TO_UINT32(rx_pkts, p);
             STREAM_TO_UINT32(rx_to, p);
             STREAM_TO_UINT32(rx_crc, p);
-            STREAM_TO_UINT32(per_int, p);               // PER_INT is integer value of (PER X 1,000,000)
-            per_percent = (float)per_int / 10000;
+            STREAM_TO_UINT32(per_int, p);               // PER_INT is integer value of (PER X 100,000,000)
+            per_percent = (float)per_int / 1000000;
 
-            Log (L"     0x%02x      0x%02x    %10u    %10u    %10u    %10u          %.4f%%\n",
+            Log (L"     0x%02x      0x%02x    %10u    %10u    %10u    %10u          %.6f%%\n",
                 node, peer, tx_pkts, rx_pkts, rx_to, rx_crc, per_percent);
         }
         break;
@@ -794,36 +794,44 @@ void ConnectedMesh::ProcessData(int port_num, DWORD opcode, LPBYTE p_data, DWORD
         if (m_nUpdateState == UPDATE_STATE_STARTING)
         {
             // starting update, check firmware ID and save node to be updated
-            if ((memcmp(p, m_FirmwareId.id, 6) == 0) && (p[6] <= m_FirmwareId.id[6]))
+            if ((memcmp(p, m_FirmwareId.id, 4) == 0) && (p[4] <= m_FirmwareId.id[4]))
                 m_UpdateNodeList[m_nUpdateNodes++].addr = node;
 
+            // check if the last node has responded
             if (num_nodes == ++m_nTotalNodes)
             {
                 uint8_t buffer[100];
 
                 // all nodes returned app info, start update
-                p = buffer;
-                UINT32_TO_STREAM(p, m_nFirmwareSize);
-                UINT8_TO_STREAM(p, m_FirmwareId.length);
-                memcpy(p, m_FirmwareId.id, m_FirmwareId.length);
-                p += m_FirmwareId.length;
-                for (i = 0; i < m_nUpdateNodes; i++)
-                    UINT8_TO_STREAM(p, m_UpdateNodeList[i].addr);
-                m_ComHelper->SendWicedCommand(HCI_CONTROL_BMS_COMMAND_OTA_START, buffer, p - buffer);
+                if (m_nUpdateNodes)
+                {
+                    p = buffer;
+                    UINT32_TO_STREAM(p, m_nFirmwareSize);
+                    UINT8_TO_STREAM(p, m_FirmwareId.length);
+                    memcpy(p, m_FirmwareId.id, m_FirmwareId.length);
+                    p += m_FirmwareId.length;
+                    for (i = 0; i < m_nUpdateNodes; i++)
+                        UINT8_TO_STREAM(p, m_UpdateNodeList[i].addr);
+                    m_ComHelper->SendWicedCommand(HCI_CONTROL_BMS_COMMAND_OTA_START, buffer, p - buffer);
+                }
+                else
+                {
+                    Log(L"The firmware image does not matach any node.\n");
+                    SetUpdateState(UPDATE_STATE_IDLE);
+                }
             }
         }
         else    // user clicked "Get Nodes Info" button, display node app info
         {
-            UINT16 cid, pid, vid;
+            UINT16 cid, pid;
             UINT8 major, minor;
 
             BE_STREAM_TO_UINT16(cid, p);
             BE_STREAM_TO_UINT16(pid, p);
-            BE_STREAM_TO_UINT16(vid, p);
             BE_STREAM_TO_UINT8(major, p);
             BE_STREAM_TO_UINT8(minor, p);
 
-            Log(L"Node: 0x%02x Company ID: 0x%04x Product ID: 0x%04x HW Ver: %d SW Ver: %d.%d", node, cid, pid, vid, major, minor);
+            Log(L"Node: 0x%02x   Company ID: 0x%04X   Product ID: 0x%04X   Version: %d.%d", node, cid, pid, major, minor);
         }
         break;
 
@@ -850,6 +858,16 @@ void ConnectedMesh::ProcessData(int port_num, DWORD opcode, LPBYTE p_data, DWORD
             case UPDATE_STATE_UPDATING:
                 if (SendFirmwareData() == 0)
                 {
+                    SetUpdateState(UPDATE_STATE_VERIFYING);
+                    m_ComHelper->SendWicedCommand(HCI_CONTROL_BMS_COMMAND_OTA_VERIFY, NULL, 0);
+                }
+                break;
+            case UPDATE_STATE_VERIFYING:
+                {
+                    // stop data before applying, otherwise L0 node will stuck after reboot
+                    if (m_sendingData)
+                        OnBnClickedConnMeshStartData();
+
                     UINT8 reset = (UINT8)m_nFactoryReset;
                     SetUpdateState(UPDATE_STATE_APPLYING);
                     m_ComHelper->SendWicedCommand(HCI_CONTROL_BMS_COMMAND_OTA_APPLY, &reset, 1);
@@ -871,8 +889,11 @@ void ConnectedMesh::ProcessData(int port_num, DWORD opcode, LPBYTE p_data, DWORD
             case UPDATE_STATE_UPDATING:
                 yy = wsprintf(buff, L"Firmware data transfer failed with nodes:");
                 break;
-            case UPDATE_STATE_APPLYING:
+            case UPDATE_STATE_VERIFYING:
                 yy = wsprintf(buff, L"Firmware verification failed with nodes:");
+                break;
+            case UPDATE_STATE_APPLYING:
+                yy = wsprintf(buff, L"Firmware applying failed with nodes:");
                 break;
             }
             for (xx = 0; xx < (int)len; xx++)

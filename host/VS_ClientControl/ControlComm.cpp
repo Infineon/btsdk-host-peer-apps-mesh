@@ -81,9 +81,9 @@ DWORD WINAPI ReadThread(LPVOID lpdwThreadParam)
 //
 // Obtains the information about Serial (Com port) device from the system using SetupAPI windows
 // API, This information includes the OS driver name for the serial device. Workaround for
-// 1. https://jira.cypress.com/browse/BTSDK-4891
+// BTSDK-4891
 // KP3_RTS (BT_UART_CTS) stays high when Clientcontrol com port is enabled
-// 2. https://jira.cypress.com/browse/CYBLUETOOL-369
+// CYBLUETOOL-369
 // KP3_RTS (BT_UART_CTS) stays high when Bluetool com port is enabled
 //
 bool IsKp3Device(const char* portNameToFind)
